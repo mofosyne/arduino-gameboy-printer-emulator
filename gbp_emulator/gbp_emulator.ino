@@ -24,6 +24,7 @@ typedef enum gbp_parse_state_t
     GBP_PARSE_STATE_COMPRESSION,
     GBP_PARSE_STATE_PACKET_LENGTH_LOW,
     GBP_PARSE_STATE_PACKET_LENGTH_HIGH,
+    GBP_PARSE_STATE_VARIABLE_PAYLOAD,
     GBP_PARSE_STATE_CHECKSUM_LOW,
     GBP_PARSE_STATE_CHECKSUM_HIGH,
     /** This could be sent seperately perhaps **/
@@ -169,6 +170,10 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
   static uint16_t checksum_low;
   static uint16_t checksum_high;
 
+  // Packet Payload (Move out of this function)
+  static uint16_t payload_index = 0;
+  static uint8_t payload[450] = {0};
+
 #if 1
   if (clear_byte_buffer_flag)
   {
@@ -229,7 +234,6 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
       { // Command Byte Received
         packet_data_length_low = byte_output;
-        //packet_data_length = byte_output & 0x0F;
         parse_state = GBP_PARSE_STATE_PACKET_LENGTH_HIGH;
         clear_byte_buffer_flag = true;
       }
@@ -239,9 +243,38 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
       { // Command Byte Received
         packet_data_length_high = byte_output;
-        //packet_data_length = (byte_output << 4) & 0xF0;
+
+        packet_data_length = ( (packet_data_length_high << 8) & 0xFF00 ) | ( (packet_data_length_low << 0) & 0x00FF );
+
+        if ( packet_data_length > 0)
+        { // Data Payload Present
+          parse_state = GBP_PARSE_STATE_VARIABLE_PAYLOAD;
+        }
+        else
+        { // No Data Payload
+          parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
+        }
+
+        clear_byte_buffer_flag = true;
+      }
+    } break;
+    /********************* VARIABLE PAYLOAD **************************/
+    case GBP_PARSE_STATE_VARIABLE_PAYLOAD:
+    {
+      /*
+        semi-eqv: for(payload_index=0 ; payload_index < packet_data_length ; payload_index++){...}
+      */
+      
+      if (payload_index < packet_data_length)
+      { // All bytes loaded
         parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
         clear_byte_buffer_flag = true;
+      }
+      
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      {
+        payload[payload_index];
+        payload_index++;
       }
     } break;
     /********************* CHECKSUM **************************/
@@ -250,7 +283,6 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
       { // Command Byte Received
         checksum_low = byte_output;
-        //checksum = byte_output & 0x0F;
         parse_state = GBP_PARSE_STATE_CHECKSUM_HIGH;
         clear_byte_buffer_flag = true;
       }
@@ -260,7 +292,9 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
       { // Command Byte Received
         checksum_high = byte_output;
-        //checksum = (byte_output << 4) & 0xF0;
+        
+        checksum = ( (checksum_high << 8) & 0xFF00 ) | ( (checksum_low << 0) & 0x00FF );
+        
         parse_state = GBP_PARSE_STATE_DIAGNOSTICS;
         clear_byte_buffer_flag = true;
       }
@@ -273,14 +307,14 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       Serial.println("\n compression: "); // Note: will cause bit miss
       Serial.println(compression,HEX);
       Serial.println("\n packet_data_length: "); // Note: will cause bit miss
-      Serial.println(packet_data_length_low,HEX);
-      Serial.println(packet_data_length_high,HEX);
+      //Serial.println(packet_data_length_low,HEX);
+      //Serial.println(packet_data_length_high,HEX);
       packet_data_length = ( (packet_data_length_high << 8) & 0xFF00 ) | ( (packet_data_length_low << 0) & 0x00FF );
       Serial.println(packet_data_length,HEX);
       //Serial.println(packet_data_length,HEX);
       Serial.println("\n checksum: "); // Note: will cause bit miss
-      Serial.println(checksum_low,HEX);
-      Serial.println(checksum_high,HEX);
+      //Serial.println(checksum_low,HEX);
+      //Serial.println(checksum_high,HEX);
       checksum = ( (checksum_high << 8) & 0xFF00 ) | ( (checksum_low << 0) & 0x00FF );
       Serial.println(checksum,HEX);
 
