@@ -24,7 +24,8 @@ typedef enum gbp_parse_state_t
     GBP_PARSE_STATE_COMPRESSION,
     GBP_PARSE_STATE_PACKET_LENGTH_LOW,
     GBP_PARSE_STATE_PACKET_LENGTH_HIGH,
-    GBP_PARSE_STATE_CHECKSUM,
+    GBP_PARSE_STATE_CHECKSUM_LOW,
+    GBP_PARSE_STATE_CHECKSUM_HIGH,
     /** This could be sent seperately perhaps **/
     //GBP_PARSE_STATE_ACKNOWLEGEMENT,
     //GBP_PARSE_STATE_STATUS,
@@ -163,6 +164,10 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
   static uint16_t packet_data_length;
   static uint16_t checksum;
 
+  static uint16_t packet_data_length_low;
+  static uint16_t packet_data_length_high;
+  static uint16_t checksum_low;
+  static uint16_t checksum_high;
 
 #if 1
   if (clear_byte_buffer_flag)
@@ -214,28 +219,71 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
       { // Command Byte Received
         compression = byte_output;
-        parse_state = GBP_PARSE_STATE_DIAGNOSTICS;
+        parse_state = GBP_PARSE_STATE_PACKET_LENGTH_LOW;
         clear_byte_buffer_flag = true;
       }
     } break;
     /********************* PACKET_LENGTH **************************/
     case GBP_PARSE_STATE_PACKET_LENGTH_LOW:
     {
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      { // Command Byte Received
+        packet_data_length_low = byte_output;
+        //packet_data_length = byte_output & 0x0F;
+        parse_state = GBP_PARSE_STATE_PACKET_LENGTH_HIGH;
+        clear_byte_buffer_flag = true;
+      }
     } break;
     case GBP_PARSE_STATE_PACKET_LENGTH_HIGH:
     {
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      { // Command Byte Received
+        packet_data_length_high = byte_output;
+        //packet_data_length = (byte_output << 4) & 0xF0;
+        parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
+        clear_byte_buffer_flag = true;
+      }
     } break;
     /********************* CHECKSUM **************************/
-    case GBP_PARSE_STATE_CHECKSUM:
+    case GBP_PARSE_STATE_CHECKSUM_LOW:
     {
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      { // Command Byte Received
+        checksum_low = byte_output;
+        //checksum = byte_output & 0x0F;
+        parse_state = GBP_PARSE_STATE_CHECKSUM_HIGH;
+        clear_byte_buffer_flag = true;
+      }
+    } break;
+    case GBP_PARSE_STATE_CHECKSUM_HIGH:
+    {
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      { // Command Byte Received
+        checksum_high = byte_output;
+        //checksum = (byte_output << 4) & 0xF0;
+        parse_state = GBP_PARSE_STATE_DIAGNOSTICS;
+        clear_byte_buffer_flag = true;
+      }
     } break;
     /********************* DIAGNOSTICS **************************/
     case GBP_PARSE_STATE_DIAGNOSTICS:
     { // print out the headers
-      Serial.print("\ncommandbyte: "); // Note: will cause bit miss
+      Serial.println("\n commandbyte: "); // Note: will cause bit miss
       Serial.println(command,HEX);
-      Serial.print("\ncompression: "); // Note: will cause bit miss
+      Serial.println("\n compression: "); // Note: will cause bit miss
       Serial.println(compression,HEX);
+      Serial.println("\n packet_data_length: "); // Note: will cause bit miss
+      Serial.println(packet_data_length_low,HEX);
+      Serial.println(packet_data_length_high,HEX);
+      packet_data_length = ( (packet_data_length_high << 8) & 0xFF00 ) | ( (packet_data_length_low << 0) & 0x00FF );
+      Serial.println(packet_data_length,HEX);
+      //Serial.println(packet_data_length,HEX);
+      Serial.println("\n checksum: "); // Note: will cause bit miss
+      Serial.println(checksum_low,HEX);
+      Serial.println(checksum_high,HEX);
+      checksum = ( (checksum_high << 8) & 0xFF00 ) | ( (checksum_low << 0) & 0x00FF );
+      Serial.println(checksum,HEX);
+
       parse_state = GBP_PARSE_STATE_IDLING;
     } break;
     default:
