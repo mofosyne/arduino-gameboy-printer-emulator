@@ -16,25 +16,23 @@
 #define SI_PIN 11 // Serial INPUT   (OUTPUT)
 
 
-enum gbp_parse_state 
+typedef enum gbp_parse_state_t
 { // Indicates the stage of the parsing processing
-    IDLING,
-    GBP_MAGIC_BYTE_1, // 0x88
-    GBP_MAGIC_BYTE_2, // 0x33
-    GBP_COMMAND_TYPE,
-    GBP_COMPRESSION_TYPE,
-    GBP_PACKET_LENGTH,
-    GBP_CHECKSUM,
-    GBP_ACKNOWLEGEMENT,
-    GBP_STATUS
-};
+    GBP_PARSE_STATE_IDLING,
+    GBP_PARSE_STATE_MAGIC_BYTE,
+    GBP_PARSE_STATE_COMMAND,
+    GBP_PARSE_STATE_COMPRESSION,
+    GBP_PARSE_STATE_PACKET_LENGTH_LOW,
+    GBP_PARSE_STATE_PACKET_LENGTH_HIGH,
+    GBP_PARSE_STATE_CHECKSUM,
+    /** This could be sent seperately perhaps **/
+    //GBP_PARSE_STATE_ACKNOWLEGEMENT,
+    //GBP_PARSE_STATE_STATUS
+} gbp_parse_state_t;
 
 
 
-
-
-
-
+/************************************************************************/
 
 // include the library code:
 #include <LiquidCrystal.h>
@@ -147,18 +145,62 @@ static bool gbp_get_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_inp
   return false;  
 }
 
-static bool gbp_parse_message(int data_bit)
+static gbp_parse_state_t gbp_parse_message(int data_bit)
 { // Returns true when a message is fully parsed (This is timing critical. Avoid serial prints)
   // Byte Wise Buffer State
   static uint8_t byte_output = 0;
   static uint8_t byte_buffer = 0x00;
   static int bit_received = 0;
 
-  gbp_scan_byte(&byte_output, &byte_buffer, data_bit);
+  static gbp_parse_state_t parse_state = GBP_PARSE_STATE_IDLING;
 
-  if ( byte_output == 0x88 )
+  switch (parse_state)
   {
-    Serial.print("0x88 detected\n");
+    /********************* MAGIC BYTES **************************/
+    case GBP_PARSE_STATE_IDLING:
+    {
+      // Scan for magic byte
+      gbp_scan_byte(&byte_output, &byte_buffer, data_bit);
+      if ( byte_output == GBP_MAGIC_BYTE_VALUE_1 )
+      { // First Magic Byte Found
+        parse_state = GBP_PARSE_STATE_MAGIC_BYTE;
+      }
+    } break;
+    case GBP_PARSE_STATE_MAGIC_BYTE:
+    {
+      // Scan for magic byte
+      gbp_scan_byte(&byte_output, &byte_buffer, data_bit);  // Should probbly be a proper bit by bit count. Too lazy
+      if ( byte_output == GBP_MAGIC_BYTE_VALUE_2 )
+      { // Second Magic Byte Found
+        parse_state = GBP_PARSE_STATE_IDLING;
+        Serial.print("!\n");
+      }
+    } break;
+    /********************* COMMAND **************************/
+    case GBP_PARSE_STATE_COMMAND:
+    {
+    } break;
+    /********************* COMPRESSION **************************/
+    case GBP_PARSE_STATE_COMPRESSION:
+    {
+    } break;
+    /********************* PACKET_LENGTH **************************/
+    case GBP_PARSE_STATE_PACKET_LENGTH_LOW:
+    {
+    } break;
+    case GBP_PARSE_STATE_PACKET_LENGTH_HIGH:
+    {
+    } break;
+    /********************* PACKET_LENGTH **************************/
+    case GBP_PARSE_STATE_CHECKSUM:
+    {
+    } break;
+
+    
+    default:
+    { // Unknown state. Revert to idle state
+      parse_state = GBP_PARSE_STATE_IDLING;
+    } break;
   }
 }
 
