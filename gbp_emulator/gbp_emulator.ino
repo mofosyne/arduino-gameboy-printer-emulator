@@ -58,6 +58,17 @@ static int serial_putchar(char ch, FILE* stream)
     return (0) ;
 }
 
+/*
+  Gameboy TX RX
+*/
+
+typedef struct {
+  uint8_t data;
+  uint8_t bitmask;
+} gbp_tx_byte_t;
+
+gbp_tx_byte_t gbp_tx_byte_buffer;
+
 /**************************************************************
  * 
  *  GAMEBOY PRINTER PROTOCOL
@@ -72,6 +83,15 @@ static int serial_putchar(char ch, FILE* stream)
  *  GAMEBOY PRINTER FUNCTIONS
  * 
  **************************************************************/
+
+
+
+static void gbp_send_byte_set(uint8_t byte_data )
+{
+  gbp_tx_byte_buffer.bitmask = (1<<7);  // Reset Byte Mask.
+  gbp_tx_byte_buffer.data = byte_data;
+}
+
 /*
  * Checks for any new incoming data bit from the gameboy. 
  *  Every bit is received on the rising edge of the serial clock.
@@ -81,7 +101,7 @@ static int serial_putchar(char ch, FILE* stream)
  *         * 1 : High Bit Received
  *         * 0 : Low Bit Received
  */
-static int gbp_get_bit()
+static int gbp_rx_tx_bit_update()
 { // Checks for any new bits
   static bool first_start = true;
   static int serial_clock_state_prev = 0;
@@ -90,7 +110,7 @@ static int gbp_get_bit()
   int serial_clock_state  = digitalRead(SC_PIN);
   int serial_data_state   = digitalRead(SD_PIN);
   int serial_out_state    = digitalRead(SO_PIN);
-  int serial_input_state  = digitalRead(SI_PIN);
+  //int serial_input_state  = digitalRead(SI_PIN);
   
   if (first_start)
   { // Just need to record initial state
@@ -102,9 +122,9 @@ static int gbp_get_bit()
     if (serial_clock_state != serial_clock_state_prev)
     { // Clock Pin Transition Detected
       if (serial_clock_state)
-      { // Rising Edge
-        // fprintf(&lcdout, ">> SD:%d SO:%d SI:%d\n", serial_data_state, serial_out_state, serial_input_state ) ;
-        // Serial.print(serial_out_state);
+      { // Rising Clock Edge (RX Read Edge)
+
+        // Reading a bit
         if(serial_out_state)
         { // High Bit Recieved
           bit_status = 1;
@@ -112,6 +132,26 @@ static int gbp_get_bit()
         else
         { // Low Bit Recieved
           bit_status = 0;
+        }
+
+      }
+      else
+      { // Falling Clock Edge (TX Sending Edge)
+        if (gbp_tx_byte_buffer.bitmask)
+        { // Byte sending is active
+
+          // Sending a bit
+          if ( gbp_tx_byte_buffer.data & gbp_tx_byte_buffer.bitmask )
+          { // High Bit
+            digitalWrite(SI_PIN, HIGH);
+          }
+          else
+          { // Low Bit
+            digitalWrite(SI_PIN, LOW);
+          }
+
+          // Shift single bit bitMask downwards to next bit in the byte buffer
+          gbp_tx_byte_buffer.bitmask = gbp_tx_byte_buffer.bitmask >> 1;
         }
       }
     }
@@ -345,10 +385,10 @@ void setup() {
 
   pinMode(SC_PIN, INPUT);
   pinMode(SO_PIN, INPUT);
-  pinMode(SI_PIN, INPUT);
+  pinMode(SI_PIN, OUTPUT);
 
   // Default output value
-  //digitalWrite(SI_PIN, LOW);
+  digitalWrite(SI_PIN, LOW);
 
   Serial.print("GAMEBOY PRINTER EMULATION PROJECT\n");
 }
@@ -357,7 +397,7 @@ void loop() {
   int data_bit;
 
   // Get next Bit
-  data_bit = gbp_get_bit();
+  data_bit = gbp_rx_tx_bit_update();
 
 #if 1 // Bit Scanning
   if ( NO_NEW_BIT != data_bit )
