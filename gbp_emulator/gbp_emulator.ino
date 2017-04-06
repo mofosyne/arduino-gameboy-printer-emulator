@@ -27,7 +27,8 @@ typedef enum gbp_parse_state_t
     GBP_PARSE_STATE_CHECKSUM,
     /** This could be sent seperately perhaps **/
     //GBP_PARSE_STATE_ACKNOWLEGEMENT,
-    //GBP_PARSE_STATE_STATUS
+    //GBP_PARSE_STATE_STATUS,
+    GBP_PARSE_STATE_DIAGNOSTICS
 } gbp_parse_state_t;
 
 
@@ -134,12 +135,13 @@ static bool gbp_scan_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_in
   return true;  // There is always a byte avaiable to scan
 }
 
-static bool gbp_get_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_input, int *bit_received)
+static bool gbp_get_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_input, int *bit_count_ptr)
 { // This returns a byte if avaiable
-  *bit_received++;
-  if (*bit_received < 8)
+  gbp_scan_byte(byte_output, byte_buffer, bit_input);
+  
+  (*bit_count_ptr) = (*bit_count_ptr) + 1;
+  if (*bit_count_ptr >= 8)
   { // Byte Ready
-    gbp_scan_byte(byte_output, byte_buffer, bit_input);  
     return true;
   }
   return false;  
@@ -147,12 +149,30 @@ static bool gbp_get_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_inp
 
 static gbp_parse_state_t gbp_parse_message(int data_bit)
 { // Returns true when a message is fully parsed (This is timing critical. Avoid serial prints)
+  static gbp_parse_state_t parse_state = GBP_PARSE_STATE_IDLING;
+
   // Byte Wise Buffer State
+  static bool clear_byte_buffer_flag = true;
   static uint8_t byte_output = 0;
   static uint8_t byte_buffer = 0x00;
   static int bit_received = 0;
 
-  static gbp_parse_state_t parse_state = GBP_PARSE_STATE_IDLING;
+  // Packet Field
+  static uint8_t command;
+  static uint8_t compression;
+  static uint16_t packet_data_length;
+  static uint16_t checksum;
+
+
+#if 1
+  if (clear_byte_buffer_flag)
+  {
+    clear_byte_buffer_flag = false;
+    byte_output = 0;
+    byte_buffer = 0x00;
+    bit_received = 0;
+  }
+#endif
 
   switch (parse_state)
   {
@@ -164,6 +184,7 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       if ( byte_output == GBP_MAGIC_BYTE_VALUE_1 )
       { // First Magic Byte Found
         parse_state = GBP_PARSE_STATE_MAGIC_BYTE;
+        clear_byte_buffer_flag = true;
       }
     } break;
     case GBP_PARSE_STATE_MAGIC_BYTE:
@@ -172,17 +193,30 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
       gbp_scan_byte(&byte_output, &byte_buffer, data_bit);  // Should probbly be a proper bit by bit count. Too lazy
       if ( byte_output == GBP_MAGIC_BYTE_VALUE_2 )
       { // Second Magic Byte Found
-        parse_state = GBP_PARSE_STATE_IDLING;
-        Serial.print("!\n");
+        parse_state = GBP_PARSE_STATE_COMMAND;
+        clear_byte_buffer_flag = true;
+        //Serial.print("magic_byte_detected\n"); // Note: will cause bit miss
       }
     } break;
     /********************* COMMAND **************************/
     case GBP_PARSE_STATE_COMMAND:
     {
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      { // Command Byte Received
+        command = byte_output;
+        parse_state = GBP_PARSE_STATE_COMPRESSION;
+        clear_byte_buffer_flag = true;
+      }      
     } break;
     /********************* COMPRESSION **************************/
     case GBP_PARSE_STATE_COMPRESSION:
     {
+      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+      { // Command Byte Received
+        compression = byte_output;
+        parse_state = GBP_PARSE_STATE_DIAGNOSTICS;
+        clear_byte_buffer_flag = true;
+      }
     } break;
     /********************* PACKET_LENGTH **************************/
     case GBP_PARSE_STATE_PACKET_LENGTH_LOW:
@@ -191,12 +225,19 @@ static gbp_parse_state_t gbp_parse_message(int data_bit)
     case GBP_PARSE_STATE_PACKET_LENGTH_HIGH:
     {
     } break;
-    /********************* PACKET_LENGTH **************************/
+    /********************* CHECKSUM **************************/
     case GBP_PARSE_STATE_CHECKSUM:
     {
     } break;
-
-    
+    /********************* DIAGNOSTICS **************************/
+    case GBP_PARSE_STATE_DIAGNOSTICS:
+    { // print out the headers
+      Serial.print("\ncommandbyte: "); // Note: will cause bit miss
+      Serial.println(command,HEX);
+      Serial.print("\ncompression: "); // Note: will cause bit miss
+      Serial.println(compression,HEX);
+      parse_state = GBP_PARSE_STATE_IDLING;
+    } break;
     default:
     { // Unknown state. Revert to idle state
       parse_state = GBP_PARSE_STATE_IDLING;
