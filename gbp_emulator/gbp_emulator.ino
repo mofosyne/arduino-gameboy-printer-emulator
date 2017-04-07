@@ -8,7 +8,12 @@
  * 
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NO_NEW_BIT -1
+#define NO_NEW_BYTE -1
 
 #define SC_PIN 13 // Serial Clock   (INPUT)
 #define SD_PIN 0 // Serial Data    (?)
@@ -78,6 +83,119 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
 #define GBP_MAGIC_BYTE_VALUE_1 0x88
 #define GBP_MAGIC_BYTE_VALUE_2 0x33
 
+
+
+/**************************************************************
+ * 
+ *  GAMEBOY PRINTER FUNCTIONS (Stream Byte Version)
+ * 
+ **************************************************************/
+
+typedef struct gbp_rx_tx_byte_buffer_t
+{
+  bool      initialized;
+
+  // Bit State
+  int       serial_clock_state_prev;  // Previous Serial Clock State
+
+  // Sync word
+  bool      syncronised; // Is true when byte is aligned
+  uint16_t  sync_word;   // Sync word to match against
+  uint16_t  sync_buffer; // Streaming sync buffer
+
+  // Bit position within a byte frame
+  uint8_t   byte_frame_bit_pos;  
+
+  // Used for receiving byte
+  uint8_t   rx_byte_buffer;
+  uint8_t   rx_bitmask;
+
+  // Used for transmitting byte
+  uint8_t   tx_byte_buffer;
+  uint8_t   tx_bitmask;
+} gbp_rx_tx_byte_buffer_t;
+
+gbp_rx_tx_byte_buffer_t gbp_rx_tx_byte_buffer;
+
+static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
+{
+  *ptr = {0}; // Clear 
+
+  ptr->initialized  = true;
+  ptr->syncronised  = false;
+  ptr->sync_word    = 0x8833;
+}
+
+static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *rx_byte,  int *rx_bitState)
+{
+  bool byte_ready = false;
+
+  int serial_clock_state  = digitalRead(SC_PIN);
+  int serial_data_state   = digitalRead(SD_PIN);
+  int serial_out_state    = digitalRead(SO_PIN);
+
+  *rx_bitState = NO_NEW_BIT;
+
+  if (!(ptr->initialized))
+  { // Record initial clock pin state
+    gbp_rx_tx_byte_reset(ptr);
+    ptr->initialized = true;
+    ptr->serial_clock_state_prev = serial_clock_state;
+    return byte_ready;
+  }
+
+  // Clock Edge Detection
+  if (serial_clock_state != ptr->serial_clock_state_prev)
+  { // Clock Pin Transition Detected
+
+    if(serial_clock_state)
+    { // Rising Clock (Bit Rx Read)
+
+      // Current Bit State (Useful for diagnostics)
+      *rx_bitState = serial_out_state;
+
+      // Is this syncronised to a byte frame yet?
+      if (!(ptr->syncronised))
+      { // Preamble Sync Scan
+
+        // Insert the new detected bit
+        (ptr->sync_buffer) <<= 1;
+
+        // Insert a `1` else leave as `0`
+        if(serial_out_state)
+        { 
+          (ptr->sync_buffer) |= 1;
+        }
+
+        // Check if Sync Word is found
+        if (ptr->sync_buffer == ptr->sync_word)
+        { // Syncword detected
+          ptr->syncronised = true;
+          Serial.println("|sync|");
+          Serial.println(ptr->sync_buffer,HEX);
+          Serial.println(ptr->sync_word,HEX);
+        }
+
+      }
+      else
+      { // Byte Read Mode
+
+      }
+    }
+    else
+    { // Falling Clock (Bit Tx Set)
+
+    }
+
+  }
+
+  // Save current state for next edge detection
+  ptr->serial_clock_state_prev = serial_clock_state;
+  return byte_ready;
+}
+
+
+
 /**************************************************************
  * 
  *  GAMEBOY PRINTER FUNCTIONS
@@ -86,7 +204,7 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
 
 
 
-static void gbp_send_byte_set(uint8_t byte_data )
+static void gbp_send_byte_set(uint8_t byte_data)
 {
   gbp_tx_byte_buffer.bitmask = (1<<7);  // Reset Byte Mask.
   gbp_tx_byte_buffer.data = byte_data;
@@ -391,9 +509,23 @@ void setup() {
   digitalWrite(SI_PIN, LOW);
 
   Serial.print("GAMEBOY PRINTER EMULATION PROJECT\n");
-}
+} // setup()
 
 void loop() {  
+  uint8_t rx_byte;
+  int rx_bitState;
+
+  gbp_rx_tx_byte_update(&gbp_rx_tx_byte_buffer, &rx_byte,  &rx_bitState);
+
+#if 1 // Bit Scanning
+  if ( NO_NEW_BIT != rx_bitState )
+  { // New bit detected
+    Serial.print(rx_bitState);
+  }
+#endif
+
+
+#if 0
   int data_bit;
 
   // Get next Bit
@@ -412,9 +544,11 @@ void loop() {
     // Parse Message
   
     /// Scanning for Magic Header
-
-
   }
+#endif
 
+} // loop()
+
+#ifdef __cplusplus
 }
-
+#endif
