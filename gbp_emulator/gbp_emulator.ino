@@ -148,7 +148,7 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
   if (serial_clock_state != ptr->serial_clock_state_prev)
   { // Clock Pin Transition Detected
 
-    if(serial_clock_state)
+    if (serial_clock_state)
     { // Rising Clock (Bit Rx Read)
 
       // Current Bit State (Useful for diagnostics)
@@ -158,10 +158,10 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
       if (!(ptr->syncronised))
       { // Preamble Sync Scan
 
-        // Insert the new detected bit
+        // The sync buffer is seen as a FIFO stream of bits
         (ptr->sync_buffer) <<= 1;
 
-        // Insert a `1` else leave as `0`
+        // Push in a `1` else leave as `0`
         if(serial_out_state)
         { 
           (ptr->sync_buffer) |= 1;
@@ -171,15 +171,36 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
         if (ptr->sync_buffer == ptr->sync_word)
         { // Syncword detected
           ptr->syncronised = true;
+          ptr->byte_frame_bit_pos = 7;
+#if 0
           Serial.println("|sync|");
           Serial.println(ptr->sync_buffer,HEX);
           Serial.println(ptr->sync_word,HEX);
+#endif
         }
 
       }
       else
       { // Byte Read Mode
 
+        if(serial_out_state)
+        { 
+          ptr->rx_byte_buffer |= (1 << ptr->byte_frame_bit_pos);
+        }
+
+        if (ptr->byte_frame_bit_pos == 0)
+        { // All bits in a byte frame has been received
+          byte_ready = true;
+          // Set Byte Result
+          *rx_byte = ptr->rx_byte_buffer;
+          // Reset Rx Buffer
+          ptr->byte_frame_bit_pos = 7;
+          ptr->rx_byte_buffer = 0;
+        }
+        else
+        {
+          ptr->byte_frame_bit_pos--;
+        }
       }
     }
     else
@@ -514,16 +535,23 @@ void setup() {
 void loop() {  
   uint8_t rx_byte;
   int rx_bitState;
+  bool new_byte_flag;
 
-  gbp_rx_tx_byte_update(&gbp_rx_tx_byte_buffer, &rx_byte,  &rx_bitState);
+  new_byte_flag = gbp_rx_tx_byte_update(&gbp_rx_tx_byte_buffer, &rx_byte,  &rx_bitState);
 
-#if 1 // Bit Scanning
+#if 0 // Bit Scanning
   if ( NO_NEW_BIT != rx_bitState )
   { // New bit detected
     Serial.print(rx_bitState);
   }
 #endif
 
+#if 1 // Byte Scanning
+  if (new_byte_flag)
+  {
+    Serial.println(rx_byte,HEX);
+  }
+#endif
 
 #if 0
   int data_bit;
