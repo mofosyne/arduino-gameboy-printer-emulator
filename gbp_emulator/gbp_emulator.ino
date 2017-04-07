@@ -117,7 +117,7 @@ typedef struct gbp_rx_tx_byte_buffer_t
 gbp_rx_tx_byte_buffer_t gbp_rx_tx_byte_buffer;
 
 static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
-{
+{ // Resets the byte reader, back into scanning for the next packet.
   *ptr = {0}; // Clear 
 
   ptr->initialized  = true;
@@ -125,8 +125,13 @@ static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
   ptr->sync_word    = 0x8833;
 }
 
+static bool gbp_rx_tx_byte_set(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *tx_byte)
+{ // Stages the next byte to be transmitted
+  ptr->tx_byte_staging = *tx_byte;
+}
+
 static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *rx_byte,  int *rx_bitState)
-{
+{ // This is a byte scanner to allow this to read gameboy printer protocol formatted messages
   bool byte_ready = false;
 
   int serial_clock_state  = digitalRead(SC_PIN);
