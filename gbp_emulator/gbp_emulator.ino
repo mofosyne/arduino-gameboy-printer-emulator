@@ -108,11 +108,10 @@ typedef struct gbp_rx_tx_byte_buffer_t
 
   // Used for receiving byte
   uint8_t   rx_byte_buffer;
-  uint8_t   rx_bitmask;
 
   // Used for transmitting byte
+  uint8_t   tx_byte_staging;
   uint8_t   tx_byte_buffer;
-  uint8_t   tx_bitmask;
 } gbp_rx_tx_byte_buffer_t;
 
 gbp_rx_tx_byte_buffer_t gbp_rx_tx_byte_buffer;
@@ -172,11 +171,6 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
         { // Syncword detected
           ptr->syncronised = true;
           ptr->byte_frame_bit_pos = 7;
-#if 0
-          Serial.println("|sync|");
-          Serial.println(ptr->sync_buffer,HEX);
-          Serial.println(ptr->sync_word,HEX);
-#endif
         }
 
       }
@@ -188,23 +182,52 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
           ptr->rx_byte_buffer |= (1 << ptr->byte_frame_bit_pos);
         }
 
-        if (ptr->byte_frame_bit_pos == 0)
+        if (ptr->byte_frame_bit_pos > 0)
+        { // Need to read a few more bits to make a byte
+          ptr->byte_frame_bit_pos--;
+        }
+        else
         { // All bits in a byte frame has been received
           byte_ready = true;
+          
           // Set Byte Result
           *rx_byte = ptr->rx_byte_buffer;
           // Reset Rx Buffer
           ptr->byte_frame_bit_pos = 7;
           ptr->rx_byte_buffer = 0;
         }
-        else
-        {
-          ptr->byte_frame_bit_pos--;
-        }
       }
     }
     else
     { // Falling Clock (Bit Tx Set)
+
+      if ((ptr->syncronised) );
+      { // Only start transmitting when syncronised
+
+        // Loading new TX Bytes on new byte frames
+        if(7 == ptr->byte_frame_bit_pos)
+        { // Start of a new byte cycle
+            if (ptr->tx_byte_staging)
+            { // Byte ready to be sent
+              ptr->tx_byte_buffer = ptr->tx_byte_staging;
+            }
+            else
+            { // No new bytes present. Just keep transmitting zeros.
+              ptr->tx_byte_buffer = 0;
+            }
+        }
+
+        // Send next bit in a byte
+        if(ptr->tx_byte_buffer & (1 << ptr->byte_frame_bit_pos))
+        { // Send High Bit
+          digitalWrite(SI_PIN, HIGH);
+        }
+        else
+        { // Send Low Bit
+          digitalWrite(SI_PIN, LOW);
+        }
+
+      }
 
     }
 
