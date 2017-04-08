@@ -77,9 +77,15 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
  * 
  **************************************************************/
 
-#define GBP_MAGIC_BYTE_VALUE_1 0x88
-#define GBP_MAGIC_BYTE_VALUE_2 0x33
+#define GBP_SYNC_WORD_BYTE_1 0x88
+#define GBP_SYNC_WORD_BYTE_2 0x33
+#define GBP_SYNC_WORD 0x8833
 
+// Initialize(0x01), Data (0x04), Print (0x02), and Inquiry (0x0F).
+#define GBP_COMMAND_INIT 0x01
+#define GBP_COMMAND_DATA 0x04
+#define GBP_COMMAND_PRINT 0x02
+#define GBP_COMMAND_INQUIRY 0x0F
 
 static uint8_t gbp_status_byte(
                                 bool too_hot_or_cold, bool paper_jam, bool timeout, bool battery_low,
@@ -182,7 +188,7 @@ static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
 
   ptr->initialized  = true;
   ptr->syncronised  = false;
-  ptr->sync_word    = 0x8833;
+  ptr->sync_word    = GBP_SYNC_WORD;
 }
 
 static bool gbp_rx_tx_byte_set(struct gbp_rx_tx_byte_buffer_t *ptr, const uint8_t tx_byte)
@@ -534,7 +540,33 @@ void loop() {
 
   if (packet_ready_flag)
   {
+#if 1
+    Serial.println("#");
+#else
     Serial.println("packet received");
+    switch (gbp_packet.command)
+    {
+      case GBP_COMMAND_INIT:
+        Serial.println("INIT");
+        break;
+      case GBP_COMMAND_DATA:
+        Serial.println("DATA");
+        break;
+      case GBP_COMMAND_PRINT:
+        Serial.println("PRNT");
+        break;
+      case GBP_COMMAND_INQUIRY:
+        Serial.println("INQY");
+        break;
+    }
+    Serial.print("cmp:");
+    Serial.println(gbp_packet.compression,HEX);
+    Serial.print("len:");
+    Serial.println(gbp_packet.data_length,HEX);
+    Serial.print("csum:");
+    Serial.println(gbp_packet.checksum,HEX);
+    Serial.println("---");
+#endif
     gbp_rx_tx_byte_reset(&gbp_rx_tx_byte_buffer);
     gbp_parse_message_reset(&gbp_packet_parser);
   }
