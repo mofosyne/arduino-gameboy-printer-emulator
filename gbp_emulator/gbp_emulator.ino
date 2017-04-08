@@ -22,19 +22,16 @@ extern "C" {
 
 
 typedef enum gbp_parse_state_t
-{ // Indicates the stage of the parsing processing
-    GBP_PARSE_STATE_IDLING,
-    GBP_PARSE_STATE_MAGIC_BYTE,
+{ // Indicates the stage of the parsing processing (syncword is not parsed)
     GBP_PARSE_STATE_COMMAND,
     GBP_PARSE_STATE_COMPRESSION,
-    GBP_PARSE_STATE_PACKET_LENGTH_LOW,
-    GBP_PARSE_STATE_PACKET_LENGTH_HIGH,
+    GBP_PARSE_STATE_DATA_LENGTH_LOW,
+    GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH,
     GBP_PARSE_STATE_VARIABLE_PAYLOAD,
     GBP_PARSE_STATE_CHECKSUM_LOW,
     GBP_PARSE_STATE_CHECKSUM_HIGH,
-    /** This could be sent seperately perhaps **/
-    //GBP_PARSE_STATE_ACKNOWLEGEMENT,
-    //GBP_PARSE_STATE_STATUS,
+    GBP_PARSE_STATE_ACK,
+    GBP_PARSE_STATE_PRINTER_STATUS,
     GBP_PARSE_STATE_DIAGNOSTICS
 } gbp_parse_state_t;
 
@@ -84,12 +81,33 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
 #define GBP_MAGIC_BYTE_VALUE_2 0x33
 
 
+static uint8_t gbp_status_byte(
+                                bool too_hot_or_cold, bool paper_jam, bool timeout, bool battery_low,
+                                bool ready_to_print, bool print_reqested, bool currently_printing, bool checksum_error
+                                )
+{ // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
+  /*        | BITFLAG NAME            |BIT POS| */
+  return 
+          ( ( too_hot_or_cold     ?1:0) <<  7 )
+        | ( ( paper_jam           ?1:0) <<  6 )
+        | ( ( timeout             ?1:0) <<  5 )
+        | ( ( battery_low         ?1:0) <<  4 )
+        | ( ( ready_to_print      ?1:0) <<  3 )
+        | ( ( print_reqested      ?1:0) <<  2 )
+        | ( ( currently_printing  ?1:0) <<  1 )
+        | ( ( checksum_error      ?1:0) <<  0 )
+        ;
+}
 
 /**************************************************************
  * 
  *  GAMEBOY PRINTER FUNCTIONS (Stream Byte Version)
  * 
  **************************************************************/
+
+/*
+    Structs
+*/
 
 typedef struct gbp_rx_tx_byte_buffer_t
 {
@@ -114,7 +132,49 @@ typedef struct gbp_rx_tx_byte_buffer_t
   uint8_t   tx_byte_buffer;
 } gbp_rx_tx_byte_buffer_t;
 
+typedef struct gbp_packet_parser_t
+{
+  gbp_parse_state_t parse_state_prev;
+  gbp_parse_state_t parse_state;
+  uint16_t data_index;
+} gbp_packet_parser_t;
+
+typedef struct gbp_packet_t
+{ // This represents the structure of a gbp printer packet (excluding the sync word)
+  // Received
+  uint8_t   command;  
+  uint8_t   compression;  
+  uint16_t  data_length;
+  uint8_t   *data_ptr;   // Variable length field determined by data_length
+  uint16_t  checksum;
+
+  // Send
+  uint8_t   acknowledgement;
+  uint8_t   printer_status;
+} gbp_packet_t;
+
+
+
+/*
+    Global Vars
+*/
+uint8_t                 gbp_data_buffer[400];   // Variable length field determined by data_length (Convert to pointer if mallocing this)
 gbp_rx_tx_byte_buffer_t gbp_rx_tx_byte_buffer;
+gbp_packet_parser_t     gbp_packet_parser;
+gbp_packet_t            gbp_packet = 
+{
+  0,  //  command
+  0,  //  compression
+  0,  //  data_length
+  gbp_data_buffer,  // data
+  0,  //  checksum
+  0,  //  ack
+  0   //  status
+};
+
+/*
+    Static Functions
+*/
 
 static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
 { // Resets the byte reader, back into scanning for the next packet.
@@ -125,9 +185,9 @@ static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
   ptr->sync_word    = 0x8833;
 }
 
-static bool gbp_rx_tx_byte_set(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *tx_byte)
+static bool gbp_rx_tx_byte_set(struct gbp_rx_tx_byte_buffer_t *ptr, const uint8_t tx_byte)
 { // Stages the next byte to be transmitted
-  ptr->tx_byte_staging = *tx_byte;
+  ptr->tx_byte_staging = tx_byte;
 }
 
 static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *rx_byte,  int *rx_bitState)
@@ -183,7 +243,7 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
       { // Byte Read Mode
 
         if(serial_out_state)
-        { 
+        { // Get latest incoming bit and insert to next bit position in a byte
           ptr->rx_byte_buffer |= (1 << ptr->byte_frame_bit_pos);
         }
 
@@ -243,297 +303,168 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
   return byte_ready;
 }
 
-
-
-/**************************************************************
- * 
- *  GAMEBOY PRINTER FUNCTIONS
- * 
- **************************************************************/
-
-
-
-static void gbp_send_byte_set(uint8_t byte_data)
+static bool gbp_parse_message_reset(struct gbp_packet_parser_t *ptr)
 {
-  gbp_tx_byte_buffer.bitmask = (1<<7);  // Reset Byte Mask.
-  gbp_tx_byte_buffer.data = byte_data;
-}
-
-/*
- * Checks for any new incoming data bit from the gameboy. 
- *  Every bit is received on the rising edge of the serial clock.
- * 
- * Returns:
- *         * NO_NEW_BIT if no new bit detected.
- *         * 1 : High Bit Received
- *         * 0 : Low Bit Received
- */
-static int gbp_rx_tx_bit_update()
-{ // Checks for any new bits
-  static bool first_start = true;
-  static int serial_clock_state_prev = 0;
-  int bit_status = NO_NEW_BIT;
-
-  int serial_clock_state  = digitalRead(SC_PIN);
-  int serial_data_state   = digitalRead(SD_PIN);
-  int serial_out_state    = digitalRead(SO_PIN);
-  //int serial_input_state  = digitalRead(SI_PIN);
-  
-  if (first_start)
-  { // Just need to record initial state
-    first_start = false;
-  }
-  else
-  { // Check for new bits
-    // Clock Edge Detection
-    if (serial_clock_state != serial_clock_state_prev)
-    { // Clock Pin Transition Detected
-      if (serial_clock_state)
-      { // Rising Clock Edge (RX Read Edge)
-
-        // Reading a bit
-        if(serial_out_state)
-        { // High Bit Recieved
-          bit_status = 1;
-        }
-        else
-        { // Low Bit Recieved
-          bit_status = 0;
-        }
-
-      }
-      else
-      { // Falling Clock Edge (TX Sending Edge)
-        if (gbp_tx_byte_buffer.bitmask)
-        { // Byte sending is active
-
-          // Sending a bit
-          if ( gbp_tx_byte_buffer.data & gbp_tx_byte_buffer.bitmask )
-          { // High Bit
-            digitalWrite(SI_PIN, HIGH);
-          }
-          else
-          { // Low Bit
-            digitalWrite(SI_PIN, LOW);
-          }
-
-          // Shift single bit bitMask downwards to next bit in the byte buffer
-          gbp_tx_byte_buffer.bitmask = gbp_tx_byte_buffer.bitmask >> 1;
-        }
-      }
-    }
-  }
-
-  // Save current state for next edge detection
-  serial_clock_state_prev = serial_clock_state;
-  return bit_status;
-}
-
-
-static bool gbp_scan_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_input)
-{ // During Idling, scan for the initial magic byte
-  *byte_buffer <<= 1;
-
-  if(bit_input)
-  { // Insert a `1` else leave as `0`
-    *byte_buffer |= 0b0001;
-  }
-
-  *byte_output = *byte_buffer;
-
-  return true;  // There is always a byte avaiable to scan
-}
-
-static bool gbp_get_byte(uint8_t *byte_output, uint8_t *byte_buffer, int bit_input, int *bit_count_ptr)
-{ // This returns a byte if avaiable
-  gbp_scan_byte(byte_output, byte_buffer, bit_input);
-  
-  (*bit_count_ptr) = (*bit_count_ptr) + 1;
-  if (*bit_count_ptr >= 8)
-  { // Byte Ready
-    return true;
-  }
-  return false;  
-}
-
-static gbp_parse_state_t gbp_parse_message(int data_bit)
-{ // Returns true when a message is fully parsed (This is timing critical. Avoid serial prints)
-  static gbp_parse_state_t parse_state = GBP_PARSE_STATE_IDLING;
-
-  // Byte Wise Buffer State
-  static bool clear_byte_buffer_flag = true;
-  static uint8_t byte_output = 0;
-  static uint8_t byte_buffer = 0x00;
-  static int bit_received = 0;
-
-  // Packet Field
-  static uint8_t command;
-  static uint8_t compression;
-  static uint16_t packet_data_length;
-  static uint16_t checksum;
-
-  static uint16_t packet_data_length_low;
-  static uint16_t packet_data_length_high;
-  static uint16_t checksum_low;
-  static uint16_t checksum_high;
-
-  // Packet Payload (Move out of this function)
-  static uint16_t payload_index = 0;
-  static uint8_t payload[450] = {0};
-
-#if 1
-  if (clear_byte_buffer_flag)
+  *ptr = 
   {
-    clear_byte_buffer_flag = false;
-    byte_output = 0;
-    byte_buffer = 0x00;
-    bit_received = 0;
-  }
-#endif
+    (gbp_parse_state_t) 0,
+    (gbp_parse_state_t) 0,
+    0
+  };
+}
 
-  switch (parse_state)
+static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp_packet_t *packet_ptr, const bool new_rx_byte, const uint8_t rx_byte, bool *new_tx_byte, uint8_t *tx_byte)
+{
+  static uint16_t data_index;
+  bool   packet_ready_flag = false;
+
+  // Indicates if there was a change in state on last cycle
+  bool   init_state_flag = (ptr->parse_state != ptr->parse_state_prev);
+
+  // This keeps track of each stage and how to handle each incoming byte
+  switch (ptr->parse_state)
   {
-    /********************* MAGIC BYTES **************************/
-    case GBP_PARSE_STATE_IDLING:
-    {
-      // Scan for magic byte
-      gbp_scan_byte(&byte_output, &byte_buffer, data_bit);
-      if ( byte_output == GBP_MAGIC_BYTE_VALUE_1 )
-      { // First Magic Byte Found
-        parse_state = GBP_PARSE_STATE_MAGIC_BYTE;
-        clear_byte_buffer_flag = true;
-      }
-    } break;
-    case GBP_PARSE_STATE_MAGIC_BYTE:
-    {
-      // Scan for magic byte
-      gbp_scan_byte(&byte_output, &byte_buffer, data_bit);  // Should probbly be a proper bit by bit count. Too lazy
-      if ( byte_output == GBP_MAGIC_BYTE_VALUE_2 )
-      { // Second Magic Byte Found
-        parse_state = GBP_PARSE_STATE_COMMAND;
-        clear_byte_buffer_flag = true;
-        //Serial.print("magic_byte_detected\n"); // Note: will cause bit miss
-      }
-    } break;
-    /********************* COMMAND **************************/
     case GBP_PARSE_STATE_COMMAND:
     {
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
-      { // Command Byte Received
-        command = byte_output;
-        parse_state = GBP_PARSE_STATE_COMPRESSION;
-        clear_byte_buffer_flag = true;
-      }      
+      if (new_rx_byte)
+      {
+        packet_ptr->command = rx_byte;
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+      }
     } break;
-    /********************* COMPRESSION **************************/
     case GBP_PARSE_STATE_COMPRESSION:
     {
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
-      { // Command Byte Received
-        compression = byte_output;
-        parse_state = GBP_PARSE_STATE_PACKET_LENGTH_LOW;
-        clear_byte_buffer_flag = true;
+      if (new_rx_byte)
+      {
+        packet_ptr->compression = rx_byte;
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
       }
     } break;
-    /********************* PACKET_LENGTH **************************/
-    case GBP_PARSE_STATE_PACKET_LENGTH_LOW:
+    case GBP_PARSE_STATE_DATA_LENGTH_LOW:
     {
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
-      { // Command Byte Received
-        packet_data_length_low = byte_output;
-        parse_state = GBP_PARSE_STATE_PACKET_LENGTH_HIGH;
-        clear_byte_buffer_flag = true;
+      if (init_state_flag)
+      {
+        packet_ptr->data_length = 0;
+      }
+      if (new_rx_byte)
+      {
+        packet_ptr->data_length |= ( (rx_byte << 0) & 0x00FF );
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
       }
     } break;
-    case GBP_PARSE_STATE_PACKET_LENGTH_HIGH:
+    case GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH:
     {
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
-      { // Command Byte Received
-        packet_data_length_high = byte_output;
+      if (new_rx_byte)
+      {
+        packet_ptr->data_length |= ( (rx_byte << 8) & 0xFF00 );
 
-        packet_data_length = ( (packet_data_length_high << 8) & 0xFF00 ) | ( (packet_data_length_low << 0) & 0x00FF );
-
-        if ( packet_data_length > 0)
-        { // Data Payload Present
-          parse_state = GBP_PARSE_STATE_VARIABLE_PAYLOAD;
+        // Check data length
+        if (packet_ptr->data_length > 0)
+        {
+          ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
         }
         else
-        { // No Data Payload
-          parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
+        { // Skip variable payload stage if data_length is zero
+          ptr->parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
         }
-
-        clear_byte_buffer_flag = true;
       }
     } break;
-    /********************* VARIABLE PAYLOAD **************************/
     case GBP_PARSE_STATE_VARIABLE_PAYLOAD:
     {
       /*
-        semi-eqv: for(payload_index=0 ; payload_index < packet_data_length ; payload_index++){...}
+        The logical flow of this section is similar to 
+        `for (data_index = 0 ; (data_index > packet_ptr->data_length) ; data_index++ )`
       */
-      
-      if (payload_index < packet_data_length)
-      { // All bytes loaded
-        parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
-        clear_byte_buffer_flag = true;
-      }
-      
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
+
+      if (init_state_flag)
       {
-        payload[payload_index];
-        payload_index++;
+        ptr->data_index = 0;
+      }
+
+      if (new_rx_byte)
+      {
+        // Record Byte
+        packet_ptr->data_ptr[ptr->data_index] = rx_byte;
+
+        // Increment to next byte position in the data field
+        ptr->data_index++;
+
+        // Escape and move to next stage
+        if (ptr->data_index > packet_ptr->data_length)
+        {
+          ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+        }
       }
     } break;
-    /********************* CHECKSUM **************************/
     case GBP_PARSE_STATE_CHECKSUM_LOW:
     {
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
-      { // Command Byte Received
-        checksum_low = byte_output;
-        parse_state = GBP_PARSE_STATE_CHECKSUM_HIGH;
-        clear_byte_buffer_flag = true;
+      if (new_rx_byte)
+      {
+        packet_ptr->checksum = 0;
+        packet_ptr->checksum |= ( (rx_byte << 0) & 0x00FF );
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
       }
     } break;
     case GBP_PARSE_STATE_CHECKSUM_HIGH:
     {
-      if (gbp_get_byte(&byte_output, &byte_buffer, data_bit, &bit_received))
-      { // Command Byte Received
-        checksum_high = byte_output;
-        
-        checksum = ( (checksum_high << 8) & 0xFF00 ) | ( (checksum_low << 0) & 0x00FF );
-        
-        parse_state = GBP_PARSE_STATE_DIAGNOSTICS;
-        clear_byte_buffer_flag = true;
+      if (new_rx_byte)
+      {
+        packet_ptr->checksum |= ( (rx_byte << 8) & 0xFF00 );
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
       }
     } break;
-    /********************* DIAGNOSTICS **************************/
+    case GBP_PARSE_STATE_ACK:
+    {
+      if (init_state_flag)
+      {
+        *new_tx_byte = true;
+        *tx_byte = 0x81;
+        /* 
+          # "GB Printer interface specification" [Source](https://www.mikrocontroller.net/attachment/34801/gb-printer.txt)
+          > An acknowledgement code is set (by GB Printer) to either 0x80 or 0x81. 
+          > The difference of those two values is unsure at this moment.
+          > However, any other values are unaccepted and should be avoided.
+          > When writing a GB Printer alternative (e.g., emulator,) it is safe to return 0x81 always.
+        */
+      }
+      if (new_rx_byte)
+      {
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+      }
+    } break;
+    case GBP_PARSE_STATE_PRINTER_STATUS:
+    {
+      if (init_state_flag)
+      {
+        *new_tx_byte = true;
+        *tx_byte = gbp_status_byte( 0,0,0,0 , 0,0,0,0 );
+      }
+      if (new_rx_byte)
+      {
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+        packet_ready_flag = true;
+      }
+    } break;
     case GBP_PARSE_STATE_DIAGNOSTICS:
-    { // print out the headers
-      Serial.println("\n commandbyte: "); // Note: will cause bit miss
-      Serial.println(command,HEX);
-      Serial.println("\n compression: "); // Note: will cause bit miss
-      Serial.println(compression,HEX);
-      Serial.println("\n packet_data_length: "); // Note: will cause bit miss
-      //Serial.println(packet_data_length_low,HEX);
-      //Serial.println(packet_data_length_high,HEX);
-      packet_data_length = ( (packet_data_length_high << 8) & 0xFF00 ) | ( (packet_data_length_low << 0) & 0x00FF );
-      Serial.println(packet_data_length,HEX);
-      //Serial.println(packet_data_length,HEX);
-      Serial.println("\n checksum: "); // Note: will cause bit miss
-      //Serial.println(checksum_low,HEX);
-      //Serial.println(checksum_high,HEX);
-      checksum = ( (checksum_high << 8) & 0xFF00 ) | ( (checksum_low << 0) & 0x00FF );
-      Serial.println(checksum,HEX);
+    {
+      if (init_state_flag)
+      {
+        Serial.println("Received:");
+        Serial.println(packet_ptr->command,HEX);
+        Serial.println(packet_ptr->compression,HEX);
+        Serial.println(packet_ptr->data_length,HEX);
+        Serial.println(packet_ptr->checksum,HEX);
+        Serial.println(packet_ptr->acknowledgement,HEX);
+        Serial.println(packet_ptr->printer_status,HEX);
+      }
+    } break;
 
-      parse_state = GBP_PARSE_STATE_IDLING;
-    } break;
-    default:
-    { // Unknown state. Revert to idle state
-      parse_state = GBP_PARSE_STATE_IDLING;
-    } break;
   }
-}
 
+  // Keeping track of change in state
+  ptr->parse_state == ptr->parse_state_prev;
+  return packet_ready_flag;
+}
 
 /**************************************************************
  **************************************************************/
@@ -558,14 +489,24 @@ void setup() {
   digitalWrite(SI_PIN, LOW);
 
   Serial.print("GAMEBOY PRINTER EMULATION PROJECT\n");
+
+  // Clear Byte Scanner and Parser
+  gbp_rx_tx_byte_reset(&gbp_rx_tx_byte_buffer);
+  gbp_parse_message_reset(&gbp_packet_parser);
 } // setup()
 
 void loop() {  
-  uint8_t rx_byte;
   int rx_bitState;
-  bool new_byte_flag;
 
-  new_byte_flag = gbp_rx_tx_byte_update(&gbp_rx_tx_byte_buffer, &rx_byte,  &rx_bitState);
+  uint8_t rx_byte;
+  bool new_rx_byte;
+
+  uint8_t tx_byte;
+  bool new_tx_byte;
+
+  bool packet_ready_flag;
+
+  new_rx_byte = gbp_rx_tx_byte_update(&gbp_rx_tx_byte_buffer, &rx_byte,  &rx_bitState);
 
 #if 0 // Bit Scanning
   if ( NO_NEW_BIT != rx_bitState )
@@ -575,33 +516,29 @@ void loop() {
 #endif
 
 #if 1 // Byte Scanning
-  if (new_byte_flag)
+  if (new_rx_byte)
   {
     Serial.println(rx_byte,HEX);
   }
 #endif
 
-#if 0
-  int data_bit;
-
-  // Get next Bit
-  data_bit = gbp_rx_tx_bit_update();
-
-#if 1 // Bit Scanning
-  if ( NO_NEW_BIT != data_bit )
-  { // New bit detected
-    Serial.print(data_bit);
-  }
-#endif
-
-  if ( NO_NEW_BIT != data_bit )
+  packet_ready_flag = gbp_parse_message_update(
+                                              &gbp_packet_parser, &gbp_packet, 
+                                              new_rx_byte, rx_byte,
+                                              &new_tx_byte, &tx_byte
+                                              );
+  if (new_tx_byte)
   {
-    gbp_parse_message(data_bit);
-    // Parse Message
-  
-    /// Scanning for Magic Header
+    gbp_rx_tx_byte_set(&gbp_rx_tx_byte_buffer, tx_byte);
   }
-#endif
+
+  if (packet_ready_flag)
+  {
+    Serial.println("packet received");
+    gbp_rx_tx_byte_reset(&gbp_rx_tx_byte_buffer);
+    gbp_parse_message_reset(&gbp_packet_parser);
+  }
+
 
 } // loop()
 
