@@ -355,6 +355,8 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
   // Indicates if there was a change in state on last cycle
   bool   init_state_flag = (ptr->parse_state != ptr->parse_state_prev);
 
+  ptr->parse_state_prev = ptr->parse_state;
+
   *new_tx_byte = false;
 
   // This keeps track of each stage and how to handle each incoming byte
@@ -523,8 +525,6 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
 
   }
 
-  // Keeping track of change in state
-  ptr->parse_state_prev = ptr->parse_state;
   return packet_ready_flag;
 }
 
