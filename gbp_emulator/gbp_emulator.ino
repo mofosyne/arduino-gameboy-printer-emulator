@@ -20,6 +20,7 @@ extern "C" {
 #define SI_PIN 11 // Serial INPUT   (OUTPUT)
 #define SD_PIN 0  // Serial Data    (?)
 
+#define GBP_PACKET_TIMEOUT_MS 5000 // ms timeout period to wait for next byte in a packet
 
 typedef enum gbp_parse_state_t
 { // Indicates the stage of the parsing processing (syncword is not parsed)
@@ -217,8 +218,12 @@ typedef struct gbp_printer_t
   gbp_packet_parser_t     gbp_packet_parser;
   gbp_packet_t            gbp_packet;
 
+  // Buffers
   uint8_t                 gbp_print_settings_buffer[4];
   uint8_t                 gbp_print_buffer[800];  // 640 bytes usually
+
+  // Timeout if byte not received in time
+  unsigned long uptime_til_timeout_ms;
 } gbp_printer_t;
 
 
@@ -611,7 +616,11 @@ void loop() {
 
   bool packet_ready_flag;
 
+  /***************** BYTE PARSER ***********************/
+
   new_rx_byte = gbp_rx_tx_byte_update(&(gbp_printer.gbp_rx_tx_byte_buffer), &rx_byte,  &rx_bitState);
+
+  /***************** TX/RX BIT->BYTE DIAGNOSTICS ***********************/
 
 #if 0 // Bit Scanning
   if ( NO_NEW_BIT != rx_bitState )
@@ -629,6 +638,9 @@ void loop() {
   }
 #endif
 
+  /***************** PACKET PARSER ***********************/
+
+  // Byte
   packet_ready_flag = gbp_parse_message_update(
                                               &(gbp_printer.gbp_packet_parser), 
                                               &(gbp_printer.gbp_packet), 
@@ -637,6 +649,7 @@ void loop() {
                                               &new_tx_byte, &tx_byte
                                               );
 
+  // Byte to be tranmitted to the gameboy received
   if (new_tx_byte)
   {
 #if 0 // warning: effects timing
@@ -646,39 +659,38 @@ void loop() {
     gbp_rx_tx_byte_set(&(gbp_printer.gbp_rx_tx_byte_buffer), tx_byte);
   }
 
+  // Packet received from gameboy
   if (packet_ready_flag)
   {
 #if 1
     Serial.println("#");
-#else
-    Serial.println("packet received");
-    switch (gbp_packet.command)
-    {
-      case GBP_COMMAND_INIT:
-        Serial.println("INIT");
-        break;
-      case GBP_COMMAND_DATA:
-        Serial.println("DATA");
-        break;
-      case GBP_COMMAND_PRINT:
-        Serial.println("PRNT");
-        break;
-      case GBP_COMMAND_INQUIRY:
-        Serial.println("INQY");
-        break;
-    }
-    Serial.print("cmp:");
-    Serial.println(gbp_packet.compression,HEX);
-    Serial.print("len:");
-    Serial.println(gbp_packet.data_length,HEX);
-    Serial.print("csum:");
-    Serial.println(gbp_packet.checksum,HEX);
-    Serial.println("---");
 #endif
     gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
     gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
   }
 
+
+  // Trigger Timeout and reset the printer if byte stopped being recieved.
+  if ( (gbp_printer.gbp_rx_tx_byte_buffer.syncronised) )
+  { // During parsing phase, we want to ensure that we do not stay stuck.
+    if (new_rx_byte)
+    { // Push forward timeout since a byte was received.
+      gbp_printer.uptime_til_timeout_ms = millis() + GBP_PACKET_TIMEOUT_MS;
+    }
+    if ( (0 != gbp_printer.uptime_til_timeout_ms) && (millis() > gbp_printer.uptime_til_timeout_ms) )
+    { // reset printer byte and packet processor
+      Serial.println("ERROR: Timed Out");
+      gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
+      gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
+    }
+  }
+  else
+  { // During scanning phase timeout is not required.
+    gbp_printer.uptime_til_timeout_ms = 0;
+  }
+
+
+  // Diagnostics Console
   while (Serial.available() > 0) 
   {
     switch (Serial.read())
@@ -688,8 +700,12 @@ void loop() {
         Serial.println(gbp_printer.gbp_packet_parser.parse_state,HEX);
         Serial.print("data_index:");
         Serial.println(gbp_printer.gbp_packet_parser.data_index,HEX);
-        Serial.print("data_length:");
-        Serial.println(gbp_printer.gbp_packet.data_length,HEX);
+        Serial.print("next timeout in:");
+        Serial.println(gbp_printer.uptime_til_timeout_ms);
+        Serial.print("milis():");
+        Serial.println(millis());
+        Serial.print("synced:");
+        Serial.println(gbp_printer.gbp_rx_tx_byte_buffer.syncronised);
         break;
     }
   };
