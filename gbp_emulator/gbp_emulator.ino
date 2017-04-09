@@ -343,7 +343,7 @@ static bool gbp_parse_message_reset(struct gbp_packet_parser_t *ptr)
   };
 }
 
-static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp_packet_t *packet_ptr, struct gbp_printer_status_t *printer_status_ptr, const bool new_rx_byte, const uint8_t rx_byte, bool *new_tx_byte, uint8_t *tx_byte)
+static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp_packet_t *packet_ptr, struct gbp_printer_t *printer_ptr, const bool new_rx_byte, const uint8_t rx_byte, bool *new_tx_byte, uint8_t *tx_byte)
 {
   static uint16_t data_index;
   bool   packet_ready_flag = false;
@@ -360,6 +360,24 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       {
         packet_ptr->command = rx_byte;
         ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+
+        switch (packet_ptr->command)
+        {
+          case GBP_COMMAND_INIT:
+            packet_ptr->data_ptr = NULL;
+            break;
+          case GBP_COMMAND_DATA:
+            packet_ptr->data_ptr = printer_ptr->gbp_print_buffer;
+            break;
+          case GBP_COMMAND_PRINT:
+            packet_ptr->data_ptr = printer_ptr->gbp_print_settings_buffer;
+            break;
+          case GBP_COMMAND_INQUIRY:
+            packet_ptr->data_ptr = NULL;
+            break;
+          default:
+            packet_ptr->data_ptr = NULL;
+        }
       }
     } break;
     case GBP_PARSE_STATE_COMPRESSION:
@@ -391,6 +409,11 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
         // Check data length
         if (packet_ptr->data_length > 0)
         {
+          if (packet_ptr->data_ptr == NULL)
+          {
+            Serial.println("ERROR: Serial data length should be non zero");
+            while(1);
+          }
           ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
         }
         else
@@ -467,7 +490,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       if (init_state_flag)
       {
         *new_tx_byte = true;
-        *tx_byte = gbp_status_byte(printer_status_ptr);
+        *tx_byte = gbp_status_byte(&(printer_ptr->gbp_printer_status));
       }
       if (new_rx_byte)
       {
@@ -567,7 +590,7 @@ void loop() {
   packet_ready_flag = gbp_parse_message_update(
                                               &(gbp_printer.gbp_packet_parser), 
                                               &(gbp_printer.gbp_packet), 
-                                              &(gbp_printer.gbp_printer_status),
+                                              &(gbp_printer),
                                               new_rx_byte, rx_byte,
                                               &new_tx_byte, &tx_byte
                                               );
