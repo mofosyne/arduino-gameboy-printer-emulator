@@ -263,6 +263,9 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
         { // Syncword detected
           ptr->syncronised = true;
           ptr->byte_frame_bit_pos = 7;
+#if 1
+          Serial.println("-");
+#endif
         }
 
       }
@@ -284,6 +287,7 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
           
           // Set Byte Result
           *rx_byte = ptr->rx_byte_buffer;
+
           // Reset Rx Buffer
           ptr->byte_frame_bit_pos = 7;
           ptr->rx_byte_buffer = 0;
@@ -351,6 +355,8 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
   // Indicates if there was a change in state on last cycle
   bool   init_state_flag = (ptr->parse_state != ptr->parse_state_prev);
 
+  *new_tx_byte = false;
+
   // This keeps track of each stage and how to handle each incoming byte
   switch (ptr->parse_state)
   {
@@ -394,6 +400,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       {
         packet_ptr->data_length = 0;
       }
+
       if (new_rx_byte)
       {
         packet_ptr->data_length |= ( (rx_byte << 0) & 0x00FF );
@@ -441,6 +448,8 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
 
         // Increment to next byte position in the data field
         ptr->data_index++;
+        //Serial.println(ptr->data_index);
+        //Serial.println(",");
 
         // Escape and move to next stage
         if (ptr->data_index > packet_ptr->data_length)
@@ -515,7 +524,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
   }
 
   // Keeping track of change in state
-  ptr->parse_state == ptr->parse_state_prev;
+  ptr->parse_state_prev = ptr->parse_state;
   return packet_ready_flag;
 }
 
@@ -583,6 +592,8 @@ void loop() {
 #if 1 // Byte Scanning
   if (new_rx_byte)
   {
+    Serial.print(gbp_printer.gbp_packet_parser.parse_state,HEX);
+    Serial.print(":");
     Serial.println(rx_byte,HEX);
   }
 #endif
@@ -594,8 +605,13 @@ void loop() {
                                               new_rx_byte, rx_byte,
                                               &new_tx_byte, &tx_byte
                                               );
+
   if (new_tx_byte)
   {
+#if 1
+    Serial.print("TX:");
+    Serial.println(new_tx_byte,HEX);
+#endif
     gbp_rx_tx_byte_set(&(gbp_printer.gbp_rx_tx_byte_buffer), tx_byte);
   }
 
@@ -631,6 +647,21 @@ void loop() {
     gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
     gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
   }
+
+  while (Serial.available() > 0) 
+  {
+    switch (Serial.read())
+    {
+      case '?':
+        Serial.print("parse_state:");
+        Serial.println(gbp_printer.gbp_packet_parser.parse_state,HEX);
+        Serial.print("data_index:");
+        Serial.println(gbp_printer.gbp_packet_parser.data_index,HEX);
+        Serial.print("data_length:");
+        Serial.println(gbp_printer.gbp_packet.data_length,HEX);
+        break;
+    }
+  };
 
 
 } // loop()
