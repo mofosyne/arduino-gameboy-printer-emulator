@@ -608,7 +608,7 @@ void loop() {
 
   if (new_tx_byte)
   {
-#if 1
+#if 0 // warning: effects timing
     Serial.print("TX:");
     Serial.println(new_tx_byte,HEX);
 #endif
