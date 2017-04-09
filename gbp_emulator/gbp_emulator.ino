@@ -16,9 +16,9 @@ extern "C" {
 #define NO_NEW_BYTE -1
 
 #define SC_PIN 13 // Serial Clock   (INPUT)
-#define SD_PIN 0 // Serial Data    (?)
 #define SO_PIN 12 // Serial OUTPUT  (INPUT)
 #define SI_PIN 11 // Serial INPUT   (OUTPUT)
+#define SD_PIN 0  // Serial Data    (?)
 
 
 typedef enum gbp_parse_state_t
@@ -77,31 +77,58 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
  * 
  **************************************************************/
 
-#define GBP_SYNC_WORD_BYTE_1 0x88
-#define GBP_SYNC_WORD_BYTE_2 0x33
-#define GBP_SYNC_WORD 0x8833
+#define GBP_SYNC_WORD_BYTE_1  0x88 // 0b01011000
+#define GBP_SYNC_WORD_BYTE_2  0x33 // 0b00100001
+#define GBP_SYNC_WORD         0x8833
 
 // Initialize(0x01), Data (0x04), Print (0x02), and Inquiry (0x0F).
-#define GBP_COMMAND_INIT 0x01
-#define GBP_COMMAND_DATA 0x04
-#define GBP_COMMAND_PRINT 0x02
-#define GBP_COMMAND_INQUIRY 0x0F
+#define GBP_COMMAND_INIT      0x01 // 0b00000001
+#define GBP_COMMAND_DATA      0x04 // 0b00000100
+#define GBP_COMMAND_PRINT     0x02 // 0b00000010
+#define GBP_COMMAND_INQUIRY   0x0F // 0b00001111
 
-static uint8_t gbp_status_byte(
-                                bool too_hot_or_cold, bool paper_jam, bool timeout, bool battery_low,
-                                bool ready_to_print, bool print_reqested, bool currently_printing, bool checksum_error
-                                )
+#define GBP_ACKNOWLEGEMENT    0x81 // 10000001
+
+// Gameboy Printer Packet Structure
+typedef struct gbp_packet_t
+{ // This represents the structure of a gbp printer packet (excluding the sync word)
+  // Received
+  uint8_t   command;  
+  uint8_t   compression;  
+  uint16_t  data_length;
+  uint8_t   *data_ptr;   // Variable length field determined by data_length
+  uint16_t  checksum;
+
+  // Send
+  uint8_t   acknowledgement;
+  uint8_t   printer_status;
+} gbp_packet_t;
+
+// Gameboy Printer Status Code Structure
+typedef struct gbp_printer_status_t
+{
+  bool too_hot_or_cold;
+  bool paper_jam;
+  bool timeout;
+  bool battery_low;
+  bool ready_to_print;
+  bool print_reqested;
+  bool currently_printing;
+  bool checksum_error;
+} gbp_printer_status_t;
+
+static uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
-  /*        | BITFLAG NAME            |BIT POS| */
+  /*        | BITFLAG NAME                                |BIT POS| */
   return 
-          ( ( too_hot_or_cold     ?1:0) <<  7 )
-        | ( ( paper_jam           ?1:0) <<  6 )
-        | ( ( timeout             ?1:0) <<  5 )
-        | ( ( battery_low         ?1:0) <<  4 )
-        | ( ( ready_to_print      ?1:0) <<  3 )
-        | ( ( print_reqested      ?1:0) <<  2 )
-        | ( ( currently_printing  ?1:0) <<  1 )
-        | ( ( checksum_error      ?1:0) <<  0 )
+          ( ( printer_status_ptr->too_hot_or_cold     ?1:0) <<  7 )
+        | ( ( printer_status_ptr->paper_jam           ?1:0) <<  6 )
+        | ( ( printer_status_ptr->timeout             ?1:0) <<  5 )
+        | ( ( printer_status_ptr->battery_low         ?1:0) <<  4 )
+        | ( ( printer_status_ptr->ready_to_print      ?1:0) <<  3 )
+        | ( ( printer_status_ptr->print_reqested      ?1:0) <<  2 )
+        | ( ( printer_status_ptr->currently_printing  ?1:0) <<  1 )
+        | ( ( printer_status_ptr->checksum_error      ?1:0) <<  0 )
         ;
 }
 
@@ -115,6 +142,9 @@ static uint8_t gbp_status_byte(
     Structs
 */
 
+
+
+// Reads the bitstream and outputs a bytes stream after sync
 typedef struct gbp_rx_tx_byte_buffer_t
 {
   bool      initialized;
@@ -138,6 +168,7 @@ typedef struct gbp_rx_tx_byte_buffer_t
   uint8_t   tx_byte_buffer;
 } gbp_rx_tx_byte_buffer_t;
 
+// This deals with interpreting bytes stream as a packet structure
 typedef struct gbp_packet_parser_t
 {
   gbp_parse_state_t parse_state_prev;
@@ -145,42 +176,32 @@ typedef struct gbp_packet_parser_t
   uint16_t data_index;
 } gbp_packet_parser_t;
 
-typedef struct gbp_packet_t
-{ // This represents the structure of a gbp printer packet (excluding the sync word)
-  // Received
-  uint8_t   command;  
-  uint8_t   compression;  
-  uint16_t  data_length;
-  uint8_t   *data_ptr;   // Variable length field determined by data_length
-  uint16_t  checksum;
+// Printer Status and other stuff
+typedef struct gbp_printer_t
+{ // This is the overall information about the printer
+  bool      initialized;
 
-  // Send
-  uint8_t   acknowledgement;
-  uint8_t   printer_status;
-} gbp_packet_t;
+  gbp_printer_status_t    gbp_printer_status;
+  gbp_rx_tx_byte_buffer_t gbp_rx_tx_byte_buffer;
+  gbp_packet_parser_t     gbp_packet_parser;
+  gbp_packet_t            gbp_packet;
 
+  uint8_t                 gbp_print_settings_buffer[4];
+  uint8_t                 gbp_print_buffer[800];  // 640 bytes usually
+} gbp_printer_t;
 
 
 /*
     Global Vars
 */
-uint8_t                 gbp_data_buffer[400];   // Variable length field determined by data_length (Convert to pointer if mallocing this)
-gbp_rx_tx_byte_buffer_t gbp_rx_tx_byte_buffer;
-gbp_packet_parser_t     gbp_packet_parser;
-gbp_packet_t            gbp_packet = 
-{
-  0,  //  command
-  0,  //  compression
-  0,  //  data_length
-  gbp_data_buffer,  // data
-  0,  //  checksum
-  0,  //  ack
-  0   //  status
-};
+gbp_printer_t gbp_printer; // Overall Structure
 
 /*
     Static Functions
 */
+
+
+/*------------------------- BYTE STREAMER --------------------------*/
 
 static bool gbp_rx_tx_byte_reset(struct gbp_rx_tx_byte_buffer_t *ptr)
 { // Resets the byte reader, back into scanning for the next packet.
@@ -309,6 +330,9 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
   return byte_ready;
 }
 
+/*------------------------- MESSAGE PARSER --------------------------*/
+
+
 static bool gbp_parse_message_reset(struct gbp_packet_parser_t *ptr)
 {
   *ptr = 
@@ -319,7 +343,7 @@ static bool gbp_parse_message_reset(struct gbp_packet_parser_t *ptr)
   };
 }
 
-static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp_packet_t *packet_ptr, const bool new_rx_byte, const uint8_t rx_byte, bool *new_tx_byte, uint8_t *tx_byte)
+static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp_packet_t *packet_ptr, struct gbp_printer_status_t *printer_status_ptr, const bool new_rx_byte, const uint8_t rx_byte, bool *new_tx_byte, uint8_t *tx_byte)
 {
   static uint16_t data_index;
   bool   packet_ready_flag = false;
@@ -424,7 +448,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       if (init_state_flag)
       {
         *new_tx_byte = true;
-        *tx_byte = 0x81;
+        *tx_byte = GBP_ACKNOWLEGEMENT;
         /* 
           # "GB Printer interface specification" [Source](https://www.mikrocontroller.net/attachment/34801/gb-printer.txt)
           > An acknowledgement code is set (by GB Printer) to either 0x80 or 0x81. 
@@ -443,7 +467,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       if (init_state_flag)
       {
         *new_tx_byte = true;
-        *tx_byte = gbp_status_byte( 0,0,0,0 , 0,0,0,0 );
+        *tx_byte = gbp_status_byte(printer_status_ptr);
       }
       if (new_rx_byte)
       {
@@ -472,6 +496,19 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
   return packet_ready_flag;
 }
 
+/*------------------------- Gameboy Printer --------------------------*/
+
+static bool gbp_printer_init(struct gbp_printer_t *ptr)
+{
+  ptr->initialized = true;
+  ptr->gbp_printer_status = {0};
+
+  gbp_rx_tx_byte_reset(&(ptr->gbp_rx_tx_byte_buffer));
+  gbp_parse_message_reset(&(ptr->gbp_packet_parser));
+}
+
+
+
 /**************************************************************
  **************************************************************/
 
@@ -497,8 +534,7 @@ void setup() {
   Serial.print("GAMEBOY PRINTER EMULATION PROJECT\n");
 
   // Clear Byte Scanner and Parser
-  gbp_rx_tx_byte_reset(&gbp_rx_tx_byte_buffer);
-  gbp_parse_message_reset(&gbp_packet_parser);
+  gbp_printer_init(&gbp_printer);
 } // setup()
 
 void loop() {  
@@ -512,7 +548,7 @@ void loop() {
 
   bool packet_ready_flag;
 
-  new_rx_byte = gbp_rx_tx_byte_update(&gbp_rx_tx_byte_buffer, &rx_byte,  &rx_bitState);
+  new_rx_byte = gbp_rx_tx_byte_update(&(gbp_printer.gbp_rx_tx_byte_buffer), &rx_byte,  &rx_bitState);
 
 #if 0 // Bit Scanning
   if ( NO_NEW_BIT != rx_bitState )
@@ -529,13 +565,15 @@ void loop() {
 #endif
 
   packet_ready_flag = gbp_parse_message_update(
-                                              &gbp_packet_parser, &gbp_packet, 
+                                              &(gbp_printer.gbp_packet_parser), 
+                                              &(gbp_printer.gbp_packet), 
+                                              &(gbp_printer.gbp_printer_status),
                                               new_rx_byte, rx_byte,
                                               &new_tx_byte, &tx_byte
                                               );
   if (new_tx_byte)
   {
-    gbp_rx_tx_byte_set(&gbp_rx_tx_byte_buffer, tx_byte);
+    gbp_rx_tx_byte_set(&(gbp_printer.gbp_rx_tx_byte_buffer), tx_byte);
   }
 
   if (packet_ready_flag)
@@ -567,8 +605,8 @@ void loop() {
     Serial.println(gbp_packet.checksum,HEX);
     Serial.println("---");
 #endif
-    gbp_rx_tx_byte_reset(&gbp_rx_tx_byte_buffer);
-    gbp_parse_message_reset(&gbp_packet_parser);
+    gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
+    gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
   }
 
 
