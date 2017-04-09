@@ -77,17 +77,44 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
  * 
  **************************************************************/
 
-#define GBP_SYNC_WORD_BYTE_1  0x88 // 0b01011000
-#define GBP_SYNC_WORD_BYTE_2  0x33 // 0b00100001
-#define GBP_SYNC_WORD         0x8833
+// GameBoy Printer Packet Structure
+/*
+  | BYTE POS :   |     0     |     1     |     2     |     3     |     4     |  4 + X    | 4 + X + 1 | 4 + X + 2 | 4 + X + 3 | 4 + X + 4 |
+  |--------------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+  | SIZE         |        2 Bytes        |  1 Bytes  |  1 Bytes  |  1 Bytes  | Variable  |        2 Bytes        |  1 Bytes  |  1 Bytes  |
+  | DESCRIPTION  |       SYNC_WORD       | COMMAND   |     DATA_LENGTH(X)    | Payload   |       CHECKSUM        |    ACK    |  STATUS   |
+  | FROM PRINTER |    0x88   |    0x33   | See Below | Low Byte  | High Byte | See Below |       See Below       |    0x00   |    0x00   |
+  | TO PRINTER   |    0x00   |    0x00   |    0x00   |    0x00   |    0x00   |    0x00   |    0x00   |    0x00   |    0x81   | See Below |
 
-// Initialize(0x01), Data (0x04), Print (0x02), and Inquiry (0x0F).
+  * Command may be either Initialize (0x01), Data (0x04), Print (0x02), or Inquiry (0x0F).
+  * Payload byte count size depends on the value of the `DATA_LENGTH` field.
+  * Checksum is a simple sum of bytes in command, data length, and the data payload.
+  * Status byte is a bitfield byte indicating various status of the printer itself. (e.g. If it is still printing)
+*/
+
+// Sync Word
+#define GBP_SYNC_WORD_0       0x88    // 0b10001000
+#define GBP_SYNC_WORD_1       0x33    // 0b00110011
+#define GBP_SYNC_WORD         0x8833  // 0b1000100000110011
+
+// Command Byte Values
 #define GBP_COMMAND_INIT      0x01 // 0b00000001
 #define GBP_COMMAND_DATA      0x04 // 0b00000100
 #define GBP_COMMAND_PRINT     0x02 // 0b00000010
 #define GBP_COMMAND_INQUIRY   0x0F // 0b00001111
 
-#define GBP_ACKNOWLEGEMENT    0x81 // 10000001
+// ACKNOWLEGEMENT BYTE VALUE
+#define GBP_ACK               0x81 // 10000001
+
+// GAMEBOY PRINTER STATUS BYTE BIT POSITION
+#define GBP_STATUS_TEMP_WARN_BIT_POS          7
+#define GBP_STATUS_PAPER_JAM_BIT_POS          6
+#define GBP_STATUS_TIMEOUT_BIT_POS            5
+#define GBP_STATUS_BATTERY_LOW_BIT_POS        4
+#define GBP_STATUS_READY_TO_PRINT_BIT_POS     3
+#define GBP_STATUS_PRINT_REQUESTED_BIT_POS    2
+#define GBP_STATUS_CURRENTLY_PRINTING_BIT_POS 1
+#define GBP_STATUS_CHECKSUM_ERROR_BIT_POS     0
 
 // Gameboy Printer Packet Structure
 typedef struct gbp_packet_t
@@ -103,6 +130,10 @@ typedef struct gbp_packet_t
   uint8_t   acknowledgement;
   uint8_t   printer_status;
 } gbp_packet_t;
+
+/*
+
+*/
 
 // Gameboy Printer Status Code Structure
 typedef struct gbp_printer_status_t
@@ -121,14 +152,14 @@ static uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
   /*        | BITFLAG NAME                                |BIT POS| */
   return 
-          ( ( printer_status_ptr->too_hot_or_cold     ?1:0) <<  7 )
-        | ( ( printer_status_ptr->paper_jam           ?1:0) <<  6 )
-        | ( ( printer_status_ptr->timeout             ?1:0) <<  5 )
-        | ( ( printer_status_ptr->battery_low         ?1:0) <<  4 )
-        | ( ( printer_status_ptr->ready_to_print      ?1:0) <<  3 )
-        | ( ( printer_status_ptr->print_reqested      ?1:0) <<  2 )
-        | ( ( printer_status_ptr->currently_printing  ?1:0) <<  1 )
-        | ( ( printer_status_ptr->checksum_error      ?1:0) <<  0 )
+          ( ( printer_status_ptr->too_hot_or_cold     ?1:0) <<  GBP_STATUS_TEMP_WARN_BIT_POS          )
+        | ( ( printer_status_ptr->paper_jam           ?1:0) <<  GBP_STATUS_PAPER_JAM_BIT_POS          )
+        | ( ( printer_status_ptr->timeout             ?1:0) <<  GBP_STATUS_TIMEOUT_BIT_POS            )
+        | ( ( printer_status_ptr->battery_low         ?1:0) <<  GBP_STATUS_BATTERY_LOW_BIT_POS        )
+        | ( ( printer_status_ptr->ready_to_print      ?1:0) <<  GBP_STATUS_READY_TO_PRINT_BIT_POS     )
+        | ( ( printer_status_ptr->print_reqested      ?1:0) <<  GBP_STATUS_PRINT_REQUESTED_BIT_POS    )
+        | ( ( printer_status_ptr->currently_printing  ?1:0) <<  GBP_STATUS_CURRENTLY_PRINTING_BIT_POS )
+        | ( ( printer_status_ptr->checksum_error      ?1:0) <<  GBP_STATUS_CHECKSUM_ERROR_BIT_POS     )
         ;
 }
 
@@ -482,7 +513,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       if (init_state_flag)
       {
         *new_tx_byte = true;
-        *tx_byte = GBP_ACKNOWLEGEMENT;
+        *tx_byte = GBP_ACK;
         /* 
           # "GB Printer interface specification" [Source](https://www.mikrocontroller.net/attachment/34801/gb-printer.txt)
           > An acknowledgement code is set (by GB Printer) to either 0x80 or 0x81. 
