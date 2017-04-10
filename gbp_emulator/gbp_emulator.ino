@@ -15,10 +15,10 @@ extern "C" {
 #define NO_NEW_BIT -1
 #define NO_NEW_BYTE -1
 
-#define SC_PIN 13 // Serial Clock   (INPUT)
-#define SO_PIN 12 // Serial OUTPUT  (INPUT)
-#define SI_PIN 11 // Serial INPUT   (OUTPUT)
-#define SD_PIN 0  // Serial Data    (?)
+#define SC_PIN 2 // Serial Clock   (INPUT)  // Interrupt Pin
+#define SO_PIN 3 // Serial OUTPUT  (INPUT)
+#define SI_PIN 4 // Serial INPUT   (OUTPUT)
+#define SD_PIN 0 // Serial Data    (?)
 
 #define GBP_PACKET_TIMEOUT_MS 5000 // ms timeout period to wait for next byte in a packet
 
@@ -218,11 +218,14 @@ typedef struct gbp_printer_t
   gbp_packet_parser_t     gbp_packet_parser;
   gbp_packet_t            gbp_packet;
 
+  // Triggered upon successful read of a packet
+  bool packet_ready_flag;
+
   // Buffers
   uint8_t                 gbp_print_settings_buffer[4];
   uint8_t                 gbp_print_buffer[800];  // 640 bytes usually
 
-  // Timeout if byte not received in time
+  // Timeout if bytes not received in time
   unsigned long uptime_til_timeout_ms;
 } gbp_printer_t;
 
@@ -580,6 +583,71 @@ static bool gbp_printer_init(struct gbp_printer_t *ptr)
 /**************************************************************
  **************************************************************/
 
+
+void serialClock_ISR(void)
+{
+  int rx_bitState;
+
+  uint8_t rx_byte;
+  bool new_rx_byte;
+
+  uint8_t tx_byte;
+  bool new_tx_byte;
+
+  /***************** BYTE PARSER ***********************/
+
+  new_rx_byte = gbp_rx_tx_byte_update(&(gbp_printer.gbp_rx_tx_byte_buffer), &rx_byte,  &rx_bitState);
+
+  /***************** TX/RX BIT->BYTE DIAGNOSTICS ***********************/
+
+#if 0 // Bit Scanning
+  if ( NO_NEW_BIT != rx_bitState )
+  { // New bit detected
+    Serial.print(rx_bitState);
+  }
+#endif
+
+#if 1 // Byte Scanning
+  if (new_rx_byte)
+  {
+    // Diagnostics
+    Serial.print(gbp_printer.gbp_packet_parser.parse_state,HEX);
+    Serial.print(":");
+    Serial.println(rx_byte,HEX);
+
+    // Update Timeout State
+    if (gbp_printer.gbp_rx_tx_byte_buffer.syncronised)
+    { // Push forward timeout since a byte was received.
+      gbp_printer.uptime_til_timeout_ms = millis() + GBP_PACKET_TIMEOUT_MS;
+    }
+  }
+#endif
+
+  /***************** PACKET PARSER ***********************/
+
+  // Byte
+  gbp_printer.packet_ready_flag = gbp_parse_message_update(
+                                              &(gbp_printer.gbp_packet_parser), 
+                                              &(gbp_printer.gbp_packet), 
+                                              &(gbp_printer),
+                                              new_rx_byte, rx_byte,
+                                              &new_tx_byte, &tx_byte
+                                              );
+
+  // Byte to be tranmitted to the gameboy received
+  if (new_tx_byte)
+  {
+#if 0 // warning: effects timing
+    Serial.print("TX:");
+    Serial.println(new_tx_byte,HEX);
+#endif
+    gbp_rx_tx_byte_set(&(gbp_printer.gbp_rx_tx_byte_buffer), tx_byte);
+  }
+
+
+
+}
+
 void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
@@ -603,80 +671,32 @@ void setup() {
 
   // Clear Byte Scanner and Parser
   gbp_printer_init(&gbp_printer);
+
+
+  attachInterrupt( digitalPinToInterrupt(SC_PIN), serialClock_ISR, CHANGE);  // attach interrupt handler
+
+
 } // setup()
 
 void loop() {  
-  int rx_bitState;
 
-  uint8_t rx_byte;
-  bool new_rx_byte;
-
-  uint8_t tx_byte;
-  bool new_tx_byte;
-
-  bool packet_ready_flag;
-
-  /***************** BYTE PARSER ***********************/
-
-  new_rx_byte = gbp_rx_tx_byte_update(&(gbp_printer.gbp_rx_tx_byte_buffer), &rx_byte,  &rx_bitState);
-
-  /***************** TX/RX BIT->BYTE DIAGNOSTICS ***********************/
-
-#if 0 // Bit Scanning
-  if ( NO_NEW_BIT != rx_bitState )
-  { // New bit detected
-    Serial.print(rx_bitState);
-  }
-#endif
-
-#if 1 // Byte Scanning
-  if (new_rx_byte)
-  {
-    Serial.print(gbp_printer.gbp_packet_parser.parse_state,HEX);
-    Serial.print(":");
-    Serial.println(rx_byte,HEX);
-  }
-#endif
-
-  /***************** PACKET PARSER ***********************/
-
-  // Byte
-  packet_ready_flag = gbp_parse_message_update(
-                                              &(gbp_printer.gbp_packet_parser), 
-                                              &(gbp_printer.gbp_packet), 
-                                              &(gbp_printer),
-                                              new_rx_byte, rx_byte,
-                                              &new_tx_byte, &tx_byte
-                                              );
-
-  // Byte to be tranmitted to the gameboy received
-  if (new_tx_byte)
-  {
-#if 0 // warning: effects timing
-    Serial.print("TX:");
-    Serial.println(new_tx_byte,HEX);
-#endif
-    gbp_rx_tx_byte_set(&(gbp_printer.gbp_rx_tx_byte_buffer), tx_byte);
-  }
 
   // Packet received from gameboy
-  if (packet_ready_flag)
+  if (gbp_printer.packet_ready_flag)
   {
 #if 1
     Serial.println("#");
 #endif
     gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
     gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
+
+    gbp_printer.packet_ready_flag = false; // Packet Processed
   }
 
 
   // Trigger Timeout and reset the printer if byte stopped being recieved.
   if ( (gbp_printer.gbp_rx_tx_byte_buffer.syncronised) )
-  { // During parsing phase, we want to ensure that we do not stay stuck.
-    if (new_rx_byte)
-    { // Push forward timeout since a byte was received.
-      gbp_printer.uptime_til_timeout_ms = millis() + GBP_PACKET_TIMEOUT_MS;
-    }
+  {
     if ( (0 != gbp_printer.uptime_til_timeout_ms) && (millis() > gbp_printer.uptime_til_timeout_ms) )
     { // reset printer byte and packet processor
       Serial.println("ERROR: Timed Out");
