@@ -203,7 +203,6 @@ typedef struct gbp_rx_tx_byte_buffer_t
 // This deals with interpreting bytes stream as a packet structure
 typedef struct gbp_packet_parser_t
 {
-  gbp_parse_state_t parse_state_prev;
   gbp_parse_state_t parse_state;
   uint16_t data_index;
 } gbp_packet_parser_t;
@@ -381,7 +380,6 @@ static bool gbp_parse_message_reset(struct gbp_packet_parser_t *ptr)
   *ptr = 
   {
     (gbp_parse_state_t) 0,
-    (gbp_parse_state_t) 0,
     0
   };
 }
@@ -390,20 +388,18 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
 {
   static uint16_t data_index;
   bool   packet_ready_flag = false;
-
-  // Indicates if there was a change in state on last cycle
-  bool   init_state_flag = (ptr->parse_state != ptr->parse_state_prev);
-
-  ptr->parse_state_prev = ptr->parse_state;
+  gbp_parse_state_t parse_state_prev = ptr->parse_state;
 
   *new_tx_byte = false;
 
-  // This keeps track of each stage and how to handle each incoming byte
-  switch (ptr->parse_state)
+  //-------------------------- NEW BYTES
+
+  if (new_rx_byte)
   {
-    case GBP_PARSE_STATE_COMMAND:
+    // This keeps track of each stage and how to handle each incoming byte
+    switch (ptr->parse_state)
     {
-      if (new_rx_byte)
+      case GBP_PARSE_STATE_COMMAND:
       {
         packet_ptr->command = rx_byte;
         ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
@@ -425,32 +421,18 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
           default:
             packet_ptr->data_ptr = NULL;
         }
-      }
-    } break;
-    case GBP_PARSE_STATE_COMPRESSION:
-    {
-      if (new_rx_byte)
+      } break;
+      case GBP_PARSE_STATE_COMPRESSION:
       {
         packet_ptr->compression = rx_byte;
         ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
-      }
-    } break;
-    case GBP_PARSE_STATE_DATA_LENGTH_LOW:
-    {
-      if (init_state_flag)
-      {
-        packet_ptr->data_length = 0;
-      }
-
-      if (new_rx_byte)
+      } break;
+      case GBP_PARSE_STATE_DATA_LENGTH_LOW:
       {
         packet_ptr->data_length |= ( (rx_byte << 0) & 0x00FF );
         ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
-      }
-    } break;
-    case GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH:
-    {
-      if (new_rx_byte)
+      } break;
+      case GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH:
       {
         packet_ptr->data_length |= ( (rx_byte << 8) & 0xFF00 );
 
@@ -458,7 +440,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
         if (packet_ptr->data_length > 0)
         {
           if (packet_ptr->data_ptr == NULL)
-          {
+          { // SIMPLE ASSERT
             Serial.println("ERROR: Serial data length should be non zero");
             while(1);
           }
@@ -468,60 +450,88 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
         { // Skip variable payload stage if data_length is zero
           ptr->parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
         }
-      }
-    } break;
-    case GBP_PARSE_STATE_VARIABLE_PAYLOAD:
-    {
-      /*
-        The logical flow of this section is similar to 
-        `for (data_index = 0 ; (data_index > packet_ptr->data_length) ; data_index++ )`
-      */
-
-      if (init_state_flag)
+      } break;
+      case GBP_PARSE_STATE_VARIABLE_PAYLOAD:
       {
-        ptr->data_index = 0;
-      }
-
-      if (new_rx_byte)
-      {
+        /*
+          The logical flow of this section is similar to 
+          `for (data_index = 0 ; (data_index > packet_ptr->data_length) ; data_index++ )`
+        */
         // Record Byte
         packet_ptr->data_ptr[ptr->data_index] = rx_byte;
 
         // Increment to next byte position in the data field
         ptr->data_index++;
-        //Serial.println(ptr->data_index);
-        //Serial.println(",");
 
         // Escape and move to next stage
         if (ptr->data_index > packet_ptr->data_length)
         {
           ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
         }
-      }
-    } break;
-    case GBP_PARSE_STATE_CHECKSUM_LOW:
-    {
-      if (new_rx_byte)
+      } break;
+      case GBP_PARSE_STATE_CHECKSUM_LOW:
       {
         packet_ptr->checksum = 0;
         packet_ptr->checksum |= ( (rx_byte << 0) & 0x00FF );
         ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
-      }
-    } break;
-    case GBP_PARSE_STATE_CHECKSUM_HIGH:
-    {
-      if (new_rx_byte)
+      } break;
+      case GBP_PARSE_STATE_CHECKSUM_HIGH:
       {
         packet_ptr->checksum |= ( (rx_byte << 8) & 0xFF00 );
         ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
-      }
-    } break;
-    case GBP_PARSE_STATE_ACK:
-    {
-      if (init_state_flag)
+      } break;
+      case GBP_PARSE_STATE_ACK:
       {
-        *new_tx_byte = true;
-        *tx_byte = GBP_ACK;
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+      } break;
+      case GBP_PARSE_STATE_PRINTER_STATUS:
+      {
+        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
+        packet_ready_flag = true;
+      } break;
+      case GBP_PARSE_STATE_DIAGNOSTICS:
+      {
+      } break;
+    }
+  } // New Byte Detected
+
+  //-------------------------- INIT FOR NEXT STAGE
+  /*
+    This section commonly deals with initialising the next parsing state.
+    e.g. Initialising variables in addition to also staging the next response byte.
+  */
+
+  // Indicates if there was a change in state on last cycle
+  if (ptr->parse_state != parse_state_prev)
+  {
+    // This keeps track of each stage and how to handle each incoming byte
+    switch (ptr->parse_state)
+    {
+      case GBP_PARSE_STATE_COMMAND:
+      {
+      } break;
+      case GBP_PARSE_STATE_COMPRESSION:
+      {
+      } break;
+      case GBP_PARSE_STATE_DATA_LENGTH_LOW:
+      {
+        packet_ptr->data_length = 0;
+      } break;
+      case GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH:
+      {
+      } break;
+      case GBP_PARSE_STATE_VARIABLE_PAYLOAD:
+      {
+        ptr->data_index = 0;
+      } break;
+      case GBP_PARSE_STATE_CHECKSUM_LOW:
+      {
+      } break;
+      case GBP_PARSE_STATE_CHECKSUM_HIGH:
+      {
+      } break;
+      case GBP_PARSE_STATE_ACK:
+      {
         /* 
           # "GB Printer interface specification" [Source](https://www.mikrocontroller.net/attachment/34801/gb-printer.txt)
           > An acknowledgement code is set (by GB Printer) to either 0x80 or 0x81. 
@@ -529,28 +539,15 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
           > However, any other values are unaccepted and should be avoided.
           > When writing a GB Printer alternative (e.g., emulator,) it is safe to return 0x81 always.
         */
-      }
-      if (new_rx_byte)
-      {
-        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
-      }
-    } break;
-    case GBP_PARSE_STATE_PRINTER_STATUS:
-    {
-      if (init_state_flag)
+        *new_tx_byte = true;
+        *tx_byte = GBP_ACK;
+      } break;
+      case GBP_PARSE_STATE_PRINTER_STATUS:
       {
         *new_tx_byte = true;
         *tx_byte = gbp_status_byte(&(printer_ptr->gbp_printer_status));
-      }
-      if (new_rx_byte)
-      {
-        ptr->parse_state = (gbp_parse_state_t)((int)ptr->parse_state + 1); // Move to next parse state ( Would usally be written as `parse_state++` in plain C )
-        packet_ready_flag = true;
-      }
-    } break;
-    case GBP_PARSE_STATE_DIAGNOSTICS:
-    {
-      if (init_state_flag)
+      } break;
+      case GBP_PARSE_STATE_DIAGNOSTICS:
       {
         Serial.println("Received:");
         Serial.println(packet_ptr->command,HEX);
@@ -559,10 +556,11 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
         Serial.println(packet_ptr->checksum,HEX);
         Serial.println(packet_ptr->acknowledgement,HEX);
         Serial.println(packet_ptr->printer_status,HEX);
-      }
-    } break;
+      } break;
 
-  }
+    }
+  } // Init Next State
+
 
   return packet_ready_flag;
 }
