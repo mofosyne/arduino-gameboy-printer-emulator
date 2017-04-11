@@ -1,8 +1,14 @@
 # arduino-gameboy-printer-emulator
 Code to emulate a gameboy printer via the gameboy link cable
 
+* So far I was able to get the HEX dump to dump some hexes... now to see if it can be interpreted.
+
+* Checksum works for init, inqiry, but not data, and possibly inqury. Possibly messed up the summation somehow. But I found that this may not matter, as the gameboy camera doesn't seem to check for it. 
+
 
 # Gameboy Printer Timing
+
+Below measurements was obtained via the ANALOG DISCOVERY via digilent
 
 ```
                        1.153ms
