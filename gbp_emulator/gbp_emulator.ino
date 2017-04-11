@@ -814,7 +814,7 @@ void loop() {
           Serial.print(data_8bit, HEX);
 
           // Insert Newline Periodically
-          if ((i+1)%20 == 0)
+          if ((i+1)%16 == 0)
           {
             Serial.print("\n");
           }
