@@ -20,7 +20,7 @@ extern "C" {
 #define SI_PIN 4 // Serial INPUT   (OUTPUT)
 #define SD_PIN 0 // Serial Data    (?)
 
-#define GBP_PACKET_TIMEOUT_MS 5000 // ms timeout period to wait for next byte in a packet
+#define GBP_PACKET_TIMEOUT_MS 100 // ms timeout period to wait for next byte in a packet
 
 typedef enum gbp_parse_state_t
 { // Indicates the stage of the parsing processing (syncword is not parsed)
@@ -36,7 +36,6 @@ typedef enum gbp_parse_state_t
     GBP_PARSE_STATE_PACKET_RECEIVED           = 9,
     GBP_PARSE_STATE_DIAGNOSTICS               = 10
 } gbp_parse_state_t;
-
 
 
 /************************************************************************/
@@ -106,7 +105,8 @@ gbp_tx_byte_t gbp_tx_byte_buffer;
 #define GBP_COMMAND_INQUIRY   0x0F // 0b00001111 // Always reports current status. Typically 10 bytes packet 
 
 // ACKNOWLEGEMENT BYTE VALUE
-#define GBP_ACK               0x81 // 10000001
+#define GBP_ACK               0x81 // 0b10000001 // Recommended by "GB Printer interface specification"
+#define GBP_ACK_2             0x80 // 0b10000000 // Used by esp8266-gameboy-printer
 
 // GAMEBOY PRINTER STATUS BYTE BIT POSITION
 #define GBP_STATUS_TEMP_WARN_BIT_POS          7
@@ -206,6 +206,7 @@ typedef struct gbp_packet_parser_t
 {
   gbp_parse_state_t parse_state;
   uint16_t data_index;
+  uint16_t  calculated_checksum;
 } gbp_packet_parser_t;
 
 // Printer Status and other stuff
@@ -385,10 +386,20 @@ static bool gbp_parse_message_reset(struct gbp_packet_parser_t *ptr)
   };
 }
 
-static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp_packet_t *packet_ptr, struct gbp_printer_t *printer_ptr, const bool new_rx_byte, const uint8_t rx_byte, bool *new_tx_byte, uint8_t *tx_byte)
-{
-  static uint16_t data_index;
-  bool   packet_ready_flag = false;
+
+static bool gbp_parse_message_update
+(
+  struct gbp_packet_parser_t *ptr,             // Parser Variables
+  bool *packet_ready_flag,                     // OUTPUT: Packet Ready Semaphore
+  struct gbp_packet_t *packet_ptr,             // INPUT/OUTPUT: Packet Data Buffer
+  struct gbp_printer_t *printer_ptr,           // INPUT/OUTPUT: Printer Variables
+  const bool new_rx_byte,                      // INPUT: New Incoming Byte Flag
+  const uint8_t rx_byte,                       // INPUT: New Incoming Byte Value
+  bool *new_tx_byte,                           // OUTPUT: New Outgoing Byte Ready
+  uint8_t *tx_byte                             // OUTPUT: New Outgoing Byte Value
+)
+{ // Return false if there was no error detected
+  bool error_status = false;
   gbp_parse_state_t parse_state_prev = ptr->parse_state;
 
   *new_tx_byte = false;
@@ -423,16 +434,26 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
           default:
             packet_ptr->data_ptr = NULL;
         }
+
+        // Checksum Tally
+        ptr->calculated_checksum = 0; // Initialise Count
+        ptr->calculated_checksum += rx_byte;
       } break;
       case GBP_PARSE_STATE_COMPRESSION:
       {
         ptr->parse_state = GBP_PARSE_STATE_DATA_LENGTH_LOW;
         packet_ptr->compression = rx_byte;
+
+        // Checksum Tally
+        ptr->calculated_checksum += rx_byte;
       } break;
       case GBP_PARSE_STATE_DATA_LENGTH_LOW:
       {
         ptr->parse_state = GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH;
         packet_ptr->data_length |= ( (rx_byte << 0) & 0x00FF );
+
+        // Checksum Tally
+        ptr->calculated_checksum += rx_byte;
       } break;
       case GBP_PARSE_STATE_PACKET_DATA_LENGTH_HIGH:
       {
@@ -452,6 +473,9 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
         { // Skip variable payload stage if data_length is zero
           ptr->parse_state = GBP_PARSE_STATE_CHECKSUM_LOW;
         }
+
+        // Checksum Tally
+        ptr->calculated_checksum += rx_byte;
       } break;
       case GBP_PARSE_STATE_VARIABLE_PAYLOAD:
       {
@@ -461,6 +485,9 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
         */
         // Record Byte
         packet_ptr->data_ptr[ptr->data_index] = rx_byte;
+
+        // Checksum Tally
+        ptr->calculated_checksum += rx_byte;
 
         // Increment to next byte position in the data field
         ptr->data_index++;
@@ -550,14 +577,40 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
       } break;
       case GBP_PARSE_STATE_PRINTER_STATUS:
       {
+
+        // Checksum Verification
+        if (ptr->calculated_checksum == packet_ptr->checksum)
+        { // Checksum Passed
+          printer_ptr->gbp_printer_status.checksum_error = false;
+        }
+        else
+        { // Checksum Failed
+          printer_ptr->gbp_printer_status.checksum_error = true;
+        }
+
+        switch (packet_ptr->command)
+        {
+          case GBP_COMMAND_INIT:
+            break;
+          case GBP_COMMAND_DATA:
+            printer_ptr->gbp_printer_status.ready_to_print      = true;
+            break;
+          case GBP_COMMAND_PRINT:
+            printer_ptr->gbp_printer_status.ready_to_print      = false;
+            printer_ptr->gbp_printer_status.print_reqested      = true;
+            printer_ptr->gbp_printer_status.currently_printing  = true;
+            break;
+          case GBP_COMMAND_INQUIRY:
+            break;
+        }
+
         *new_tx_byte = true;
         *tx_byte = gbp_status_byte(&(printer_ptr->gbp_printer_status));
-
         packet_ptr->printer_status = *tx_byte;
       } break;
       case GBP_PARSE_STATE_PACKET_RECEIVED:
       {
-        packet_ready_flag = true;
+        *packet_ready_flag = true;
       } break;
       case GBP_PARSE_STATE_DIAGNOSTICS:
       {
@@ -574,7 +627,7 @@ static bool gbp_parse_message_update(struct gbp_packet_parser_t *ptr, struct gbp
   } // Init Next State
 
 
-  return packet_ready_flag;
+  return error_status;
 }
 
 /*------------------------- Gameboy Printer --------------------------*/
@@ -592,6 +645,8 @@ static bool gbp_printer_init(struct gbp_printer_t *ptr)
 
 /**************************************************************
  **************************************************************/
+
+static void gbp_status_byte_print(struct gbp_printer_status_t *printer_status_ptr);
 
 
 void serialClock_ISR(void)
@@ -635,19 +690,14 @@ void serialClock_ISR(void)
 
   /***************** PACKET PARSER ***********************/
 
-  // Byte
-  if (
-      gbp_parse_message_update(
-                                &(gbp_printer.gbp_packet_parser), 
-                                &(gbp_printer.gbp_packet), 
-                                &(gbp_printer),
-                                new_rx_byte, rx_byte,
-                                &new_tx_byte, &tx_byte
-                              )
-    )
-  { // Set flag indicating that a packet is ready to be processed
-    gbp_printer.packet_ready_flag = true;
-  }
+  gbp_parse_message_update(
+                            &(gbp_printer.gbp_packet_parser), 
+                            &gbp_printer.packet_ready_flag,
+                            &(gbp_printer.gbp_packet), 
+                            &(gbp_printer),
+                            new_rx_byte, rx_byte,
+                            &new_tx_byte, &tx_byte
+                          );
 
   /***************** TX BYTE SET ***********************/
 
@@ -662,7 +712,7 @@ void serialClock_ISR(void)
 #if 0 // warning: effects timing
   if (new_tx_byte)
   {
-    Serial.print("TX:");
+    Serial.print("T");
     Serial.println(new_tx_byte,HEX);
   }
 #endif
@@ -748,11 +798,33 @@ void loop() {
         Serial.print("synced:");
         Serial.println(gbp_printer.gbp_rx_tx_byte_buffer.syncronised);
         break;
+
+      case '!':
+        gbp_status_byte_print(&(gbp_printer.gbp_printer_status));
+        break;
     }
   };
 
 
 } // loop()
+
+
+
+
+static void gbp_status_byte_print(struct gbp_printer_status_t *printer_status_ptr)
+{ // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )  
+  fprintf(&serialout, "Printer Status: %s,%s,%s,%s|%s,%s,%s,%s\n", 
+   ( printer_status_ptr->too_hot_or_cold     ?"Too Hot/Cold":"_"),
+   ( printer_status_ptr->paper_jam           ?"Paper Jam":"_"),
+   ( printer_status_ptr->timeout             ?"Timeout":"_"),
+   ( printer_status_ptr->battery_low         ?"Batt Low":"_"),
+   ( printer_status_ptr->ready_to_print      ?"Ready To Print":"_"),
+   ( printer_status_ptr->print_reqested      ?"Print Reqested":"_"),
+   ( printer_status_ptr->currently_printing  ?"Currently Printing":"_"),
+   ( printer_status_ptr->checksum_error      ?"Checksum Error":"_")
+  );
+}
+
 
 #ifdef __cplusplus
 }
