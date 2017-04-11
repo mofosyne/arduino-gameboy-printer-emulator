@@ -22,6 +22,8 @@ extern "C" {
 
 #define GBP_PACKET_TIMEOUT_MS 100 // ms timeout period to wait for next byte in a packet
 
+#define GBP_PACKET_PRETEND_PRINT_TIME_MS 2000 // ms to pretend to print for
+
 typedef enum gbp_parse_state_t
 { // Indicates the stage of the parsing processing (syncword is not parsed)
     GBP_PARSE_STATE_COMMAND                   = 0,
@@ -224,6 +226,7 @@ typedef struct gbp_printer_t
 
   // Timeout if bytes not received in time
   unsigned long uptime_til_timeout_ms;
+  unsigned long uptime_til_pretend_print_finish_ms;
 } gbp_printer_t;
 
 
@@ -299,9 +302,6 @@ static bool gbp_rx_tx_byte_update(struct gbp_rx_tx_byte_buffer_t *ptr, uint8_t *
         { // Syncword detected
           ptr->syncronised = true;
           ptr->byte_frame_bit_pos = 7;
-#if 1
-          Serial.println("-");
-#endif
         }
 
       }
@@ -595,6 +595,9 @@ static bool gbp_parse_message_update
             printer_ptr->gbp_printer_status.ready_to_print      = false;
             printer_ptr->gbp_printer_status.print_reqested      = true;
             printer_ptr->gbp_printer_status.currently_printing  = true;
+
+            // pretend to print for 5 seconds or so
+            gbp_printer.uptime_til_pretend_print_finish_ms = millis() + GBP_PACKET_PRETEND_PRINT_TIME_MS;
             break;
           case GBP_COMMAND_INQUIRY:
             break;
@@ -718,7 +721,11 @@ void setup() {
   lcd.print("GameBody Link");
 
   // Config Serial
+#if 0
   Serial.begin(9600);
+#else // Has to be fast or it will not trasfer the image fast enough to the computer
+  Serial.begin(115200);
+#endif
   // Serial fprintf setup
   fdev_setup_stream (&serialout, serial_putchar, NULL, _FDEV_SETUP_WRITE);
   //e.g. fprintf(&serialout, ">> SD:%d SO:%d SI:%d\n", serial_data_state, serial_out_state, serial_input_state ) ;
@@ -746,7 +753,7 @@ void loop() {
   // Packet received from gameboy
   if (gbp_printer.packet_ready_flag)
   {
-#if 1
+#if 0
     Serial.println("#");
     switch (gbp_printer.gbp_packet.command)
     {
@@ -773,8 +780,70 @@ void loop() {
                gbp_printer.gbp_printer_status.checksum_error
             );
 #endif
+
+    // Indicate To The Byte Scanner and the Message Parser to scan for new packet
     gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
     gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
+
+    // Process this packet
+    switch (gbp_printer.gbp_packet.command)
+    {
+      case GBP_COMMAND_INIT:
+      { // This clears the printer status register (and buffers etc... in the real printer)
+        gbp_printer.gbp_printer_status = {0};
+        Serial.println("PRINT START");
+        break;
+      }
+      case GBP_COMMAND_DATA:
+      { // This is called when new data is recieved.
+        /*
+          Design Note. 
+          Previously had an idea to do some processing to turn this into NetPBM formatted printout.
+          However this microcontroller has such a wimpy ram... and the printer has no flow control.
+          So we really really need to offload the data as soon as possible.
+        */
+        for (uint16_t i = 0 ; i < gbp_printer.gbp_packet.data_length ; i++)
+        {
+          uint8_t data_8bit = gbp_printer.gbp_packet.data_ptr[i];
+
+          if (data_8bit < 16) 
+          { // Cheap way to add padding without printf (for speed gains)
+            Serial.print("0");
+          }
+
+          Serial.print(data_8bit, HEX);
+
+          // Insert Newline Periodically
+          if ((i+1)%20 == 0)
+          {
+            Serial.print("\n");
+          }
+          else
+          {
+            Serial.print(" ");
+          }
+        }
+        break;
+      }
+      case GBP_COMMAND_PRINT:
+      { // This would usually indicate to the GBP to start printing.
+
+        break;
+      }
+      case GBP_COMMAND_INQUIRY:
+      { // This is usally called multiple times to check if ready to print or has finished printing.
+
+        // I like the print screen in the gameboy, so I would just let this play for a few seconds.
+        if ( (0 != gbp_printer.uptime_til_pretend_print_finish_ms) && (millis() > gbp_printer.uptime_til_pretend_print_finish_ms) )
+        { // reset printer byte and packet processor
+          Serial.println("Finished Pretending To Print for fun!");
+          gbp_printer.uptime_til_pretend_print_finish_ms = 0;
+          gbp_printer.gbp_printer_status.currently_printing = false;
+        }
+
+        break;
+      }
+    }
 
     gbp_printer.packet_ready_flag = false; // Packet Processed
   }
@@ -794,7 +863,6 @@ void loop() {
   { // During scanning phase timeout is not required.
     gbp_printer.uptime_til_timeout_ms = 0;
   }
-
 
   // Diagnostics Console
   while (Serial.available() > 0) 
