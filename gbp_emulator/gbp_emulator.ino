@@ -133,10 +133,6 @@ typedef struct gbp_packet_t
   uint8_t   printer_status;
 } gbp_packet_t;
 
-/*
-
-*/
-
 // Gameboy Printer Status Code Structure
 typedef struct gbp_printer_status_t
 {
@@ -614,13 +610,6 @@ static bool gbp_parse_message_update
       } break;
       case GBP_PARSE_STATE_DIAGNOSTICS:
       {
-        Serial.println("Received:");
-        Serial.println(packet_ptr->command,HEX);
-        Serial.println(packet_ptr->compression,HEX);
-        Serial.println(packet_ptr->data_length,HEX);
-        Serial.println(packet_ptr->checksum,HEX);
-        Serial.println(packet_ptr->acknowledgement,HEX);
-        Serial.println(packet_ptr->printer_status,HEX);
       } break;
 
     }
@@ -663,6 +652,15 @@ void serialClock_ISR(void)
 
   new_rx_byte = gbp_rx_tx_byte_update(&(gbp_printer.gbp_rx_tx_byte_buffer), &rx_byte,  &rx_bitState);
 
+  if (new_rx_byte)
+  {
+    // Update Timeout State
+    if (gbp_printer.gbp_rx_tx_byte_buffer.syncronised)
+    { // Push forward timeout since a byte was received.
+      gbp_printer.uptime_til_timeout_ms = millis() + GBP_PACKET_TIMEOUT_MS;
+    }
+  }
+
   /***************** TX/RX BIT->BYTE DIAGNOSTICS ***********************/
 
 #if 0 // Bit Scanning
@@ -672,19 +670,13 @@ void serialClock_ISR(void)
   }
 #endif
 
-#if 1 // Byte Scanning
+#if 0 // Byte Scanning
   if (new_rx_byte)
   {
     // Diagnostics
     Serial.print(gbp_printer.gbp_packet_parser.parse_state,HEX);
     Serial.print(":");
     Serial.println(rx_byte,HEX);
-
-    // Update Timeout State
-    if (gbp_printer.gbp_rx_tx_byte_buffer.syncronised)
-    { // Push forward timeout since a byte was received.
-      gbp_printer.uptime_til_timeout_ms = millis() + GBP_PACKET_TIMEOUT_MS;
-    }
   }
 #endif
 
@@ -743,7 +735,7 @@ void setup() {
   // Clear Byte Scanner and Parser
   gbp_printer_init(&gbp_printer);
 
-
+  // attach ISR
   attachInterrupt( digitalPinToInterrupt(SC_PIN), serialClock_ISR, CHANGE);  // attach interrupt handler
 
 
@@ -751,12 +743,35 @@ void setup() {
 
 void loop() {  
 
-
   // Packet received from gameboy
   if (gbp_printer.packet_ready_flag)
   {
 #if 1
     Serial.println("#");
+    switch (gbp_printer.gbp_packet.command)
+    {
+      case GBP_COMMAND_INIT:
+        fprintf(&serialout, "INIT");
+        break;
+      case GBP_COMMAND_DATA:
+        fprintf(&serialout, "DATA");
+        break;
+      case GBP_COMMAND_PRINT:
+        fprintf(&serialout, "PRNT");
+        break;
+      case GBP_COMMAND_INQUIRY:
+        fprintf(&serialout, "INQY");
+        break;
+      default:
+        fprintf(&serialout, "UKNO");
+    }
+    fprintf(&serialout, ": %u,%u | %u,%u | %u\n", 
+               gbp_printer.gbp_packet.data_length,
+               gbp_printer.gbp_packet.checksum,
+               gbp_printer.gbp_packet.acknowledgement,
+               gbp_printer.gbp_packet.printer_status,
+               gbp_printer.gbp_printer_status.checksum_error
+            );
 #endif
     gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
     gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
