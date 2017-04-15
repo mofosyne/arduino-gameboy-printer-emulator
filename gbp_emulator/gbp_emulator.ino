@@ -204,7 +204,11 @@ typedef struct gbp_packet_parser_t
 {
   gbp_parse_state_t parse_state;
   uint16_t data_index;
-  uint32_t  calculated_checksum;
+  uint16_t calculated_checksum;
+
+  // Debug Record
+  uint8_t   crc_high;
+  uint8_t   crc_low;
 } gbp_packet_parser_t;
 
 // Printer Status and other stuff
@@ -222,7 +226,7 @@ typedef struct gbp_printer_t
 
   // Buffers
   uint8_t                 gbp_print_settings_buffer[4];
-  uint8_t                 gbp_print_buffer[800];  // 640 bytes usually
+  uint8_t                 gbp_print_buffer[650];  // 640 bytes usually
 
   // Timeout if bytes not received in time
   unsigned long uptime_til_timeout_ms;
@@ -499,11 +503,13 @@ static bool gbp_parse_message_update
         ptr->parse_state = GBP_PARSE_STATE_CHECKSUM_HIGH;
         packet_ptr->checksum = 0;
         packet_ptr->checksum |= ( (rx_byte << 0) & 0x00FF );
+        ptr->crc_low = rx_byte; // For debugging
       } break;
       case GBP_PARSE_STATE_CHECKSUM_HIGH:
       {
         ptr->parse_state = GBP_PARSE_STATE_ACK;
         packet_ptr->checksum |= ( (rx_byte << 8) & 0xFF00 );
+        ptr->crc_high = rx_byte; // For debugging
       } break;
       case GBP_PARSE_STATE_ACK:
       {
@@ -573,9 +579,6 @@ static bool gbp_parse_message_update
       } break;
       case GBP_PARSE_STATE_PRINTER_STATUS:
       {
-
-        // Integer overflow in CRC
-        ptr->calculated_checksum = ptr->calculated_checksum % (65536);
 
         // Checksum Verification
         if (ptr->calculated_checksum == packet_ptr->checksum)
@@ -768,6 +771,12 @@ void loop() {
         break;
       case GBP_COMMAND_PRINT:
         fprintf(&serialout, "PRNT");
+        fprintf(&serialout, ": %02X %02X %02X %02X | ", 
+            gbp_printer.gbp_print_settings_buffer[0],
+            gbp_printer.gbp_print_settings_buffer[1],
+            gbp_printer.gbp_print_settings_buffer[2],
+            gbp_printer.gbp_print_settings_buffer[3]
+          ); 
         break;
       case GBP_COMMAND_INQUIRY:
         fprintf(&serialout, "INQY");
@@ -775,10 +784,14 @@ void loop() {
       default:
         fprintf(&serialout, "UKNO");
     }
-    fprintf(&serialout, ": length: %u | CRC: %u | CRC CALC: %u | ", 
+    fprintf(&serialout, ": length: %u | CRC: %u | CRC CALC: %u (%u %u) | crc raw: %u %u |", 
                gbp_printer.gbp_packet.data_length,
                gbp_printer.gbp_packet.checksum,
-               gbp_printer.gbp_packet_parser.calculated_checksum
+               gbp_printer.gbp_packet_parser.calculated_checksum,
+               ((gbp_printer.gbp_packet_parser.calculated_checksum & 0xFF00) >> 8),
+               gbp_printer.gbp_packet_parser.calculated_checksum & 0x00FF,
+               gbp_printer.gbp_packet_parser.crc_high,
+               gbp_printer.gbp_packet_parser.crc_low
             );
     gbp_status_byte_print(&(gbp_printer.gbp_printer_status));
 #endif
