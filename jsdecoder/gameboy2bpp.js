@@ -5,10 +5,9 @@ window.onload = function() {
 
     // Gameboy Printer Tile Constant
     TILES_PER_LINE = 20;
-    LINES_PER_IMAGE = 40;
 
     square_width = document.getElementById("demo_canvas").width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
-    square_height = document.getElementById("demo_canvas").height / (TILE_PIXEL_HEIGHT * LINES_PER_IMAGE);
+    square_height = square_width;
 
     colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
 
@@ -21,32 +20,53 @@ window.onload = function() {
         refresh(canvas, data.value);
     }, false);
 
-    //var bytes = "FF 00 7E FF 85 81 89 83 93 85 A5 8B C9 97 7E FF";
-    //refresh(canvas, bytes);
+    // Initial Render
+    refresh(canvas, data.value);
 }
 
 function refresh(canvas, rawBytes) 
 {
     data.removeAttribute("style");  // Clear Error Indicator
 
+    if (!render_gbp(canvas, rawBytes)) {
+        data.style.backgroundColor = "red"; // Trigger error status
+    }
+
+}
+
+function render_gbp(canvas, rawBytes)
+{   // Returns false on error
+    var status = true;
+
+    // Clear Screen
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // rawBytes is a string of hex where each line represents a gameboy tile
     var tiles_rawBytes_array = rawBytes.split(/\n/);
 
-    console.log(tiles_rawBytes_array);
-
+    // Render Screen Tile by Tile
     for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++) 
     {   // Process each gameboy tile
 
+        // Skip tiles with no bytes (can happen with .split() )
+        if (tiles_rawBytes_array[tile_i].length == 0)
+            continue;
+
+        // Gameboy Tile Offset
         tile_x_offset = tile_i % TILES_PER_LINE;
         tile_y_offset = Math.floor(tile_i / TILES_PER_LINE);
 
         pixels = decode(tiles_rawBytes_array[tile_i]);
-        // console.log(pixels);
+
         if (pixels) {
             paint(canvas, pixels, square_width, square_height, tile_x_offset, tile_y_offset);
         } else {
-            data.style.backgroundColor = "red"; // Trigger error status
+            status = false;
         }
     }
+
+    return status;
 }
 
 function decode(rawBytes) 
@@ -71,14 +91,13 @@ function decode(rawBytes)
 }
 
 function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_offset )
-{   // This paints the tile
+{   // This paints the tile with a specified offset and pixel width
 
     tile_offset     = tile_x_offset * tile_y_offset;
     pixel_x_offset  = TILE_PIXEL_WIDTH   * tile_x_offset * pixel_width;
     pixel_y_offset  = TILE_PIXEL_HEIGHT  * tile_y_offset * pixel_height;
 
     var ctx = canvas.getContext("2d");
-    //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (var i = 0; i < TILE_PIXEL_WIDTH; i++) 
     {   // pixels along the tile's x axis
@@ -88,12 +107,12 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
             // Pixel Color
             ctx.fillStyle = colors[pixels[j*TILE_PIXEL_WIDTH + i]];
 
-            // Pixel Position
+            // Pixel Position (Needed to add +1 to pixel width and height to fill in a gap)
             ctx.fillRect(
                     pixel_x_offset + i*pixel_width, 
                     pixel_y_offset + j*pixel_height, 
-                    pixel_width, 
-                    pixel_height
+                    pixel_width + 1 ,
+                    pixel_height + 1
                 );
         }
     }
