@@ -204,7 +204,7 @@ typedef struct gbp_packet_parser_t
 {
   gbp_parse_state_t parse_state;
   uint16_t data_index;
-  uint16_t  calculated_checksum;
+  uint32_t  calculated_checksum;
 } gbp_packet_parser_t;
 
 // Printer Status and other stuff
@@ -460,7 +460,7 @@ static bool gbp_parse_message_update
         {
           if (packet_ptr->data_ptr == NULL)
           { // SIMPLE ASSERT
-            Serial.println("ERROR: Serial data length should be non zero");
+            Serial.println("# ERROR: Serial data length should be non zero");
             while(1);
           }
           ptr->parse_state = GBP_PARSE_STATE_VARIABLE_PAYLOAD;
@@ -573,6 +573,9 @@ static bool gbp_parse_message_update
       } break;
       case GBP_PARSE_STATE_PRINTER_STATUS:
       {
+
+        // Integer overflow in CRC
+        ptr->calculated_checksum = ptr->calculated_checksum % (65536);
 
         // Checksum Verification
         if (ptr->calculated_checksum == packet_ptr->checksum)
@@ -772,13 +775,12 @@ void loop() {
       default:
         fprintf(&serialout, "UKNO");
     }
-    fprintf(&serialout, ": length: %u | checksum: %u | ack: %u | print stat: %u | CRC_err:%u\n", 
+    fprintf(&serialout, ": length: %u | CRC: %u | CRC CALC: %u | ", 
                gbp_printer.gbp_packet.data_length,
                gbp_printer.gbp_packet.checksum,
-               gbp_printer.gbp_packet.acknowledgement,
-               gbp_printer.gbp_packet.printer_status,
-               gbp_printer.gbp_printer_status.checksum_error
+               gbp_printer.gbp_packet_parser.calculated_checksum
             );
+    gbp_status_byte_print(&(gbp_printer.gbp_printer_status));
 #endif
 
     // Indicate To The Byte Scanner and the Message Parser to scan for new packet
@@ -827,7 +829,6 @@ void loop() {
       }
       case GBP_COMMAND_PRINT:
       { // This would usually indicate to the GBP to start printing.
-
         break;
       }
       case GBP_COMMAND_INQUIRY:
@@ -896,15 +897,15 @@ void loop() {
 
 static void gbp_status_byte_print(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )  
-  fprintf(&serialout, "Printer Status: %s,%s,%s,%s|%s,%s,%s,%s\n", 
-   ( printer_status_ptr->too_hot_or_cold     ?"Too Hot/Cold":"_"),
-   ( printer_status_ptr->paper_jam           ?"Paper Jam":"_"),
-   ( printer_status_ptr->timeout             ?"Timeout":"_"),
-   ( printer_status_ptr->battery_low         ?"Batt Low":"_"),
-   ( printer_status_ptr->ready_to_print      ?"Ready To Print":"_"),
-   ( printer_status_ptr->print_reqested      ?"Print Reqested":"_"),
-   ( printer_status_ptr->currently_printing  ?"Currently Printing":"_"),
-   ( printer_status_ptr->checksum_error      ?"Checksum Error":"_")
+  fprintf(&serialout, "Printer Status: %s%s%s%s%s%s%s%s |\n", 
+   ( printer_status_ptr->too_hot_or_cold     ?"Too Hot/Cold, ":""),
+   ( printer_status_ptr->paper_jam           ?"Paper Jam, ":""),
+   ( printer_status_ptr->timeout             ?"Timeout, ":""),
+   ( printer_status_ptr->battery_low         ?"Batt Low, ":""),
+   ( printer_status_ptr->ready_to_print      ?"Ready To Print, ":""),
+   ( printer_status_ptr->print_reqested      ?"Print Reqested, ":""),
+   ( printer_status_ptr->currently_printing  ?"Currently Printing, ":""),
+   ( printer_status_ptr->checksum_error      ?"Checksum Error, ":"")
   );
 }
 
