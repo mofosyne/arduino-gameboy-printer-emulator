@@ -38,6 +38,9 @@ function render_gbp(canvas, rawBytes)
 {   // Returns false on error
     var status = true;
 
+    // Track Tile Increments
+    var tile_count = 0;
+
     // Clear Screen
     var ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -48,22 +51,36 @@ function render_gbp(canvas, rawBytes)
     // Render Screen Tile by Tile
     for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++) 
     {   // Process each gameboy tile
+        tile_element = tiles_rawBytes_array[tile_i];
 
-        // Skip tiles with no bytes (can happen with .split() )
-        if (tiles_rawBytes_array[tile_i].length == 0)
+        // Check for invalid raw lines
+        if (tile_element.length == 0)
+        {   // Skip lines with no bytes (can happen with .split() )
             continue;
+        }
+        else if (/[^0-9a-z]/i.test(tile_element[0]) == true)
+        {   // Skip lines used for comments
+            console.log(tile_element)
+            continue;
+        }
 
         // Gameboy Tile Offset
-        tile_x_offset = tile_i % TILES_PER_LINE;
-        tile_y_offset = Math.floor(tile_i / TILES_PER_LINE);
+        tile_x_offset = tile_count % TILES_PER_LINE;
+        tile_y_offset = Math.floor(tile_count / TILES_PER_LINE);
 
-        pixels = decode(tiles_rawBytes_array[tile_i]);
+        pixels = decode(tile_element);
 
-        if (pixels) {
+        if (pixels) 
+        {
             paint(canvas, pixels, square_width, square_height, tile_x_offset, tile_y_offset);
-        } else {
+        }
+        else 
+        {
             status = false;
         }
+
+        // Increment Tile Count Tracker
+        tile_count++;
     }
 
     return status;

@@ -737,7 +737,7 @@ void setup() {
   // Default output value
   digitalWrite(SI_PIN, LOW);
 
-  Serial.print("GAMEBOY PRINTER EMULATION PROJECT\n");
+  Serial.print("# GAMEBOY PRINTER EMULATION PROJECT\n");
 
   // Clear Byte Scanner and Parser
   gbp_printer_init(&gbp_printer);
@@ -753,8 +753,8 @@ void loop() {
   // Packet received from gameboy
   if (gbp_printer.packet_ready_flag)
   {
-#if 0
-    Serial.println("#");
+#if 1
+    Serial.print("!");
     switch (gbp_printer.gbp_packet.command)
     {
       case GBP_COMMAND_INIT:
@@ -772,7 +772,7 @@ void loop() {
       default:
         fprintf(&serialout, "UKNO");
     }
-    fprintf(&serialout, ": %u,%u | %u,%u | %u\n", 
+    fprintf(&serialout, ": length: %u | checksum: %u | ack: %u | print stat: %u | CRC_err:%u\n", 
                gbp_printer.gbp_packet.data_length,
                gbp_printer.gbp_packet.checksum,
                gbp_printer.gbp_packet.acknowledgement,
@@ -791,7 +791,7 @@ void loop() {
       case GBP_COMMAND_INIT:
       { // This clears the printer status register (and buffers etc... in the real printer)
         gbp_printer.gbp_printer_status = {0};
-        Serial.println("PRINT START");
+        //Serial.println("PRINT START");
         break;
       }
       case GBP_COMMAND_DATA:
@@ -836,7 +836,7 @@ void loop() {
         // I like the print screen in the gameboy, so I would just let this play for a few seconds.
         if ( (0 != gbp_printer.uptime_til_pretend_print_finish_ms) && (millis() > gbp_printer.uptime_til_pretend_print_finish_ms) )
         { // reset printer byte and packet processor
-          Serial.println("Finished Pretending To Print for fun!");
+          Serial.println("# Finished Pretending To Print for fun!");
           gbp_printer.uptime_til_pretend_print_finish_ms = 0;
           gbp_printer.gbp_printer_status.currently_printing = false;
         }
