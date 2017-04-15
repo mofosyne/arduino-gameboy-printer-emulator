@@ -19,7 +19,8 @@ window.onload = function() {
     //refresh(canvas, bytes);
 }
 
-function refresh(canvas, rawBytes) {
+function refresh(canvas, rawBytes) 
+{
     data.removeAttribute("style");  // Clear Error Indicator
 
     var tiles_rawBytes_array = rawBytes.split(/\n/);
@@ -27,20 +28,20 @@ function refresh(canvas, rawBytes) {
     console.log(tiles_rawBytes_array);
 
     for (var i = 0; i < tiles_rawBytes_array.length; i++) 
-    {
+    {   // Process each gameboy tile
+
         pixels = decode(tiles_rawBytes_array[i]);
         //console.log(pixels);
         if (pixels) {
-            paint(canvas, pixels);
+            paint(canvas, pixels, square_width, square_height );
         } else {
             data.style.backgroundColor = "red";
         }
     }
-
-
 }
 
-function decode(rawBytes) {
+function decode(rawBytes) 
+{   // Gameboy tile decoder function from http://www.huderlem.com/demos/gameboy2bpp.html
     var bytes = rawBytes.replace(/ /g, "");
     if (bytes.length != 32) return false;
     
@@ -60,14 +61,21 @@ function decode(rawBytes) {
     return pixels;
 }
 
-function paint(canvas, pixels) {
+function paint(canvas, pixels, pixel_width, pixel_height)
+{   // 
     var ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (var i = 0; i < width; i++) {
-        for (var j = 0; j < height; j++) {
+    for (var i = 0; i < width; i++) 
+    {   // Iterate along the x image axis
+        for (var j = 0; j < height; j++) 
+        {   // Iterate along the y image axis
+
+            // Pixel Color
             ctx.fillStyle = colors[pixels[j*width + i]];
-            ctx.fillRect(i*square_width, j*square_height, square_width, square_height);
+
+            // Pixel Position
+            ctx.fillRect(i*pixel_width, j*pixel_height, pixel_width, pixel_height);
         }
     }
 }
