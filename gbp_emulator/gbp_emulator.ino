@@ -204,7 +204,11 @@ typedef struct gbp_packet_parser_t
 {
   gbp_parse_state_t parse_state;
   uint16_t data_index;
-  uint16_t  calculated_checksum;
+  uint16_t calculated_checksum;
+
+  // Debug Record
+  uint8_t   crc_high;
+  uint8_t   crc_low;
 } gbp_packet_parser_t;
 
 // Printer Status and other stuff
@@ -222,7 +226,7 @@ typedef struct gbp_printer_t
 
   // Buffers
   uint8_t                 gbp_print_settings_buffer[4];
-  uint8_t                 gbp_print_buffer[800];  // 640 bytes usually
+  uint8_t                 gbp_print_buffer[650];  // 640 bytes usually
 
   // Timeout if bytes not received in time
   unsigned long uptime_til_timeout_ms;
@@ -460,7 +464,7 @@ static bool gbp_parse_message_update
         {
           if (packet_ptr->data_ptr == NULL)
           { // SIMPLE ASSERT
-            Serial.println("ERROR: Serial data length should be non zero");
+            Serial.println("# ERROR: Serial data length should be non zero");
             while(1);
           }
           ptr->parse_state = GBP_PARSE_STATE_VARIABLE_PAYLOAD;
@@ -499,11 +503,13 @@ static bool gbp_parse_message_update
         ptr->parse_state = GBP_PARSE_STATE_CHECKSUM_HIGH;
         packet_ptr->checksum = 0;
         packet_ptr->checksum |= ( (rx_byte << 0) & 0x00FF );
+        ptr->crc_low = rx_byte; // For debugging
       } break;
       case GBP_PARSE_STATE_CHECKSUM_HIGH:
       {
         ptr->parse_state = GBP_PARSE_STATE_ACK;
         packet_ptr->checksum |= ( (rx_byte << 8) & 0xFF00 );
+        ptr->crc_high = rx_byte; // For debugging
       } break;
       case GBP_PARSE_STATE_ACK:
       {
@@ -719,6 +725,8 @@ void setup() {
   lcd.begin(16, 2);
   // Print a message to the LCD.
   lcd.print("GameBody Link");
+  lcd.setCursor(0, 1);
+  lcd.print("By Brian Khuu");
 
   // Config Serial
 #if 0
@@ -737,7 +745,8 @@ void setup() {
   // Default output value
   digitalWrite(SI_PIN, LOW);
 
-  Serial.print("GAMEBOY PRINTER EMULATION PROJECT\n");
+  Serial.print("# GAMEBOY PRINTER EMULATION PROJECT\n");
+  Serial.print("# By Brian Khuu (2017)\n");
 
   // Clear Byte Scanner and Parser
   gbp_printer_init(&gbp_printer);
@@ -753,8 +762,8 @@ void loop() {
   // Packet received from gameboy
   if (gbp_printer.packet_ready_flag)
   {
-#if 0
-    Serial.println("#");
+#if 1
+    Serial.print("!");
     switch (gbp_printer.gbp_packet.command)
     {
       case GBP_COMMAND_INIT:
@@ -765,6 +774,12 @@ void loop() {
         break;
       case GBP_COMMAND_PRINT:
         fprintf(&serialout, "PRNT");
+        fprintf(&serialout, ": %02X %02X %02X %02X | ", 
+            gbp_printer.gbp_print_settings_buffer[0],
+            gbp_printer.gbp_print_settings_buffer[1],
+            gbp_printer.gbp_print_settings_buffer[2],
+            gbp_printer.gbp_print_settings_buffer[3]
+          ); 
         break;
       case GBP_COMMAND_INQUIRY:
         fprintf(&serialout, "INQY");
@@ -772,13 +787,16 @@ void loop() {
       default:
         fprintf(&serialout, "UKNO");
     }
-    fprintf(&serialout, ": %u,%u | %u,%u | %u\n", 
+    fprintf(&serialout, ": length: %u | CRC: %u | CRC CALC: %u (%u %u) | crc raw: %u %u |", 
                gbp_printer.gbp_packet.data_length,
                gbp_printer.gbp_packet.checksum,
-               gbp_printer.gbp_packet.acknowledgement,
-               gbp_printer.gbp_packet.printer_status,
-               gbp_printer.gbp_printer_status.checksum_error
+               gbp_printer.gbp_packet_parser.calculated_checksum,
+               ((gbp_printer.gbp_packet_parser.calculated_checksum & 0xFF00) >> 8),
+               gbp_printer.gbp_packet_parser.calculated_checksum & 0x00FF,
+               gbp_printer.gbp_packet_parser.crc_high,
+               gbp_printer.gbp_packet_parser.crc_low
             );
+    gbp_status_byte_print(&(gbp_printer.gbp_printer_status));
 #endif
 
     // Indicate To The Byte Scanner and the Message Parser to scan for new packet
@@ -791,7 +809,7 @@ void loop() {
       case GBP_COMMAND_INIT:
       { // This clears the printer status register (and buffers etc... in the real printer)
         gbp_printer.gbp_printer_status = {0};
-        Serial.println("PRINT START");
+        //Serial.println("PRINT START");
         break;
       }
       case GBP_COMMAND_DATA:
@@ -803,7 +821,7 @@ void loop() {
           So we really really need to offload the data as soon as possible.
         */
         for (uint16_t i = 0 ; i < gbp_printer.gbp_packet.data_length ; i++)
-        {
+        { // Display the data payload encoded in hex
           uint8_t data_8bit = gbp_printer.gbp_packet.data_ptr[i];
 
           if (data_8bit < 16) 
@@ -814,7 +832,7 @@ void loop() {
           Serial.print(data_8bit, HEX);
 
           // Insert Newline Periodically
-          if ((i+1)%20 == 0)
+          if ((i+1)%16 == 0)
           {
             Serial.print("\n");
           }
@@ -827,7 +845,6 @@ void loop() {
       }
       case GBP_COMMAND_PRINT:
       { // This would usually indicate to the GBP to start printing.
-
         break;
       }
       case GBP_COMMAND_INQUIRY:
@@ -836,7 +853,7 @@ void loop() {
         // I like the print screen in the gameboy, so I would just let this play for a few seconds.
         if ( (0 != gbp_printer.uptime_til_pretend_print_finish_ms) && (millis() > gbp_printer.uptime_til_pretend_print_finish_ms) )
         { // reset printer byte and packet processor
-          Serial.println("Finished Pretending To Print for fun!");
+          Serial.println("# Finished Pretending To Print for fun!");
           gbp_printer.uptime_til_pretend_print_finish_ms = 0;
           gbp_printer.gbp_printer_status.currently_printing = false;
         }
@@ -854,7 +871,7 @@ void loop() {
   {
     if ( (0 != gbp_printer.uptime_til_timeout_ms) && (millis() > gbp_printer.uptime_til_timeout_ms) )
     { // reset printer byte and packet processor
-      Serial.println("ERROR: Timed Out");
+      Serial.println("# ERROR: Timed Out");
       gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
       gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
     }
@@ -896,15 +913,15 @@ void loop() {
 
 static void gbp_status_byte_print(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )  
-  fprintf(&serialout, "Printer Status: %s,%s,%s,%s|%s,%s,%s,%s\n", 
-   ( printer_status_ptr->too_hot_or_cold     ?"Too Hot/Cold":"_"),
-   ( printer_status_ptr->paper_jam           ?"Paper Jam":"_"),
-   ( printer_status_ptr->timeout             ?"Timeout":"_"),
-   ( printer_status_ptr->battery_low         ?"Batt Low":"_"),
-   ( printer_status_ptr->ready_to_print      ?"Ready To Print":"_"),
-   ( printer_status_ptr->print_reqested      ?"Print Reqested":"_"),
-   ( printer_status_ptr->currently_printing  ?"Currently Printing":"_"),
-   ( printer_status_ptr->checksum_error      ?"Checksum Error":"_")
+  fprintf(&serialout, "Printer Status: %s%s%s%s%s%s%s%s |\n", 
+   ( printer_status_ptr->too_hot_or_cold     ?"Too Hot/Cold, ":""),
+   ( printer_status_ptr->paper_jam           ?"Paper Jam, ":""),
+   ( printer_status_ptr->timeout             ?"Timeout, ":""),
+   ( printer_status_ptr->battery_low         ?"Batt Low, ":""),
+   ( printer_status_ptr->ready_to_print      ?"Ready To Print, ":""),
+   ( printer_status_ptr->print_reqested      ?"Print Reqested, ":""),
+   ( printer_status_ptr->currently_printing  ?"Currently Printing, ":""),
+   ( printer_status_ptr->checksum_error      ?"Checksum Error, ":"")
   );
 }
 
