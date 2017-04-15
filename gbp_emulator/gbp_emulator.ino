@@ -725,6 +725,8 @@ void setup() {
   lcd.begin(16, 2);
   // Print a message to the LCD.
   lcd.print("GameBody Link");
+  lcd.setCursor(0, 1);
+  lcd.print("By Brian Khuu");
 
   // Config Serial
 #if 0
@@ -744,6 +746,7 @@ void setup() {
   digitalWrite(SI_PIN, LOW);
 
   Serial.print("# GAMEBOY PRINTER EMULATION PROJECT\n");
+  Serial.print("# By Brian Khuu (2017)\n");
 
   // Clear Byte Scanner and Parser
   gbp_printer_init(&gbp_printer);
@@ -818,7 +821,7 @@ void loop() {
           So we really really need to offload the data as soon as possible.
         */
         for (uint16_t i = 0 ; i < gbp_printer.gbp_packet.data_length ; i++)
-        {
+        { // Display the data payload encoded in hex
           uint8_t data_8bit = gbp_printer.gbp_packet.data_ptr[i];
 
           if (data_8bit < 16) 
@@ -868,7 +871,7 @@ void loop() {
   {
     if ( (0 != gbp_printer.uptime_til_timeout_ms) && (millis() > gbp_printer.uptime_til_timeout_ms) )
     { // reset printer byte and packet processor
-      Serial.println("ERROR: Timed Out");
+      Serial.println("# ERROR: Timed Out");
       gbp_rx_tx_byte_reset(&(gbp_printer.gbp_rx_tx_byte_buffer));
       gbp_parse_message_reset(&(gbp_printer.gbp_packet_parser));
     }

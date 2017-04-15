@@ -1,3 +1,12 @@
+/*
+Gameboy Printer Render via "Gameboy 2BPP Graphics Format". 2017-4-16
+
+Original Tile Decoder From: http://www.huderlem.com/demos/gameboy2bpp.html By Marcus
+
+Heavily adapted to work with gameboy camera and gameboy printer data By Brian Khuu
+
+*/
+
 window.onload = function() {
     // Tile Constants
     TILE_PIXEL_WIDTH = 8;
