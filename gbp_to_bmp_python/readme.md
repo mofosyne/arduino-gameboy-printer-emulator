@@ -1,3 +1,5 @@
-FYI this code was partially forked from GBcamera-ImageSaver 
+TODO:
+
+Adapt this python image saver to work with this arduino project.
+
  * https://github.com/gism/GBcamera-ImageSaver
- * https://github.com/LIFX/GBcamera-ImageSaver -

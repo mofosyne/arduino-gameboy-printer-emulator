@@ -11,17 +11,15 @@ window.onload = function() {
     // Tile Constants
     TILE_PIXEL_WIDTH = 8;
     TILE_PIXEL_HEIGHT = 8;
-
-    // Gameboy Printer Tile Constant
-    TILES_PER_LINE = 20;
-
-    square_width = document.getElementById("demo_canvas").width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
-    square_height = square_width;
-
-    colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
+    TILES_PER_LINE = 20; // Gameboy Printer Tile Constant
 
     var canvas = document.getElementById("demo_canvas");
 
+    /* Determine size of each pixel in canvas */
+    square_width = canvas.width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
+    square_height = square_width;
+
+    colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
     button = document.getElementById("submit_button");
     data = document.getElementById("data_text")
 
@@ -47,9 +45,6 @@ function render_gbp(canvas, rawBytes)
 {   // Returns false on error
     var status = true;
 
-    // Track Tile Increments
-    var tile_count = 0;
-
     // Clear Screen
     var ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -57,7 +52,40 @@ function render_gbp(canvas, rawBytes)
     // rawBytes is a string of hex where each line represents a gameboy tile
     var tiles_rawBytes_array = rawBytes.split(/\n/);
 
-    // Render Screen Tile by Tile
+    /* Dry run, to find height */
+
+    var total_tile_count = 0;
+
+    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++) 
+    {   // Process each gameboy tile
+        tile_element = tiles_rawBytes_array[tile_i];
+
+        // Check for invalid raw lines
+        if (tile_element.length == 0)
+        {   // Skip lines with no bytes (can happen with .split() )
+            continue;
+        }
+        else if (/[^0-9a-z]/i.test(tile_element[0]) == true)
+        {   // Skip lines used for comments
+            continue;
+        }
+
+        // Increment Tile Count Tracker
+        total_tile_count++;
+    }
+
+    var tile_height_count = Math.floor(total_tile_count / TILES_PER_LINE);
+
+    // Resize height (Setting new canvas size will reset canvas)
+    canvas.width = square_width * TILE_PIXEL_WIDTH * TILES_PER_LINE;
+    canvas.height = square_height * TILE_PIXEL_HEIGHT * tile_height_count;
+
+    console.log("lol"+canvas.height);
+
+    /* Render Screen Tile by Tile */
+
+    var tile_count = 0, tile_x_offset = 0, tile_y_offset = 0;
+
     for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++) 
     {   // Process each gameboy tile
         tile_element = tiles_rawBytes_array[tile_i];
