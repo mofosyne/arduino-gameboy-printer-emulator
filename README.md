@@ -3,7 +3,7 @@ Code to emulate a gameboy printer via the gameboy link cable
 
 * So far I was able to get the HEX dump to dump some hexes... now to see if it can be interpreted.
 
-* Checksum works for init, inqiry, but not data, and possibly inqury. Possibly messed up the summation somehow. But I found that this may not matter, as the gameboy camera doesn't seem to check for it. 
+* Checksum works for init, inqiry, but not data, and possibly inqury. Possibly messed up the summation somehow. But I found that this may not matter, as the gameboy camera doesn't seem to check for it.
 
 # gbp_emulator
 
@@ -32,7 +32,7 @@ Below measurements was obtained via the ANALOG DISCOVERY via digilent
         <--------------------------------------->
          0   1   2   3   4   5   6   7             0   1   2   3   4   5   6   7
      __   _   _   _   _   _   _   _   ___________   _   _   _   _   _   _   _   _
-CLK:   |_| |_| |_| |_| |_| |_| |_| |_|           |_| |_| |_| |_| |_| |_| |_| |_| 
+CLK:   |_| |_| |_| |_| |_| |_| |_| |_|           |_| |_| |_| |_| |_| |_| |_| |_|
 DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX_
        <-->                           <---------->
        127.63 us                         229.26 us
@@ -44,10 +44,11 @@ DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 * Transmission Speed: 867 baud (1.153ms per 8bit symbol)
 * Between Symbol Period: 229.26 us
 
+![](gameboy_to_ghost_printer.png)
 
 ## Findings
 
-* There is not enough time/ram to actually do much processing of the image in the arduino. Instead the image data has to be transferred raw to over serial at 115200baud via hex. 
+* There is not enough time/ram to actually do much processing of the image in the arduino. Instead the image data has to be transferred raw to over serial at 115200baud via hex.
 
 
 # Example Output so far (2017-4-12)
@@ -56,7 +57,7 @@ DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 * Investigation with http://www.huderlem.com/demos/gameboy2bpp.html shows that this is actually encoded as "16 byte standard gameboy tile format".
 
-* According to http://furrtek.free.fr/?a=gbprinter&i=2 the `The GameBoy Camera buffers tile data by blocs of 2 20 tiles wide lines.`. 
+* According to http://furrtek.free.fr/?a=gbprinter&i=2 the `The GameBoy Camera buffers tile data by blocs of 2 20 tiles wide lines.`.
 
 ## White Screen
 
@@ -466,7 +467,7 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 # Finished Pretending To Print for fun!
 !INQY: length: 0 | CRC: 15 | CRC CALC: 15 (0 15) | crc raw: 0 15 |Printer Status: Print Reqested,  |
 
-```	
+```
 
 </details>
 
