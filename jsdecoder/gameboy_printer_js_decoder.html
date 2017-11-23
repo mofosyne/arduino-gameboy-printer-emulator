@@ -423,7 +423,75 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 
 <br>
 <input id="submit_button" type="button" value="Click to Update Gameboy Tile"><br/><br/>
-<canvas id="demo_canvas" width="500" height="500" style="image-rendering: pixelated">Your browser doesn't support the HTML5 canvas. No marching squares demo for you. :(</canvas>
+<canvas id="demo_canvas" width="500" height="500" style="image-rendering: pixelated">
+  Your browser doesn't support the HTML5 canvas :(
+</canvas>
 </div>
+
+
+
+
+<!-- Imgur-submit tutorial http://literallycanvas.com/examples/imgur.html . This below was adapted from it.-->
+
+<script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+
+<form class="imgur-submit">
+    <input type="submit" data-action="upload-to-imgur" value="Upload to Imgur">
+</form>
+
+<script>
+  $(document).ready(function()
+  {
+    var imgurClientId = '105d0460a607e3d';
+
+    $('[data-action=upload-to-imgur]').click(
+      function(e)
+      {
+        e.preventDefault();
+
+        try
+        {
+            var b64_img = document.getElementById('demo_canvas').toDataURL('image/jpeg', 0.9).split(',')[1];
+        }
+        catch(err)
+        {
+            var b64_img = document.getElementById('demo_canvas').toDataURL().split(',')[1];
+        }
+
+        $('.imgur-submit').html('Uploading...')
+
+        // this is all standard Imgur API;
+        $.ajax(
+          {
+            url: 'https://api.imgur.com/3/image',
+            type: 'POST',
+            headers:
+              {
+                // Your application gets an imgurClientId from Imgur
+                Authorization: 'Client-ID ' + imgurClientId,
+                Accept: 'application/json'
+              }
+            ,
+            data:
+            {
+              // convert the image data to base64
+              image: b64_img,
+              type:  'base64'
+            }
+            ,
+            success: function(result)
+              {
+                var url = 'https://imgur.com/gallery/' + result.data.id;
+                $('.imgur-submit').html("<a href='" + url + "'>" + url + "</a>");
+              },
+          }
+        );
+    });
+  });
+</script>
+
 </body>
 </html>
