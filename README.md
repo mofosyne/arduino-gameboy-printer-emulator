@@ -85,7 +85,7 @@ DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ## My Face In BW
 
-![](./sample_image.png/bk_portrate.png)
+![](./sample_image/bk_portrait.png)
 
 
 <details>
