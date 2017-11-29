@@ -1,24 +1,50 @@
 /*******************************************************************************
- *
- * GAMEBOY PRINTER EMULATION PROJECT
- *
- * Creation Date: 2017-11-27
- * PURPOSE: Standardised header file for gameboy printer
- * AUTHOR: Brian Khuu
+
+  # GAMEBOY PRINTER EMULATION PROJECT
+
+  - Creation Date: 2017-4-6
+  - Revised  Date: 2017-11-27
+  - PURPOSE: Header file for gameboy printer
+  - AUTHOR: Brian Khuu
+
+  Below header file was revised again in 2017-11-27 because I found the
+  gameboy programming manual, which points out exactly how the communication
+  works.
 
   Source Documentation:
+    GameBoy PROGRAMMING MANUAL Version 1.0
     DMG-06-4216-001-A
     Released 11/09/1999
 
- */
+------------------------------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /*******************************************************************************
     GAMEBOY LINK SIGNALING
 ********************************************************************************
 
+  # Manual Measurement With Oscilloscope
   - Clock Frequency: 8kHz (127.63 us)
   - Transmission Speed: 867 baud (1.153ms per 8bit symbol)
   - Between Symbol Period: 229.26 us
+
+  # Gameboy Link Pinout
+
+  ```
+   ___________
+  |  6  4  2  |
+   \_5__3__1_/   (at cable)
+  ```
+
+  - Pin 1 :  GBP_VCC_PIN  : VDD35
+  - Pin 2 :  GBP_SO_PIN   : SO
+  - Pin 3 :  GBP_SI_PIN   : SI
+  - Pin 4 :  GBP_SD_PIN   : SD
+  - Pin 5 :  GBP_SC_PIN   : SC
+  - Pin 6 :  GBP_GND_PIN  : GND
 
 ------------------------------------------------------------------------------*/
 
@@ -32,7 +58,7 @@
   | BYTE POS :    |     0     |     1     |     2     |      3      |     4     |     5     |  6 + X    | 6 + X + 1 | 6 + X + 2 | 6 + X + 3 | 6 + X + 4 |
   |---------------|-----------|-----------|-----------|-------------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
   | SIZE          |        2 Bytes        |  1 Byte   |   1 Byte    |  1 Bytes  |  1 Bytes  | Variable  |        2 Bytes        |  1 Bytes  |  1 Bytes  |
-  | DESCRIPTION   |       SYNC_WORD       | COMMAND   | COMPRESSION |     DATA_LENGTH(X)    | Payload   |       CHECKSUM        |    ACK    |  STATUS   |
+  | DESCRIPTION   |       SYNC_WORD       | COMMAND   | COMPRESSION |     DATA_LENGTH(X)    | Payload   |       CHECKSUM        |  DEVICEID |  STATUS   |
   | GB TO PRINTER |    0x88   |    0x33   | See Below | See Below   | Low Byte  | High Byte | See Below |       See Below       |    0x00   |    0x00   |
   | TO PRINTER    |    0x00   |    0x00   |    0x00   |   0x00      |    0x00   |    0x00   |    0x00   |    0x00   |    0x00   |    0x81   | See Below |
 
@@ -53,22 +79,24 @@
 #define GBP_COMMAND_INIT      0x01    // 0b00000001 // Typically 10 bytes packet
 #define GBP_COMMAND_PRINT     0x02    // 0b00000010 // Print instructions
 #define GBP_COMMAND_DATA      0x04    // 0b00000100 // Typically 650 bytes packet (10byte header + 640byte image)
-#define GBP_COMMAND_BREAK     0x08    // // Means to forcibly stops printing
+#define GBP_COMMAND_BREAK     0x08    // 0b00001000 // Means to forcibly stops printing
 #define GBP_COMMAND_INQUIRY   0x0F    // 0b00001111 // Always reports current status
 
-/* Ack Byte */
-// According to the GB programming manual. This is actually a status byte.
-// Where the MSB is always 1 and the lower 7 bits is the device number.
-// Pocket printer is always 1
-#define GBP_ACK               0x81    // 0b10000001 // Recommended by "GB Printer interface specification"
-#define GBP_ACK_2             0x80    // 0b10000000 // Used by esp8266-gameboy-printer
+/* Compression Flag */
+#define GBP_COMPRESSION_DISABLED  0x00
+#define GBP_COMPRESSION_ENABLED   0x01
 
-/* Print Instruction Payload (4 data bytes) */
-#define GBP_PRINT_BYTE_PRINT_DENSITY    3
-#define GBP_PRINT_BYTE_PALETTE_VALUE    2
-#define GBP_PRINT_BYTE_NUM_OF_LINEFEED  1 // High Nibble 4 bits represents the number of feeds before printing.
-                                          // Lower Nibble is 4 bits, representing the number of feeds after printing.
-#define GBP_PRINT_BYTE_NUM_OF_SHEETS    0 // 0-255 (1 in the example). 0 means line feed only.
+/* Device ID Byte */
+// According to the GB programming manual. This is a device ID number.
+// [1bit:MSB Always'0x1'][7bits: Device Number ID ]
+// Where the MSB is always 1 and the lower 7 bits is the device number.
+#define GBP_DEVICE_ID         0x81    // 0b10000001 // Gameboy Pocket Printer ID = 0x1
+
+/* Print Instruction Payload (4 data bytes) (Section 4.2 Print Instruction Packet In Document DMG-06-4216-001-A) */
+#define GBP_PRINT_BYTE_INDEX_NUM_OF_SHEETS    0 // 0-255 (1 in the example). 0 means line feed only. 1 feed = 2.64 mm
+#define GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED  1 // High Nibble 4 bits represents the number of feeds before printing. Lower Nibble is 4 bits, representing the number of feeds after printing.
+#define GBP_PRINT_BYTE_INDEX_PALETTE_VALUE    2 // Default is 00. Palettes are defined by every 2 bits beginning from high bit. (See Chapter 2, Section 2.3, Character RAM. In Document DMG-06-4216-001-A)
+#define GBP_PRINT_BYTE_INDEX_PRINT_DENSITY    3 // 0x00-0x7F. Default values are 0x40 and 0x80 or greater.
 
 /* State Byte Bit Position */
 #define GBP_STATUS_BIT_LOWBAT      7 // Battery Too Low
@@ -98,10 +126,10 @@ typedef struct gbp_printer_status_t
 } gbp_printer_status_t;
 
 
-
 /*******************************************************************************
-  UTILITIES
+  UTILITIE FUNCTIONS
 *******************************************************************************/
+#include <stdint.h> // uint8_t
 
 inline uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte
@@ -120,25 +148,7 @@ inline uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
         ;
 }
 
-/*******************************************************************************
-  DEBUG UTILITIES
-*******************************************************************************/
 
-/* Uncomment to disable these functions */
-// #define GAMEBOY_PRINTER_PROTO_DEBUG 0
-
-#if (!defined(GAMEBOY_PRINTER_PROTO_DEBUG)) || (GAMEBOY_PRINTER_PROTO_DEBUG)
-
-inline const char* gbp_command_byte_to_str(uint8_t value)
-{
-  switch(value)
-  {
-    case GBP_COMMAND_INIT   : return "INIT";
-    case GBP_COMMAND_PRINT  : return "PRNT";
-    case GBP_COMMAND_DATA   : return "DATA";
-    case GBP_COMMAND_INQUIRY: return "INQY";
-    default: return "?";
-  }
+#ifdef __cplusplus
 }
-
 #endif
