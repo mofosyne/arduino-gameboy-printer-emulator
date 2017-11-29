@@ -27,24 +27,37 @@ extern "C" {
 ********************************************************************************
 
   # Manual Measurement With Oscilloscope
-  - Clock Frequency: 8kHz (127.63 us)
-  - Transmission Speed: 867 baud (1.153ms per 8bit symbol)
-  - Between Symbol Period: 229.26 us
+
+    - Clock Frequency: 8kHz (127.63 us)
+    - Transmission Speed: 867 baud (1.153ms per 8bit symbol)
+    - Between Symbol Period: 229.26 us
+
+    ```
+                           1.153ms
+            <--------------------------------------->
+             0   1   2   3   4   5   6   7             0   1   2   3   4   5   6   7
+         __   _   _   _   _   _   _   _   ___________   _   _   _   _   _   _   _   _
+    CLK:   |_| |_| |_| |_| |_| |_| |_| |_|           |_| |_| |_| |_| |_| |_| |_| |_|
+    DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX_
+           <-->                           <---------->
+           127.63 us                         229.26 us
+    ```
 
   # Gameboy Link Pinout
 
-  ```
-   ___________
-  |  6  4  2  |
-   \_5__3__1_/   (at cable)
-  ```
+    - Pin 1 :  GBP_VCC_PIN  : VDD35
+    - Pin 2 :  GBP_SO_PIN   : SO
+    - Pin 3 :  GBP_SI_PIN   : SI
+    - Pin 4 :  GBP_SD_PIN   : SD
+    - Pin 5 :  GBP_SC_PIN   : SC
+    - Pin 6 :  GBP_GND_PIN  : GND
 
-  - Pin 1 :  GBP_VCC_PIN  : VDD35
-  - Pin 2 :  GBP_SO_PIN   : SO
-  - Pin 3 :  GBP_SI_PIN   : SI
-  - Pin 4 :  GBP_SD_PIN   : SD
-  - Pin 5 :  GBP_SC_PIN   : SC
-  - Pin 6 :  GBP_GND_PIN  : GND
+    ```
+     ___________
+    |  6  4  2  |
+     \_5__3__1_/   (at cable)
+    ```
+
 
 ------------------------------------------------------------------------------*/
 
@@ -64,7 +77,7 @@ extern "C" {
 
   * Header is the Command, Compression and Data Length
   * Command field may be either Initialize (0x01), Data (0x04), Print (0x02), or Inquiry (0x0F).
-  * Compression field is a compression indicator. No compression (0x00)
+  * Compression field is a compression indicator. No compression (0x00), Yes Compression (0x01)
   * Payload byte count size depends on the value of the `DATA_LENGTH` field.
   * Checksum is 2 bytes of data representing the sum of the header + all data in the data portion of the packet
   * Status byte is a bitfield byte indicating various status of the printer itself. (e.g. If it is still printing)
