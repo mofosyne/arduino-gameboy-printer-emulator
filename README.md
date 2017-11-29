@@ -79,12 +79,20 @@ You are all done!
 
 * GameBoy PROGRAMMING MANUAL Version 1.0 DMG-06-4216-001-A Released 11/09/1999
     - Is the original programming manual from nintendo. Has section on gameboy printer. Copy included in research folder.
-* http://www.huderlem.com/demos/gameboy2bpp.html Part of the js decoder code is based on the gameboy tile decoder tutorial
-* https://github.com/gism/GBcamera-ImageSaver potential future resource for outputting as bitmap
-* http://furrtek.free.fr/?a=gbprinter&i=2 Was my initial research on signalling of gameboy printer
-* https://github.com/avivace/awesome-gbdev Good resources on other dev efforts
-* http://gbdev.gg8.se/wiki/articles/Gameboy_Printer
-* http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable)
+
+* [http://www.huderlem.com/demos/gameboy2bpp.html](http://www.huderlem.com/demos/gameboy2bpp.html) Part of the js decoder code is based on the gameboy tile decoder tutorial
+* [https://github.com/gism/GBcamera-ImageSaver](https://github.com/gism/GBcamera-ImageSaver) - Eventally found that someone else has already tackled the same project.
+    - However was not able to run this sketch, and his python did not run. So there may have been some code rot.
+    - Nevertheless I was able to get some ideas on using an ISR to capture the bits fast enough.
+    - I liked how he outputs in .bmp format
+* [http://gbdev.gg8.se/wiki/articles/Gameboy_Printer](http://gbdev.gg8.se/wiki/articles/Gameboy_Printer) - Main gb documentation on gb protocol, great for the inital investigation.
+* [http://furrtek.free.fr/?a=gbprinter&i=2](http://furrtek.free.fr/?a=gbprinter&i=2) - Previous guy who was able to print to a gameboy printer
+* [http://playground.arduino.cc/Main/Printf](http://playground.arduino.cc/Main/Printf) - printf in arduino
+* [https://www.mikrocontroller.net/attachment/34801/gb-printer.txt](https://www.mikrocontroller.net/attachment/34801/gb-printer.txt)
+    - Backup if above link is dead [here](./ext_doc/gb-printer.txt)
+    - Most detailed writeup on the protocol I found online.
+* [http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable)](http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable))
+* [https://github.com/avivace/awesome-gbdev](https://github.com/avivace/awesome-gbdev) Collections of gameboy development resources
 
 ## Technical Information
 
