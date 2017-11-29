@@ -51,6 +51,9 @@ After the download has complete. Copy the content of the console to the javascri
 
 One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
 
+A copy of the decoder is accessible via my website as well:
+    - http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html
+
 You are all done!
 
 ## Project Makeup
@@ -74,10 +77,14 @@ You are all done!
 
 ## Credits / Other Resources
 
+* GameBoy PROGRAMMING MANUAL Version 1.0 DMG-06-4216-001-A Released 11/09/1999
+    - Is the original programming manual from nintendo. Has section on gameboy printer. Copy included in research folder.
 * http://www.huderlem.com/demos/gameboy2bpp.html Part of the js decoder code is based on the gameboy tile decoder tutorial
 * https://github.com/gism/GBcamera-ImageSaver potential future resource for outputting as bitmap
 * http://furrtek.free.fr/?a=gbprinter&i=2 Was my initial research on signalling of gameboy printer
-
+* https://github.com/avivace/awesome-gbdev Good resources on other dev efforts
+* http://gbdev.gg8.se/wiki/articles/Gameboy_Printer
+* http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable)
 
 ## Technical Information
 
