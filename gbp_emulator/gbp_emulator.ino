@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 
-
 /* Gameboy Link Cable Mapping to Arduino Pin */
 // Note: Serial Clock Pin must be attached to an interrupt pin of the arduino
 //  ___________
@@ -175,19 +174,18 @@ gbp_printer_t gbp_printer; // Overall Structure
 /*
     Static Functions
 */
-
-void gbp_status_byte_print(struct gbp_printer_status_t *printer_status_ptr)
+void gbp_status_byte_print_as_json_fields(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
-  fprintf(&serialout, "Printer Status: %s%s%s%s%s%s%s%s",
-   ( printer_status_ptr->low_battery       ?"Too Hot/Cold, ":""),
-   ( printer_status_ptr->paper_jam         ?"Timeout, ":""),
-   ( printer_status_ptr->other_error       ?"Paper Jam, ":""),
-   ( printer_status_ptr->packet_error      ?"Batt Low, ":""),
-   ( printer_status_ptr->unprocessed_data  ?"Ready To Print, ":""),
-   ( printer_status_ptr->print_buffer_full ?"Print Reqested, ":""),
-   ( printer_status_ptr->printer_busy      ?"Currently Printing, ":""),
-   ( printer_status_ptr->checksum_error    ?"Checksum Error, ":"")
-  );
+   fprintf(&serialout, "{");
+   fprintf(&serialout, "\"%s\":%d", "lowbatt", printer_status_ptr->low_battery       );
+   fprintf(&serialout, ",\"%s\":%d", "jam", printer_status_ptr->paper_jam         );
+   fprintf(&serialout, ",\"%s\":%d", "err", printer_status_ptr->other_error       );
+   fprintf(&serialout, ",\"%s\":%d", "pkterr", printer_status_ptr->packet_error      );
+   fprintf(&serialout, ",\"%s\":%d", "unproc", printer_status_ptr->unprocessed_data  );
+   fprintf(&serialout, ",\"%s\":%d", "full", printer_status_ptr->print_buffer_full );
+   fprintf(&serialout, ",\"%s\":%d", "bsy", printer_status_ptr->printer_busy      );
+   fprintf(&serialout, ",\"%s\":%d", "chk_err", printer_status_ptr->checksum_error    );
+   fprintf(&serialout, "}");
 }
 
 /******************************************************************************/
@@ -713,33 +711,40 @@ void loop() {
     digitalWrite(LED_STATUS_PIN, HIGH);
 
     Serial.print("!");
+    Serial.print("{");
+    Serial.print("\"command\":");
     switch (gbp_printer.gbp_packet.command)
     {
       case GBP_COMMAND_INIT:
-        fprintf(&serialout, "INIT");
+        fprintf(&serialout, "\"INIT\"");
         break;
       case GBP_COMMAND_DATA:
-        fprintf(&serialout, "DATA");
-        fprintf(&serialout, "| %02X | %s |",
+        fprintf(&serialout, "\"DATA\"");
+        fprintf(&serialout, ",\"compressed\":%d,\"more\":%d",
             gbp_printer.gbp_packet.compression,
-            gbp_printer.gbp_packet.data_length == 0?"DONE":"MORE"
+            gbp_printer.gbp_packet.data_length != 0
           );
         break;
       case GBP_COMMAND_PRINT:
-        fprintf(&serialout, "PRNT");
-        fprintf(&serialout, "| %02X %02X %02X %02X | ",
-            gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_SHEETS  ],
-            gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED],
-            gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PALETTE_VALUE  ],
-            gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PRINT_DENSITY  ]
+        fprintf(&serialout, "\"PRNT\"");
+        fprintf(&serialout, ",\"sheets\":%d,\"margin_upper\":%d,\"margin_lower\":%d,\"pallet\":%d,\"density\":%d ",
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_SHEETS  ]   )        ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]>>4) & 0x0F ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]   ) & 0x0F ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PALETTE_VALUE  ]   )        ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PRINT_DENSITY  ]   )
           );
         break;
       case GBP_COMMAND_INQUIRY:
-        fprintf(&serialout, "INQY");
+        fprintf(&serialout, "\"INQY\"");
+        fprintf(&serialout, ",\"status\":");
+        gbp_status_byte_print_as_json_fields(&(gbp_printer.gbp_printer_status));
         break;
       default:
-        fprintf(&serialout, "UKNO");
+        fprintf(&serialout, "\"UKNO\"");
     }
+    Serial.print("}");
+
 #if PRINT_LENGTH_AND_CRC
     fprintf(&serialout, ": length: %u | CRC: %u | CRC CALC: %u (%u %u) | crc raw: %u %u |",
                gbp_printer.gbp_packet.data_length,
@@ -750,7 +755,6 @@ void loop() {
                gbp_printer.gbp_packet_parser.crc_high,
                gbp_printer.gbp_packet_parser.crc_low
             );
-    gbp_status_byte_print(&(gbp_printer.gbp_printer_status));
 #endif
     Serial.print("\n");
 
@@ -856,7 +860,7 @@ void loop() {
         break;
 
       case '!':
-        gbp_status_byte_print(&(gbp_printer.gbp_printer_status));
+        gbp_status_byte_print_as_json_fields(&(gbp_printer.gbp_printer_status));
         Serial.print("\n");
         break;
     }
