@@ -93,6 +93,7 @@ You are all done!
     - Most detailed writeup on the protocol I found online.
 * [http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable)](http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable))
 * [https://github.com/avivace/awesome-gbdev](https://github.com/avivace/awesome-gbdev) Collections of gameboy development resources
+* [https://shonumi.github.io/articles/art2.html](https://shonumi.github.io/articles/art2.html) An in-depth technical document about the printer hardware, the communication protocol and the usual routine that games used for implementing the print feature.
 
 ## Technical Information
 
