@@ -24,7 +24,7 @@ differen pinout reference. But the wiring should be similar.
 
 Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project and helpfully submitted a handy picture of how to wire this project up.
 
-![](GBP_Emu_Micro_pinout_West_McGowan.webp)
+![](GBP_Emu_Micro_pinout_West_McGowan.webp.png)
 
 ## General Pinout
 
