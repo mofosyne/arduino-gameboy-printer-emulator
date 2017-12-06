@@ -19,6 +19,15 @@ differen pinout reference. But the wiring should be similar.
 
 * Pinout Ref: http://www.hardwarebook.info/Game_Boy_Link
 
+
+## Arduino Nano And Gameboy Color
+
+Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project and helpfully submitted a handy picture of how to wire this project up.
+
+![](GBP_Emu_Micro_pinout_West_McGowan.webp)
+
+## General Pinout
+
 ```
 Gameboy Original/Color Link Cable Pinout
  ___________
