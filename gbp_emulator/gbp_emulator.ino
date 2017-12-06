@@ -20,11 +20,11 @@ extern "C" {
 //  \_5__3__1_/   (at cable)
 //
 //                  | Arduino Pin | Gameboy Link Pin  |
-#define GBP_VCC_PIN               // Pin 1            : 3.3V (Unused)
+#define GBP_VCC_PIN               // Pin 1            : 5.0V (Unused)
 #define GBP_SO_PIN       4        // Pin 2            : Serial OUTPUT
 #define GBP_SI_PIN       3        // Pin 3            : Serial INPUT
-#define GBP_SC_PIN       2        // Pin 4            : Serial Clock (Interrupt)
-#define GBP_SD_PIN                // Pin 5            : Serial Data  (Unused)
+#define GBP_SD_PIN                // Pin 4            : Serial Data  (Unused)
+#define GBP_SC_PIN       2        // Pin 5            : Serial Clock (Interrupt)
 #define GBP_GND_PIN               // Pin 6            : GND (Attach to GND Pin)
 
 #define LED_STATUS_PIN 13 // Blink on packet reception

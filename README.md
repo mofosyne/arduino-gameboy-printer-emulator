@@ -28,11 +28,11 @@ Gameboy Original/Color Link Cable Pinout
 
 | Arduino Pin | Gameboy Link Pin                 |
 |-------------|----------------------------------|
-|  unused     | Pin 1 : 3.3V                     |
+|  unused     | Pin 1 : 5.0V                     |
 |  D4         | Pin 2 : Serial OUTPUT            |
 |  D3         | Pin 3 : Serial INPUT             |
-|  D2         | Pin 4 : Serial Clock (Interrupt) |
-|  unused     | Pin 5 : Serial Data              |
+|  unused     | Pin 4 : Serial Data              |
+|  D2         | Pin 5 : Serial Clock (Interrupt) |
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
 ### Programming the emulator
