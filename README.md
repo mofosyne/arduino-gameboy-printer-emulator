@@ -1,4 +1,7 @@
 # arduino-gameboy-printer-emulator
+
+**[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
+
 Code to emulate a gameboy printer via the gameboy link cable
 
 ![](./sample_image/gameboy_printer_emulator.png)
