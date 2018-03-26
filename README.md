@@ -25,7 +25,7 @@ differen pinout reference. But the wiring should be similar.
 
 ### Pinout Diagram
 
-Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project on his Arduino Nano plus Gameboy Color and helpfully submitted a handy picture of how to wire this project up.
+Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project on his Arduino Nano plus Gameboy Color and helpfully submitted a handy picture of how to wire this project up. You can find his tutorial in [here](https://westm.co.uk/arduino-game-boy-printer-emulator/)
 
 ![](GBP_Emu_Micro_pinout_West_McGowan.webp.png)
 
