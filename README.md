@@ -2,6 +2,10 @@
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
+**[Featured on ekeler article on gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
+
+**[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
+
 Code to emulate a gameboy printer via the gameboy link cable
 
 ![](./sample_image/gameboy_printer_emulator.png)
