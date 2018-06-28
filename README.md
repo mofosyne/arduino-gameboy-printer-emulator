@@ -2,9 +2,11 @@
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
-**[Featured on ekeler article on gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
+**[Was used by ekeler for a gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
 
 **[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
+
+**[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
 
 Code to emulate a gameboy printer via the gameboy link cable
 
