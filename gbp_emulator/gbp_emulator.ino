@@ -8,9 +8,6 @@
  *
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 /* Gameboy Link Cable Mapping to Arduino Pin */
@@ -32,7 +29,7 @@ extern "C" {
 #define GBP_PACKET_PRETEND_PRINT_TIME_MS 2000 // ms to pretend to print for
 
 // You can disable the LCD screen with no problems. It only displays my name
-#define LCD_DISPLAY_MESSAGE_ENABLE 1
+#define LCD_DISPLAY_MESSAGE_ENABLE 0
 
 #define PRINT_LENGTH_AND_CRC 0
 
@@ -868,8 +865,3 @@ void loop() {
 
 
 } // loop()
-
-
-#ifdef __cplusplus
-}
-#endif
