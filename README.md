@@ -8,6 +8,8 @@
 
 **[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
 
+**[Transferring Game Boy PocketCamera photos to a PC (Youtube Channel Re.Enthused)](https://www.youtube.com/watch?v=KttoycleK8c)**
+
 Code to emulate a gameboy printer via the gameboy link cable
 
 ![](./sample_image/gameboy_printer_emulator.png)
