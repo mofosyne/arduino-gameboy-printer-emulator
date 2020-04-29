@@ -19,7 +19,22 @@ window.onload = function() {
     square_width = canvas.width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
     square_height = square_width;
 
+    // Change below for other palettes
     colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
+    // Very green
+    //          colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F");
+    // GBP greenscale
+    //          colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
+    // Dirtyboy palette
+    //          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
+    // Grafxkid GBP gray
+    //          colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26");
+    // Grafxkid GBP green
+    //          colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a");
+    // PJ Gameboy palette
+    //          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
+
+
     button = document.getElementById("submit_button");
     data = document.getElementById("data_text")
 
@@ -31,7 +46,7 @@ window.onload = function() {
     refresh(canvas, data.value);
 }
 
-function refresh(canvas, rawBytes) 
+function refresh(canvas, rawBytes)
 {
     data.removeAttribute("style");  // Clear Error Indicator
 
@@ -56,7 +71,7 @@ function render_gbp(canvas, rawBytes)
 
     var total_tile_count = 0;
 
-    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++) 
+    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++)
     {   // Process each gameboy tile
         tile_element = tiles_rawBytes_array[tile_i];
 
@@ -86,7 +101,7 @@ function render_gbp(canvas, rawBytes)
 
     var tile_count = 0, tile_x_offset = 0, tile_y_offset = 0;
 
-    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++) 
+    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++)
     {   // Process each gameboy tile
         tile_element = tiles_rawBytes_array[tile_i];
 
@@ -107,11 +122,11 @@ function render_gbp(canvas, rawBytes)
 
         pixels = decode(tile_element);
 
-        if (pixels) 
+        if (pixels)
         {
             paint(canvas, pixels, square_width, square_height, tile_x_offset, tile_y_offset);
         }
-        else 
+        else
         {
             status = false;
         }
@@ -123,11 +138,11 @@ function render_gbp(canvas, rawBytes)
     return status;
 }
 
-function decode(rawBytes) 
+function decode(rawBytes)
 {   // Gameboy tile decoder function from http://www.huderlem.com/demos/gameboy2bpp.html
     var bytes = rawBytes.replace(/ /g, "");
     if (bytes.length != 32) return false;
-    
+
     var byteArray = new Array(16);
     for (var i = 0; i < byteArray.length; i++) {
         byteArray[i] = parseInt(bytes.substr(i*2, 2), 16);
@@ -153,9 +168,9 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
 
     var ctx = canvas.getContext("2d");
 
-    for (var i = 0; i < TILE_PIXEL_WIDTH; i++) 
+    for (var i = 0; i < TILE_PIXEL_WIDTH; i++)
     {   // pixels along the tile's x axis
-        for (var j = 0; j < TILE_PIXEL_HEIGHT; j++) 
+        for (var j = 0; j < TILE_PIXEL_HEIGHT; j++)
         {   // pixels along the tile's y axis
 
             // Pixel Color
@@ -163,8 +178,8 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
 
             // Pixel Position (Needed to add +1 to pixel width and height to fill in a gap)
             ctx.fillRect(
-                    pixel_x_offset + i*pixel_width, 
-                    pixel_y_offset + j*pixel_height, 
+                    pixel_x_offset + i*pixel_width,
+                    pixel_y_offset + j*pixel_height,
                     pixel_width + 1 ,
                     pixel_height + 1
                 );
