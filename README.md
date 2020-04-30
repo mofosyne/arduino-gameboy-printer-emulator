@@ -10,6 +10,8 @@
 
 **[Transferring Game Boy PocketCamera photos to a PC (Youtube Channel Re.Enthused)](https://www.youtube.com/watch?v=KttoycleK8c)**
 
+**[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
+
 Code to emulate a gameboy printer via the gameboy link cable
 
 ![](./sample_image/gameboy_printer_emulator.png)
@@ -1415,4 +1417,4 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 
 * @BjornB2 : For adding improvements in downloading images for jsdecoder folder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/15
 
-* @virtuaCode : For helping to fix renderign issues with the jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/9
+* @virtuaCode : For helping to fix rendering issues with the jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/9
