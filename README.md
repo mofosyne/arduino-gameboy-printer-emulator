@@ -12,6 +12,8 @@
 
 **[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
 
+**[Python Script to speed up dumping of images via pyserial (By lennartba)](https://github.com/lennartba/gbpinter_dump2image_py)**
+
 Code to emulate a gameboy printer via the gameboy link cable
 
 ![](./sample_image/gameboy_printer_emulator.png)
