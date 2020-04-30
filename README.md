@@ -1408,3 +1408,11 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 ```
 
 </details>
+
+-----------
+
+# Contributors / Thanks
+
+* @BjornB2 : For adding improvements in downloading images for jsdecoder folder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/15
+
+* @virtuaCode : For helping to fix renderign issues with the jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/9
