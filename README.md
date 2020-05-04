@@ -1,6 +1,10 @@
 # arduino-gameboy-printer-emulator
 
-**Join us in Telegram! [https://t.me/gameboycamera](https://t.me/gameboycamera)**
+## Join us in Telegram! 
+
+**[https://t.me/gameboycamera](https://t.me/gameboycamera)**
+
+## Headlines
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
