@@ -1,5 +1,7 @@
 # arduino-gameboy-printer-emulator
 
+**Join us in Telegram! [https://t.me/gameboycamera](https://t.me/gameboycamera)**
+
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
 **[Was used by ekeler for a gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
