@@ -4,7 +4,7 @@
 
 **[https://t.me/gameboycamera](https://t.me/gameboycamera)**
 
-## Headlines
+## About this project
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
