@@ -1,4 +1,4 @@
-# arduino-gameboy-printer-emulator
+# Arduino Gameboy Printer Emulator
 
 ## Join us in Telegram! 
 
