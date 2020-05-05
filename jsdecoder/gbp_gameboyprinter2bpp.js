@@ -18,23 +18,6 @@ window.onload = function() {
     /* Determine size of each pixel in canvas */
     square_width = canvas.width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
     square_height = square_width;
-
-    // Change below for other palettes
-    colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
-    // Very green
-    //          colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F");
-    // GBP greenscale
-    //          colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
-    // Dirtyboy palette
-    //          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
-    // Grafxkid GBP gray
-    //          colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26");
-    // Grafxkid GBP green
-    //          colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a");
-    // PJ Gameboy palette
-    //          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
-
-
     button = document.getElementById("submit_button");
     data = document.getElementById("data_text")
 
@@ -162,6 +145,34 @@ function decode(rawBytes)
 function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_offset )
 {   // This paints the tile with a specified offset and pixel width
 
+  var e = document.getElementById("palette");
+  var palette = e.options[e.selectedIndex].value;
+
+  switch(palette) {
+    case "grayscale":
+      colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
+      break;
+    case "dmg":
+      colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F");
+      break;
+    case "gameboypocket":
+      colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
+      break;
+    case "bgb":
+      colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
+      break;
+    case "grafixkidgray":
+      colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26");
+      break;
+    case "grafixkidgreen":
+     colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a");
+     break;
+    case "blackzero":
+     colors = new Array("#7e8416", "#577b46", "#385d49", "#2e463d");
+     break;
+    default:
+    colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
+  }
     tile_offset     = tile_x_offset * tile_y_offset;
     pixel_x_offset  = TILE_PIXEL_WIDTH   * tile_x_offset * pixel_width;
     pixel_y_offset  = TILE_PIXEL_HEIGHT  * tile_y_offset * pixel_height;

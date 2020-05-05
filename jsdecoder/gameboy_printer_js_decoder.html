@@ -421,6 +421,17 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 </textarea>
 
 <br>
+<label for="palette">Color palette</label>
+
+<select id="palette">
+  <option value="grayscale" selected="selected">Grayscale</option>
+  <option value="dmg">Original Game Boy</option>
+  <option value="gameboypocket">Game Boy Pocket</option>
+  <option value="bgb">bgb emulator</option>
+  <option value="grafixkidgray">Grafixkid Gray</option>
+  <option value="grafixkidgreen">Grafixkid Green</option>
+  <option value="blackzero">Game Boy (Black Zero) palette</option>
+</select>
 <button id="submit_button" type="button" onclick="putImage()">Update photo</button> <a id="download" download="image.jpg"><button type="button" onClick="download()">Download</button></a><br/><br/>
 <canvas id="demo_canvas" width="480" height="432" style="image-rendering: pixelated;">
   Your browser doesn't support the HTML5 canvas :(
