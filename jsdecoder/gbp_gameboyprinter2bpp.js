@@ -7,140 +7,129 @@ Heavily adapted to work with gameboy camera and gameboy printer data By Brian Kh
 
 */
 
-window.onload = function() {
-    // Tile Constants
-    TILE_PIXEL_WIDTH = 8;
-    TILE_PIXEL_HEIGHT = 8;
-    TILES_PER_LINE = 20; // Gameboy Printer Tile Constant
+// Change below for other palettes
+var colors = ["#ffffff", "#aaaaaa", "#555555", "#000000"];
+// Very green
+//          colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F");
+// GBP greenscale
+//          colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
+// Dirtyboy palette
+//          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
+// Grafxkid GBP gray
+//          colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26");
+// Grafxkid GBP green
+//          colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a");
+// PJ Gameboy palette
+//          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
 
-    var canvas = document.getElementById("demo_canvas");
+// Tile Constants
+var TILE_PIXEL_WIDTH = 8;
+var TILE_PIXEL_HEIGHT = 8;
+var TILES_PER_LINE = 20; // Gameboy Printer Tile Constant
 
-    /* Determine size of each pixel in canvas */
-    square_width = canvas.width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
-    square_height = square_width;
+document.addEventListener('DOMContentLoaded', function() {
 
-    // Change below for other palettes
-    colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
-    // Very green
-    //          colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F");
-    // GBP greenscale
-    //          colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
-    // Dirtyboy palette
-    //          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
-    // Grafxkid GBP gray
-    //          colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26");
-    // Grafxkid GBP green
-    //          colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a");
-    // PJ Gameboy palette
-    //          colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
-
-
-    button = document.getElementById("submit_button");
-    data = document.getElementById("data_text")
+    var button = document.getElementById("submit_button");
 
     button.addEventListener("click", function(evt){
-        refresh(canvas, data.value);
+        refresh();
     }, false);
 
     // Initial Render
-    refresh(canvas, data.value);
-}
+    refresh();
+});
 
-function refresh(canvas, rawBytes)
-{
-    data.removeAttribute("style");  // Clear Error Indicator
+function refresh(rawByte) {
+    var data = document.getElementById("data_text");
+    data.classList.remove('error');  // Clear Error Indicator
 
-    if (!render_gbp(canvas, rawBytes)) {
-        data.style.backgroundColor = "red"; // Trigger error status
+    try {
+        render_gbp(data.value)
+    } catch (error) {
+        data.classList.add('error');// Trigger error status
     }
-
 }
 
-function render_gbp(canvas, rawBytes)
-{   // Returns false on error
-    var status = true;
+function newCanvas() {
+    var container = document.createElement('div');
+    var canvas = document.createElement('canvas');
+    var downloadButton = document.createElement('button');
 
-    // Clear Screen
+    container.className = 'image-container';
+
+    canvas.width = 480;
+    downloadButton.innerText = 'Download';
+
+    downloadButton.addEventListener('click', download);
+
+    document.getElementById('images').appendChild(container);
+    container.appendChild(canvas);
+    container.appendChild(downloadButton);
+    return canvas;
+}
+
+function renderImage(tiles) {
+    var tile_height_count = Math.floor(tiles.length / TILES_PER_LINE);
+    var canvas = newCanvas();
+
+    // /* Determine size of each pixel in canvas */
+    var square_width = canvas.width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
+    var square_height = square_width;
+
     var ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // rawBytes is a string of hex where each line represents a gameboy tile
-    var tiles_rawBytes_array = rawBytes.split(/\n/);
-
-    /* Dry run, to find height */
-
-    var total_tile_count = 0;
-
-    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++)
-    {   // Process each gameboy tile
-        tile_element = tiles_rawBytes_array[tile_i];
-
-        // Check for invalid raw lines
-        if (tile_element.length == 0)
-        {   // Skip lines with no bytes (can happen with .split() )
-            continue;
-        }
-        else if (/[^0-9a-z]/i.test(tile_element[0]) == true)
-        {   // Skip lines used for comments
-            continue;
-        }
-
-        // Increment Tile Count Tracker
-        total_tile_count++;
-    }
-
-    var tile_height_count = Math.floor(total_tile_count / TILES_PER_LINE);
 
     // Resize height (Setting new canvas size will reset canvas)
     canvas.width = square_width * TILE_PIXEL_WIDTH * TILES_PER_LINE;
     canvas.height = square_height * TILE_PIXEL_HEIGHT * tile_height_count;
 
-    console.log("lol"+canvas.height);
-
-    /* Render Screen Tile by Tile */
-
-    var tile_count = 0, tile_x_offset = 0, tile_y_offset = 0;
-
-    for (var tile_i = 0; tile_i < tiles_rawBytes_array.length; tile_i++)
-    {   // Process each gameboy tile
-        tile_element = tiles_rawBytes_array[tile_i];
-
-        // Check for invalid raw lines
-        if (tile_element.length == 0)
-        {   // Skip lines with no bytes (can happen with .split() )
-            continue;
-        }
-        else if (/[^0-9a-z]/i.test(tile_element[0]) == true)
-        {   // Skip lines used for comments
-            console.log(tile_element)
-            continue;
-        }
-
+    tiles.forEach(function (pixels, index) {
         // Gameboy Tile Offset
-        tile_x_offset = tile_count % TILES_PER_LINE;
-        tile_y_offset = Math.floor(tile_count / TILES_PER_LINE);
-
-        pixels = decode(tile_element);
-
-        if (pixels)
-        {
-            paint(canvas, pixels, square_width, square_height, tile_x_offset, tile_y_offset);
-        }
-        else
-        {
-            status = false;
-        }
-
-        // Increment Tile Count Tracker
-        tile_count++;
-    }
-
-    return status;
+        var tile_x_offset = index % TILES_PER_LINE;
+        var tile_y_offset = Math.floor(index / TILES_PER_LINE);
+        paint(canvas, pixels, square_width, square_height, tile_x_offset, tile_y_offset);
+    })
 }
 
-function decode(rawBytes)
-{   // Gameboy tile decoder function from http://www.huderlem.com/demos/gameboy2bpp.html
-    var bytes = rawBytes.replace(/ /g, "");
+function render_gbp(rawBytes) {
+    // clear all images
+    document.getElementById('images').innerHTML = '';
+
+    // rawBytes is a string of hex where each line represents a gameboy tile
+    var tiles_rawBytes_array = rawBytes.split(/\n/);
+
+    var tile_count = 0
+
+    var images = [];
+    var currentImage = null;
+
+    tiles_rawBytes_array
+      .map(function (raw_line) {
+          if ((raw_line.charAt(0) === '#')) return null;
+
+          if ((raw_line.charAt(0) === '!')) {
+              var command = JSON.parse(raw_line.slice(1).trim());
+              if (command.command === 'INIT') {
+                  return 'INIT'
+              }
+          }
+          return (decode(raw_line));
+      })
+      .filter(Boolean)
+      .forEach(function (tile_element) {
+        if ((tile_element === 'INIT')) {
+            currentImage = [];
+            images.push(currentImage);
+        } else {
+            currentImage.push(tile_element);
+        }
+    })
+
+    images.forEach(renderImage);
+}
+
+// Gameboy tile decoder function from http://www.huderlem.com/demos/gameboy2bpp.html
+function decode(rawBytes) {
+    var bytes = rawBytes.replace(/[^0-9A-F]/ig, '');
     if (bytes.length != 32) return false;
 
     var byteArray = new Array(16);
@@ -159,8 +148,8 @@ function decode(rawBytes)
     return pixels;
 }
 
-function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_offset )
-{   // This paints the tile with a specified offset and pixel width
+// This paints the tile with a specified offset and pixel width
+function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_offset ) {
 
     tile_offset     = tile_x_offset * tile_y_offset;
     pixel_x_offset  = TILE_PIXEL_WIDTH   * tile_x_offset * pixel_width;
@@ -168,21 +157,49 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
 
     var ctx = canvas.getContext("2d");
 
-    for (var i = 0; i < TILE_PIXEL_WIDTH; i++)
-    {   // pixels along the tile's x axis
-        for (var j = 0; j < TILE_PIXEL_HEIGHT; j++)
-        {   // pixels along the tile's y axis
+    // pixels along the tile's x axis
+    for (var i = 0; i < TILE_PIXEL_WIDTH; i++) {
+        for (var j = 0; j < TILE_PIXEL_HEIGHT; j++) {
+        // pixels along the tile's y axis
 
             // Pixel Color
             ctx.fillStyle = colors[pixels[j*TILE_PIXEL_WIDTH + i]];
 
             // Pixel Position (Needed to add +1 to pixel width and height to fill in a gap)
             ctx.fillRect(
-                    pixel_x_offset + i*pixel_width,
-                    pixel_y_offset + j*pixel_height,
-                    pixel_width + 1 ,
-                    pixel_height + 1
-                );
+                pixel_x_offset + i*pixel_width,
+                pixel_y_offset + j*pixel_height,
+                pixel_width + 1 ,
+                pixel_height + 1
+            );
         }
     }
+}
+
+function download(event) {
+
+    var canvas = event.target.previousSibling;
+
+    var currentdate = new Date();
+    var filename = "Game Boy Photo "
+      + currentdate.getFullYear()
+      + addZero((currentdate.getMonth()+1))
+      + addZero(currentdate.getDate()) + " - "
+      + addZero(currentdate.getHours()) + ""
+      + addZero(currentdate.getMinutes()) + ""
+      + addZero(currentdate.getSeconds())
+      + ".jpg";
+    var download = document.getElementById("download");
+    var image = canvas.toDataURL("image/jpeg")
+      .replace("image/jpeg", "image/octet-stream");
+    download.setAttribute("href", image);
+    download.setAttribute("download", filename);
+    download.click();
+}
+
+function addZero(i) {
+    if (i < 10) {
+        i = "0" + i;
+    }
+    return i;
 }
