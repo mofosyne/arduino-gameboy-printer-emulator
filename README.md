@@ -1,6 +1,8 @@
 # Arduino Gameboy Printer Emulator
 
-## Join us in Telegram! 
+## Telegram Gameboy Camera Chatroom
+
+Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
 
 **[https://t.me/gameboycamera](https://t.me/gameboycamera)**
 
