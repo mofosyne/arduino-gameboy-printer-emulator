@@ -231,10 +231,10 @@ function download(event)
         + addZero(currentdate.getHours()) + ""
         + addZero(currentdate.getMinutes()) + ""
         + addZero(currentdate.getSeconds())
-        + ".jpg";
+        + ".png";
     var download = document.getElementById("download");
-    var image = canvas.toDataURL("image/jpeg")
-        .replace("image/jpeg", "image/octet-stream");
+    var image = canvas.toDataURL("image/png")
+        .replace("image/png", "image/octet-stream");
     download.setAttribute("href", image);
     download.setAttribute("download", filename);
     download.click();
