@@ -15,15 +15,15 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
 
+**[HerrZatacke : GameBoy printer direct serial to gif converter](https://github.com/HerrZatacke/direct-serial-to-gif-converter)**
+
+**[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
+
 **[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
 
 **[Transferring Game Boy PocketCamera photos to a PC (Youtube Channel Re.Enthused)](https://www.youtube.com/watch?v=KttoycleK8c)**
 
-**[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
-
-**[GameBoy printer direct serial to gif converter](https://github.com/HerrZatacke/direct-serial-to-gif-converter)**
-
-**[Python Script to speed up dumping of images via pyserial (By lennartba)](https://github.com/lennartba/gbpinter_dump2image_py)**
+**[Lennartba : Python Script to speed up dumping of images](https://github.com/lennartba/gbpinter_dump2image_py)**
 
 ## About this project
 
