@@ -6,7 +6,8 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[https://t.me/gameboycamera](https://t.me/gameboycamera)**
 
-## About this project
+
+## Media Coverage And Other Projects Spinoff
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
@@ -20,13 +21,17 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
 
+**[GameBoy printer direct serial to gif converter](https://github.com/HerrZatacke/direct-serial-to-gif-converter)**
+
 **[Python Script to speed up dumping of images via pyserial (By lennartba)](https://github.com/lennartba/gbpinter_dump2image_py)**
 
-Code to emulate a gameboy printer via the gameboy link cable
+## About this project
+
+Code to emulate a gameboy printer via the gameboy link cable and an arduino module
 
 ![](./sample_image/gameboy_printer_emulator.png)
 
-Blog Post: http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html
+* [Blog Post](http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html)
 
 Goal is to provide an easy way for people to quickly setup and download the images from their gameboy to their computer before the battery of these gameboy cameras dies of old age.
 
@@ -40,7 +45,7 @@ Use an arduino nano and wire the gameboy link cable as shown below.
 If you can fit the gameboy camera to gameboy advance etc... you may need a
 differen pinout reference. But the wiring should be similar.
 
-* Pinout Ref: http://www.hardwarebook.info/Game_Boy_Link
+* [Pinout Reference](http://www.hardwarebook.info/Game_Boy_Link)
 
 
 ### Pinout Diagram
