@@ -6,7 +6,9 @@
   body {background-color: white;}
   .image-container {padding: 16px 0;}
   button {display: block;}
-  .error {background: red;}
+  .error {border: 2px solid red;}
+  #errormessage {display: none; background: #ffdddd;}
+  .error ~ #errormessage {display: block;}
 </style>
 </head>
 <body>
@@ -15,7 +17,7 @@
   <h1>Arduino Gameboy Printer Emulator Javascript Decoder</h1>
 
   <p>Full instructions located at the <a href="https://mofosyne.github.io/arduino-gameboy-printer-emulator/">official github page for Arduino Gameboy Printer Emulator</a></p>
-  
+
   <p>
     This is a simple converter that converts from gameboy camera hex dump (both single image or batch print) from the gbp_emulator.ino arduino gameboy printer emulator project. This was used, as it was a low friction to extend the existing codebase for single tile rendering by Marcus in <a href="http://www.huderlem.com/demos/gameboy2bpp.html">Gameboy 2BPP Graphics Format</a> page to deal with gameboy camera encoded payloads.
   </p>
@@ -428,7 +430,7 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 # Finished Pretending To Print for fun!
 !{"command":"INQY","status":{"lowbatt":0,"jam":0,"err":0,"pkterr":0,"unproc":0,"full":1,"bsy":0,"chk_err":0}}
 </textarea>
-
+<div id="errormessage"></div>
 <br>
 <label for="palette">Color palette</label>
 
