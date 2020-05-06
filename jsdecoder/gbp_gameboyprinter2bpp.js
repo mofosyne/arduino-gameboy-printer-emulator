@@ -31,13 +31,15 @@ document.addEventListener('DOMContentLoaded', function ()
 function refresh()
 {
     var data = document.getElementById("data_text");
-    data.classList.remove('error');  // Clear Error Indicator
+    data.classList.remove('error'); // Clear Error Indicator
+    document.getElementById('errormessage').innerText = '';
 
     try {
         render_gbp(data.value)
     } catch (error)
     {
-        data.classList.add('error');// Trigger error status
+        data.classList.add('error'); // Trigger error status
+        document.getElementById('errormessage').innerText = error.message;
     }
 }
 
@@ -98,16 +100,22 @@ function render_gbp(rawBytes)
     var currentImage = null;
 
     tiles_rawBytes_array
-        .map(function (raw_line)
+        .map(function (raw_line, line_number)
         {
             if ((raw_line.charAt(0) === '#')) return null;
 
             if ((raw_line.charAt(0) === '!'))
             {
-                var command = JSON.parse(raw_line.slice(1).trim());
-                if (command.command === 'INIT')
+                try
                 {
-                    return 'INIT'
+                    var command = JSON.parse(raw_line.slice(1).trim());
+                    if (command.command === 'INIT')
+                    {
+                        return 'INIT'
+                    }
+                } catch (error)
+                {
+                    throw new Error('Error while trying to parse JSON data block in line ' + (1 + line_number));
                 }
             }
             return (decode(raw_line));
@@ -120,7 +128,13 @@ function render_gbp(rawBytes)
                 currentImage = [];
                 images.push(currentImage);
             } else {
-                currentImage.push(tile_element);
+                try
+                {
+                    currentImage.push(tile_element);
+                } catch (error)
+                {
+                    throw new Error('No image start found. Maybe this line is missing? -> !{"command":"INIT"}')
+                }
             }
         })
 
