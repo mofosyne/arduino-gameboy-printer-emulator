@@ -84,8 +84,8 @@ After the download has complete. Copy the content of the console to the javascri
 One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
 
 A copy of the decoder is accessible here as well:
-* https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html
-* (original) http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html
+* [Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html)
+* [Old Decoder](http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html)
 
 You are all done!
 
