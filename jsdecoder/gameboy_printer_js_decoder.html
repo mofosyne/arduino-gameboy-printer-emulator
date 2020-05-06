@@ -1,8 +1,13 @@
-<html>
+<html lang="en">
 <head>
 <title>Gameboy Printer</title>
 <script type="text/javascript" src="./gbp_gameboyprinter2bpp.js"></script>
-<style> body {background-color: white;} </style>
+<style>
+  body {background-color: white;}
+  .image-container {padding: 16px 0;}
+  button {display: block;}
+  .error {background: red;}
+</style>
 </head>
 <body>
 <div id="content">
@@ -17,7 +22,7 @@
 
 <br>
 
-<textarea id="data_text" type="text" name="data" cols="110" rows="20">
+<textarea id="data_text" name="data" cols="110" rows="20">
 # GAMEBOY PRINTER EMULATION PROJECT
 # By Brian Khuu (2017)
 !{"command":"INIT"}
@@ -432,51 +437,12 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
   <option value="grafixkidgreen">Grafixkid Green</option>
   <option value="blackzero">Game Boy (Black Zero) palette</option>
 </select>
-<button id="submit_button" type="button" onclick="putImage()">Update photo</button> <a id="download" download="image.jpg"><button type="button" onClick="download()">Download</button></a><br/><br/>
-<canvas id="demo_canvas" width="480" height="432" style="image-rendering: pixelated;">
-  Your browser doesn't support the HTML5 canvas :(
-</canvas>
+
+<button id="submit_button" type="button">Update</button>
+<br>
+<div id="images"></div>
+
 </div>
-
-
-
-
-
-<script>
-
-  function putImage()
-  {
-    var canvas1 = document.getElementById("demo_canvas");
-    if (canvas1.getContext) {
-       var ctx = canvas1.getContext("2d");
-
-    }
-
-  }
-  function download(){
-    var currentdate = new Date();
-    var filename = "Game Boy Photo "
-                + currentdate.getFullYear()
-                + addZero((currentdate.getMonth()+1))
-                + addZero(currentdate.getDate()) + " - "
-                + addZero(currentdate.getHours()) + ""
-                + addZero(currentdate.getMinutes()) + ""
-                + addZero(currentdate.getSeconds())
-                + ".jpg";
-    var download = document.getElementById("download");
-    var image = document.getElementById("demo_canvas").toDataURL("image/jpeg")
-                .replace("image/jpeg", "image/octet-stream");
-    download.setAttribute("href", image);
-    download.setAttribute("download", filename);
-}
-
-function addZero(i) {
-  if (i < 10) {
-    i = "0" + i;
-  }
-  return i;
-}
-</script>
-
+<a id="download"></a>
 </body>
 </html>

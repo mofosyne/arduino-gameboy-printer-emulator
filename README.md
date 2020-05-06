@@ -1,4 +1,12 @@
-# arduino-gameboy-printer-emulator
+# Arduino Gameboy Printer Emulator
+
+## Telegram Gameboy Camera Chatroom
+
+Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
+
+**[https://t.me/gameboycamera](https://t.me/gameboycamera)**
+
+## About this project
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
@@ -9,6 +17,10 @@
 **[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
 
 **[Transferring Game Boy PocketCamera photos to a PC (Youtube Channel Re.Enthused)](https://www.youtube.com/watch?v=KttoycleK8c)**
+
+**[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
+
+**[Python Script to speed up dumping of images via pyserial (By lennartba)](https://github.com/lennartba/gbpinter_dump2image_py)**
 
 Code to emulate a gameboy printer via the gameboy link cable
 
@@ -71,8 +83,9 @@ After the download has complete. Copy the content of the console to the javascri
 
 One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
 
-A copy of the decoder is accessible via my website as well:
-    - http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html
+A copy of the decoder is accessible here as well:
+* https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html
+* (original) http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html
 
 You are all done!
 
@@ -1408,3 +1421,13 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 ```
 
 </details>
+
+-----------
+
+# Contributors / Thanks
+
+* @BjornB2 : For adding improvements in downloading images for jsdecoder folder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/15
+
+* @virtuaCode : For helping to fix rendering issues with the jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/9
+
+* @HerrZatacke : For adding the feature to render a separate image for each received image in jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/19 
