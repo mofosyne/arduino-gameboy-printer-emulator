@@ -170,8 +170,11 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
         case "gameboypocket":
             colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
             break;
-        case "gameboycolor":
+        case "gameboycoloreuus":
             colors = new Array("#ffffff", "#7bff30", "#0163c6", "#000000");
+            break;
+        case "gameboycolorjp":
+            colors = new Array("#ffffff", "#ffad63", "#37332f", "#000000");
             break;
         case "bgb":
             colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
