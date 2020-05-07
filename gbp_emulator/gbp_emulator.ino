@@ -736,7 +736,7 @@ void loop() {
     Serial.print("}");
 
 #if PRINT_LENGTH_AND_CRC
-    fprintf(&serialout, ": length: %u | CRC: %u | CRC CALC: %u (%u %u) | crc raw: %u %u |",
+    sprintf(printChars, ": length: %u | CRC: %u | CRC CALC: %u (%u %u) | crc raw: %u %u |",
                gbp_printer.gbp_packet.data_length,
                gbp_printer.gbp_packet.checksum,
                gbp_printer.gbp_packet_parser.calculated_checksum,
@@ -745,6 +745,7 @@ void loop() {
                gbp_printer.gbp_packet_parser.crc_high,
                gbp_printer.gbp_packet_parser.crc_low
             );
+    Serial.print(printChars);
 #endif
     Serial.print("\n");
 
