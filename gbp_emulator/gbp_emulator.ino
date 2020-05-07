@@ -54,15 +54,6 @@
 LiquidCrystal lcd(9,8,7,6,5,4);
 #endif
 
-/* Serial Printf In Arduino (http://playground.arduino.cc/Main/Printf) */
-static FILE serialout = {0} ;      // serialout FILE structure
-
-static int serial_putchar(char ch, FILE* stream)
-{
-    Serial.write(ch) ;
-    return (0) ;
-}
-
 /* Packet Parsing State Machine State */
 typedef enum gbp_parse_state_t
 { // Indicates the stage of the parsing processing (syncword is not parsed)
@@ -167,22 +158,24 @@ typedef struct gbp_printer_t
     Global Vars
 */
 gbp_printer_t gbp_printer; // Overall Structure
+char printChars[120]; // buffer for sprintf
 
 /*
     Static Functions
 */
 void gbp_status_byte_print_as_json_fields(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
-   fprintf(&serialout, "{");
-   fprintf(&serialout, "\"%s\":%d", "lowbatt", printer_status_ptr->low_battery       );
-   fprintf(&serialout, ",\"%s\":%d", "jam", printer_status_ptr->paper_jam         );
-   fprintf(&serialout, ",\"%s\":%d", "err", printer_status_ptr->other_error       );
-   fprintf(&serialout, ",\"%s\":%d", "pkterr", printer_status_ptr->packet_error      );
-   fprintf(&serialout, ",\"%s\":%d", "unproc", printer_status_ptr->unprocessed_data  );
-   fprintf(&serialout, ",\"%s\":%d", "full", printer_status_ptr->print_buffer_full );
-   fprintf(&serialout, ",\"%s\":%d", "bsy", printer_status_ptr->printer_busy      );
-   fprintf(&serialout, ",\"%s\":%d", "chk_err", printer_status_ptr->checksum_error    );
-   fprintf(&serialout, "}");
+  sprintf(printChars, "{\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d}",
+      "lowbatt", printer_status_ptr->low_battery,
+      "jam", printer_status_ptr->paper_jam,
+      "err", printer_status_ptr->other_error,
+      "pkterr", printer_status_ptr->packet_error,
+      "unproc", printer_status_ptr->unprocessed_data,
+      "full", printer_status_ptr->print_buffer_full,
+      "bsy", printer_status_ptr->printer_busy,
+      "chk_err", printer_status_ptr->checksum_error
+    );
+  Serial.print(printChars);
 }
 
 /******************************************************************************/
@@ -674,11 +667,6 @@ void setup()
   // Has to be fast or it will not trasfer the image fast enough to the computer
   Serial.begin(115200);
 
-  // Serial fprintf setup
-  //e.g. fprintf(&serialout, ">> SD:%d SO:%d SI:%d\n", serial_data_state, serial_out_state, serial_input_state ) ;
-  fdev_setup_stream (&serialout, serial_putchar, NULL, _FDEV_SETUP_WRITE);
-
-
   /* Pins from gameboy link cable */
   pinMode(GBP_SC_PIN, INPUT);
   pinMode(GBP_SO_PIN, INPUT);
@@ -716,32 +704,34 @@ void loop() {
     switch (gbp_printer.gbp_packet.command)
     {
       case GBP_COMMAND_INIT:
-        fprintf(&serialout, "\"INIT\"");
+        Serial.print("\"INIT\"");
         break;
       case GBP_COMMAND_DATA:
-        fprintf(&serialout, "\"DATA\"");
-        fprintf(&serialout, ",\"compressed\":%d,\"more\":%d",
+        Serial.print("\"DATA\"");
+        sprintf(printChars, ",\"compressed\":%d,\"more\":%d",
             gbp_printer.gbp_packet.compression,
             gbp_printer.gbp_packet.data_length != 0
           );
+        Serial.print(printChars);
         break;
       case GBP_COMMAND_PRINT:
-        fprintf(&serialout, "\"PRNT\"");
-        fprintf(&serialout, ",\"sheets\":%d,\"margin_upper\":%d,\"margin_lower\":%d,\"pallet\":%d,\"density\":%d ",
+        Serial.print("\"PRNT\"");
+        sprintf(printChars, ",\"sheets\":%d,\"margin_upper\":%d,\"margin_lower\":%d,\"pallet\":%d,\"density\":%d ",
             (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_SHEETS  ]   )        ,
             (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]>>4) & 0x0F ,
             (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]   ) & 0x0F ,
             (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PALETTE_VALUE  ]   )        ,
             (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PRINT_DENSITY  ]   )
           );
+        Serial.print(printChars);
         break;
       case GBP_COMMAND_INQUIRY:
-        fprintf(&serialout, "\"INQY\"");
-        fprintf(&serialout, ",\"status\":");
+        Serial.print("\"INQY\"");
+        Serial.print(",\"status\":");
         gbp_status_byte_print_as_json_fields(&(gbp_printer.gbp_printer_status));
         break;
       default:
-        fprintf(&serialout, "\"UKNO\"");
+        Serial.print("\"UKNO\"");
     }
     Serial.print("}");
 
