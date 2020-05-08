@@ -47,18 +47,36 @@ function newCanvas()
 {
     var container = document.createElement('div');
     var canvas = document.createElement('canvas');
-    var downloadButton = document.createElement('button');
-
     container.className = 'image-container';
-
     canvas.width = 480;
-    downloadButton.innerText = 'Download';
 
+    var downloadButtonJPG = null;
+    var downloadButton = document.createElement('button');
+    downloadButton.setAttribute('data-filetype', 'png');
     downloadButton.addEventListener('click', download);
+
+    if (canvas.msToBlob) {
+        downloadButton.innerText = 'Download';
+    } else {
+        downloadButton.innerText = 'Download PNG';
+
+        downloadButtonJPG = document.createElement('button');
+        downloadButtonJPG.setAttribute('data-filetype', 'jpg');
+        downloadButtonJPG.addEventListener('click', download);
+        downloadButtonJPG.innerText = 'Download JPG';
+    }
+
 
     document.getElementById('images').appendChild(container);
     container.appendChild(canvas);
+
+
     container.appendChild(downloadButton);
+
+    if (downloadButtonJPG) {
+        container.appendChild(downloadButtonJPG);
+    }
+
     return canvas;
 }
 
@@ -235,7 +253,9 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
 function download(event)
 {
 
-    var canvas = event.target.previousSibling;
+    var button = event.target;
+    var fileType = button.getAttribute('data-filetype');
+    var canvas = button.parentNode.querySelector('canvas');
 
     var currentdate = new Date();
     var filename = "Game Boy Photo "
@@ -244,13 +264,31 @@ function download(event)
         + addZero(currentdate.getDate()) + " - "
         + addZero(currentdate.getHours()) + ""
         + addZero(currentdate.getMinutes()) + ""
-        + addZero(currentdate.getSeconds())
-        + ".png";
+        + addZero(currentdate.getSeconds());
+
+
+    if (canvas.msToBlob)
+    {
+        window.navigator.msSaveBlob(canvas.msToBlob(), filename + '.png');
+        return;
+    }
+
+    var image;
+    switch (fileType)
+    {
+        case 'png':
+            image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+            break;
+        case 'jpg':
+            image = canvas.toDataURL('image/jpeg', 1).replace('image/jpeg', 'image/octet-stream');
+            break;
+        default:
+            break;
+    }
+
     var download = document.getElementById("download");
-    var image = canvas.toDataURL("image/png")
-        .replace("image/png", "image/octet-stream");
     download.setAttribute("href", image);
-    download.setAttribute("download", filename);
+    download.setAttribute("download", filename + '.' + fileType);
     download.click();
 }
 
