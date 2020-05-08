@@ -581,11 +581,11 @@ static bool gbp_printer_init(struct gbp_printer_t *ptr)
 
 /**************************************************************
  **************************************************************/
-# ifndef ICACHE_RAM_ATTR
-# define ICACHE_RAM_ATTR
-# endif
-
-void ICACHE_RAM_ATTR serialClock_ISR(void)
+void
+#ifdef ESP8266
+ICACHE_RAM_ATTR
+#endif
+serialClock_ISR(void)
 {
   int rx_bitState;
 
