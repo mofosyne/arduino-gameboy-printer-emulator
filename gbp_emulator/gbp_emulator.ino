@@ -158,30 +158,24 @@ typedef struct gbp_printer_t
     Global Vars
 */
 gbp_printer_t gbp_printer; // Overall Structure
+char printChars[120]; // buffer for sprintf
 
 /*
     Static Functions
 */
 void gbp_status_byte_print_as_json_fields(struct gbp_printer_status_t *printer_status_ptr)
 { // This is returns a gameboy printer status byte (Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
-  Serial.print("{");
-  Serial.print("\"lowbatt\":");
-  Serial.print(printer_status_ptr->low_battery, DEC);
-  Serial.print(",\"jam\":");
-  Serial.print(printer_status_ptr->paper_jam, DEC);
-  Serial.print(",\"err\":");
-  Serial.print(printer_status_ptr->other_error, DEC);
-  Serial.print(",\"pkterr\":");
-  Serial.print(printer_status_ptr->packet_error, DEC);
-  Serial.print(",\"unproc\":");
-  Serial.print(printer_status_ptr->unprocessed_data, DEC);
-  Serial.print(",\"full\":");
-  Serial.print(printer_status_ptr->print_buffer_full, DEC);
-  Serial.print(",\"bsy\":");
-  Serial.print(printer_status_ptr->printer_busy, DEC);
-  Serial.print(",\"chk_err\":");
-  Serial.print(printer_status_ptr->checksum_error, DEC);
-  Serial.print("}");
+  sprintf(printChars, "{\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d,\"%s\":%d}",
+      "lowbatt", printer_status_ptr->low_battery,
+      "jam", printer_status_ptr->paper_jam,
+      "err", printer_status_ptr->other_error,
+      "pkterr", printer_status_ptr->packet_error,
+      "unproc", printer_status_ptr->unprocessed_data,
+      "full", printer_status_ptr->print_buffer_full,
+      "bsy", printer_status_ptr->printer_busy,
+      "chk_err", printer_status_ptr->checksum_error
+    );
+  Serial.print(printChars);
 }
 
 /******************************************************************************/
@@ -714,24 +708,22 @@ void loop() {
         break;
       case GBP_COMMAND_DATA:
         Serial.print("\"DATA\"");
-        Serial.print(",\"compressed\":");
-        Serial.print(gbp_printer.gbp_packet.compression, DEC);
-        Serial.print(",\"more\":");
-        Serial.print(gbp_printer.gbp_packet.data_length != 0, DEC);           
+        sprintf(printChars, ",\"compressed\":%d,\"more\":%d",
+            gbp_printer.gbp_packet.compression,
+            gbp_printer.gbp_packet.data_length != 0
+          );
+        Serial.print(printChars);
         break;
       case GBP_COMMAND_PRINT:
         Serial.print("\"PRNT\"");
-        Serial.print(",\"sheets\":");
-        Serial.print(gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_SHEETS], DEC);
-        Serial.print(",\"margin_upper\":");
-        Serial.print((gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]>>4) & 0x0F, DEC);
-        Serial.print(",\"margin_lower\":");
-        Serial.print(gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED] & 0x0F, DEC);
-        Serial.print(",\"pallet\":");
-        Serial.print(gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PALETTE_VALUE], DEC);
-        Serial.print(",\"density\":");
-        Serial.print(gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PRINT_DENSITY], DEC);
-        break;
+        sprintf(printChars, ",\"sheets\":%d,\"margin_upper\":%d,\"margin_lower\":%d,\"pallet\":%d,\"density\":%d ",
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_SHEETS  ]   )        ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]>>4) & 0x0F ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_NUM_OF_LINEFEED]   ) & 0x0F ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PALETTE_VALUE  ]   )        ,
+            (gbp_printer.gbp_print_settings_buffer[GBP_PRINT_BYTE_INDEX_PRINT_DENSITY  ]   )
+          );
+        Serial.print(printChars);
         break;
       case GBP_COMMAND_INQUIRY:
         Serial.print("\"INQY\"");
@@ -744,21 +736,16 @@ void loop() {
     Serial.print("}");
 
 #if PRINT_LENGTH_AND_CRC
-    Serial.print(": length: ");
-    Serial.print(gbp_printer.gbp_packet.data_length, DEC);
-    Serial.print(" | CRC: ");
-    Serial.print(gbp_printer.gbp_packet.checksum, DEC);
-    Serial.print(" | CRC CALC: ");
-    Serial.print(gbp_printer.gbp_packet_parser.calculated_checksum, DEC);
-    Serial.print(" (");
-    Serial.print(((gbp_printer.gbp_packet_parser.calculated_checksum & 0xFF00) >> 8), DEC);
-    Serial.print(" ");
-    Serial.print(gbp_printer.gbp_packet_parser.calculated_checksum & 0x00FF, DEC);
-    Serial.print(") | crc raw: ");
-    Serial.print(gbp_printer.gbp_packet_parser.crc_high, DEC);
-    Serial.print(" ");
-    Serial.print(gbp_printer.gbp_packet_parser.crc_low, DEC);
-    Serial.print(" |");
+    sprintf(printChars, ": length: %u | CRC: %u | CRC CALC: %u (%u %u) | crc raw: %u %u |",
+               gbp_printer.gbp_packet.data_length,
+               gbp_printer.gbp_packet.checksum,
+               gbp_printer.gbp_packet_parser.calculated_checksum,
+               ((gbp_printer.gbp_packet_parser.calculated_checksum & 0xFF00) >> 8),
+               gbp_printer.gbp_packet_parser.calculated_checksum & 0x00FF,
+               gbp_printer.gbp_packet_parser.crc_high,
+               gbp_printer.gbp_packet_parser.crc_low
+            );
+    Serial.print(printChars);
 #endif
     Serial.print("\n");
 
