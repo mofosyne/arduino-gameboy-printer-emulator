@@ -1,5 +1,7 @@
 # Arduino Gameboy Printer Emulator
 
+![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
+
 ## Telegram Gameboy Camera Chatroom
 
 Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
