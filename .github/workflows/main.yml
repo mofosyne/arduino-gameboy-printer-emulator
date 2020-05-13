@@ -14,33 +14,40 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
+    name: ${{ matrix.arduino-boards-fqbn }} - test compiling
+
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
+
+    strategy:
+      matrix:
+        arduino-boards-fqbn:
+          - arduino:avr:nano
+          - arduino:avr:uno
+          - esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
+        include:
+          - arduino-boards-fqbn: arduino:avr:nano
+
+          - arduino-boards-fqbn: arduino:avr:uno
+
+          - arduino-boards-fqbn: esp8266:esp8266:huzzah:eesz=4M3M,xtal=80
+            platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+            
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    # Runs a single command using the runners shell
-    - name: Run a one-line script
-      run: echo Hello, world!
-
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
-
     - name: Test compile for Arduino
       uses: ArminJo/arduino-test-compile@v2.2.0
-      #with:
+      with:
         # Version of arduino-cli to use when builing. Current (3/2020) one is 0.9.0.
         #cli-version: # optional, default is latest
         # Comma sepatated list of patterns or filenames (without path) of the sketch(es) to test compile. Useful if the sketch is a *.cpp or *.c file or only one sketch in the repository should be compiled.
         #sketch-names: # optional, default is *.ino
         # Fully Qualified Board Name of the Arduino board. You may add a suffix behind the fqbn with "|" to specify one board for e.g. different compile options like arduino:avr:uno|trace.
-        #arduino-board-fqbn: # optional, default is arduino:avr:uno
+        arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }} # optional, default is arduino:avr:uno
         # The platform specifier, if you require a fixed version like arduino:avr@1.8.2 or do not want the specifier derived from the 2 first elements of the arduino-board-fqbn
         #arduino-platform: # optional, default is 
         # The platform URL for the required board description if arduino-board-fqbn does not start with "arduino:".
