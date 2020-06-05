@@ -17,6 +17,8 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
 
+**[HerrZatacke : Web Decoder For Gameboy Camera Images With Custom Colour Pallet](https://herrzatacke.github.io/gb-printer-web)** : **[(Bjorn Writeup About This Project)](https://gameboymaniac.com/new-website-for-decoding-game-boy-photos/)**
+
 **[HerrZatacke : GameBoy printer direct serial to gif converter](https://github.com/HerrZatacke/direct-serial-to-gif-converter)**
 
 **[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
