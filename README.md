@@ -2,6 +2,8 @@
 
 ![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
 
+Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
+
 ## Telegram Gameboy Camera Chatroom
 
 Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
