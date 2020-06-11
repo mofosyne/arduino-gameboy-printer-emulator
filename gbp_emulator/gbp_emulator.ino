@@ -17,7 +17,7 @@
 //  \_5__3__1_/   (at cable)
 //
 
-#ifdef ESP8266 //        Pin Setup for ESP8211 Devices
+#ifdef ESP8266 //        Pin Setup for ESP8266 Devices
 //                  | Arduino Pin | Gameboy Link Pin  |
 #define GBP_VCC_PIN               // Pin 1            : 5.0V (Unused)
 #define GBP_SO_PIN       13       // Pin 2            : ESP-pin 7 MOSI (Serial OUTPUT) -> Arduino 13
