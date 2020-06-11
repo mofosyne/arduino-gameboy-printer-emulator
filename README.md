@@ -1,5 +1,9 @@
 # Arduino Gameboy Printer Emulator
 
+![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
+
+Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
+
 ## Telegram Gameboy Camera Chatroom
 
 Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
@@ -14,6 +18,8 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 **[Was used by ekeler for a gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
 
 **[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
+
+**[HerrZatacke : Web Decoder For Gameboy Camera Images With Custom Colour Pallet](https://herrzatacke.github.io/gb-printer-web)** : **[(Bjorn Writeup About This Project)](https://gameboymaniac.com/new-website-for-decoding-game-boy-photos/)**
 
 **[HerrZatacke : GameBoy printer direct serial to gif converter](https://github.com/HerrZatacke/direct-serial-to-gif-converter)**
 
