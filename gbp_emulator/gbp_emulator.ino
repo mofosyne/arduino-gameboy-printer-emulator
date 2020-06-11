@@ -16,15 +16,26 @@
 // |  6  4  2  |
 //  \_5__3__1_/   (at cable)
 //
+
+#ifdef ESP8266 //        Pin Setup for ESP8211 Devices
 //                  | Arduino Pin | Gameboy Link Pin  |
 #define GBP_VCC_PIN               // Pin 1            : 5.0V (Unused)
-#define GBP_SO_PIN       4        // Pin 2            : Serial OUTPUT
-#define GBP_SI_PIN       3        // Pin 3            : Serial INPUT
+#define GBP_SO_PIN       13       // Pin 2            : ESP-pin 7 MOSI (Serial OUTPUT) -> Arduino 13
+#define GBP_SI_PIN       12       // Pin 3            : ESP-pin 6 MISO (Serial INPUT)  -> Arduino 12
 #define GBP_SD_PIN                // Pin 4            : Serial Data  (Unused)
-#define GBP_SC_PIN       2        // Pin 5            : Serial Clock (Interrupt)
+#define GBP_SC_PIN       14       // Pin 5            : ESP-pin 5 CLK  (Serial Clock)  -> Arduino 14
 #define GBP_GND_PIN               // Pin 6            : GND (Attach to GND Pin)
-
-#define LED_STATUS_PIN 13 // Blink on packet reception
+#define LED_STATUS_PIN    2       // Internal LED blink on packet reception
+#else //                   Pin Setup for Arduinos
+//                  | Arduino Pin | Gameboy Link Pin  |
+#define GBP_VCC_PIN               // Pin 1            : 5.0V (Unused)
+#define GBP_SO_PIN        4       // Pin 2            : Serial OUTPUT
+#define GBP_SI_PIN        3       // Pin 3            : Serial INPUT
+#define GBP_SD_PIN                // Pin 4            : Serial Data  (Unused)
+#define GBP_SC_PIN        2       // Pin 5            : Serial Clock (Interrupt)
+#define GBP_GND_PIN               // Pin 6            : GND (Attach to GND Pin)
+#define LED_STATUS_PIN   13       // Internal LED blink on packet reception
+#endif
 
 #define GBP_PACKET_PRETEND_PRINT_TIME_MS 2000 // ms to pretend to print for
 
