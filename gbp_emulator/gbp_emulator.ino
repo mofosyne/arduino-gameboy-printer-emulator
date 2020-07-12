@@ -37,7 +37,7 @@
 #define LED_STATUS_PIN   13       // Internal LED blink on packet reception
 #endif
 
-#define GBP_PACKET_PRETEND_PRINT_TIME_MS 2000 // ms to pretend to print for
+#define GBP_PACKET_PRETEND_PRINT_TIME_MS 100 // ms to pretend to print for
 
 // You can disable the LCD screen with no problems. It only displays my name
 #define LCD_DISPLAY_MESSAGE_ENABLE 0
