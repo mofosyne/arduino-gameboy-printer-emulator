@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:nano",
+    "configuration": "cpu=atmega328old",
+    "sketch": "gbp_dev.ino",
+    "port": "/dev/tty.usbserial-A800F30E"
+}
