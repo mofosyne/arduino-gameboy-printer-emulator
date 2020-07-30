@@ -7,6 +7,14 @@
 
 #define GBP_PKT10_TIMEOUT_MS 5000
 
+// Testing
+#define TEST_CHECKSUM_FORCE_FAIL
+
+// Feature
+//#define FEATURE_CHECKSUM_SUPPORTED ///< WIP
+
+
+
 /******************************************************************************/
 // # Circular Byte Buffer For Embedded Applications (Index Based)
 // Author: Brian Khuu (July 2020) (briankhuu.com) (mofosyne@gmail.com)
@@ -23,6 +31,12 @@ typedef struct gpb_cbuff_t
   uint8_t *buffer; ///< Data Buffer
   size_t head;     ///< Head Index
   size_t tail;     ///< Tail Index
+
+#ifdef FEATURE_CHECKSUM_SUPPORTED
+  // Temp
+  size_t countTemp;    ///< Number of items in the buffer
+  size_t headTemp;     ///< Head Index
+#endif // FEATURE_CHECKSUM_SUPPORTED
 } gpb_cbuff_t;
 
 static inline bool gpb_cbuff_Init(gpb_cbuff_t *cb, size_t capacity, uint8_t *buffPtr)
@@ -33,10 +47,10 @@ static inline bool gpb_cbuff_Init(gpb_cbuff_t *cb, size_t capacity, uint8_t *buf
   // Init Struct
   *cb = emptyCB;
   cb->capacity = capacity;
-  cb->buffer = buffPtr;
-  cb->count = 0;
-  cb->head = 0;
-  cb->tail = 0;
+  cb->buffer   = buffPtr;
+  cb->count    = 0;
+  cb->head     = 0;
+  cb->tail     = 0;
   return true; ///< Successful
 }
 
@@ -45,6 +59,7 @@ static inline bool gpb_cbuff_Reset(gpb_cbuff_t *cb)
   cb->count = 0;
   cb->head = 0;
   cb->tail = 0;
+
   return true; ///< Successful
 }
 
@@ -54,9 +69,9 @@ static inline bool gpb_cbuff_Enqueue(gpb_cbuff_t *cb, uint8_t b)
   if (cb->count >= cb->capacity)
     return false; ///< Failed
   // Push value
-  cb->buffer[cb->tail] = b;
-  // Increment tail
-  cb->tail = (cb->tail + 1) % cb->capacity;
+  cb->buffer[cb->head] = b;
+  // Increment head
+  cb->head = (cb->head + 1) % cb->capacity;
   cb->count = cb->count + 1;
   return true; ///< Successful
 }
@@ -67,33 +82,51 @@ static inline bool gpb_cbuff_Dequeue(gpb_cbuff_t *cb, uint8_t *b)
   if (cb->count == 0)
     return false; ///< Failed
   // Pop value
-  *b = cb->buffer[cb->head];
-  // Increment head
-  cb->head = (cb->head + 1) % cb->capacity;
+  *b = cb->buffer[cb->tail];
+  // Increment tail
+  cb->tail = (cb->tail + 1) % cb->capacity;
   cb->count = cb->count - 1;
   return true; ///< Successful
 }
 
-static inline size_t gpb_cbuff_Capacity(gpb_cbuff_t *cb)
+static inline size_t gpb_cbuff_Capacity(gpb_cbuff_t *cb){ return cb->capacity;}
+static inline size_t gpb_cbuff_Count(gpb_cbuff_t *cb)   { return cb->count;}
+static inline bool gpb_cbuff_IsFull(gpb_cbuff_t *cb)    { return (cb->count >= cb->capacity);}
+static inline bool gpb_cbuff_IsEmpty(gpb_cbuff_t *cb)   { return (cb->count == 0);}
+
+#ifdef FEATURE_CHECKSUM_SUPPORTED
+/* Temp Enqeue */
+static inline bool gpb_cbuff_ResetTemp(gpb_cbuff_t *cb)
 {
-  return cb->capacity;
+  cb->countTemp = 0;
+  cb->headTemp  = cb->head ;
 }
 
-static inline size_t gpb_cbuff_Count(gpb_cbuff_t *cb)
+static inline bool gpb_cbuff_AcceptTemp(gpb_cbuff_t *cb)
 {
-  return cb->count;
+  cb->count += cb->countTemp;
+  cb->head  = cb->headTemp  ;
+  return true; ///< Successful
 }
 
-static inline bool gpb_cbuff_IsFull(gpb_cbuff_t *cb)
+static inline bool gpb_cbuff_EnqueueTemp(gpb_cbuff_t *cb, uint8_t b)
 {
-  return (cb->count >= cb->capacity);
+  // Full
+  if (cb->countTemp >= (cb->capacity-cb->count))
+    return false; ///< Failed
+  // Push value
+  cb->buffer[cb->headTemp] = b;
+  // Increment headTemp
+  cb->headTemp = (cb->headTemp + 1) % cb->capacity;
+  cb->countTemp = cb->countTemp + 1;
+  return true; ///< Successful
 }
+#else
+#define gpb_cbuff_EnqueueTemp(CB, B) gpb_cbuff_Enqueue(CB, B)
+#endif // FEATURE_CHECKSUM_SUPPORTED
 
-static inline bool gpb_cbuff_IsEmpty(gpb_cbuff_t *cb)
-{
-  return (cb->count == 0);
-}
-
+/******************************************************************************/
+/******************************************************************************/
 
 #ifdef GBP_FEATURE_RAW_DUMP
 static struct
@@ -104,6 +137,7 @@ static struct
   uint16_t lastPacketStatus;
 } packetRawDump;
 #endif
+
 
 /******************************************************************************/
 /******************************************************************************/
@@ -365,6 +399,12 @@ bool gpb_pktIO_reset(void)
 
   // Reset data buffer
   gpb_cbuff_Reset(&gpb_pktIO.dataBuffer);
+
+#ifdef FEATURE_CHECKSUM_SUPPORTED
+  // Reset temp Buffer
+  gpb_cbuff_ResetTemp(&gpb_pktIO.dataBuffer);
+#endif // FEATURE_CHECKSUM_SUPPORTED
+
   return true;
 }
 
@@ -542,20 +582,20 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
 #ifdef GBP_FEATURE_RAW_DUMP
   if (gpb_pktIO.packetState == GBP_PKT10_PARSE_HEADER_COMMAND_AND_COMPRESSION)
   {
-      gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, GBP_SYNC_WORD_0);
-      gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, GBP_SYNC_WORD_1);
+      gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, GBP_SYNC_WORD_0);
+      gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, GBP_SYNC_WORD_1);
       packetRawDump.totalBytesReceived += 2;
   }
   switch (gpb_sio.mode)
   {
     case GPB_SIO_MODE_8BITS                :
-      gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
+      gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
       packetRawDump.totalBytesReceived += 1;
       break;
     case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
     case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
-      gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 8) & 0xFF));
-      gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
+      gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 8) & 0xFF));
+      gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
       packetRawDump.totalBytesReceived += 2;
       break;
     default:
@@ -620,7 +660,7 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       {
         case GBP_COMMAND_DATA:
 #ifndef GBP_FEATURE_RAW_DUMP
-          gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, (uint8_t)(gpb_sio.rx_buff & 0xFF));
+          gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)(gpb_sio.rx_buff & 0xFF));
 #endif
           break;
         case GBP_COMMAND_PRINT:
@@ -658,14 +698,25 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       gpb_pktIO.checksumCalc += gpb_pktIO.compression            ;
       gpb_pktIO.checksumCalc += (gpb_pktIO.data_length >> 8)&0xFF;
       gpb_pktIO.checksumCalc += (gpb_pktIO.data_length >> 0)&0xFF;
-#if 0 // Disabled as we are streaming directly instead
+
+#ifdef FEATURE_CHECKSUM_SUPPORTED
       // Dev Note: Was used to confirm that packetizer was working
       // This will cause the printer to retry sending this packet
       if (gpb_pktIO.checksum != gpb_pktIO.checksumCalc)
       {
         gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, true);
       }
-#endif
+#endif // FEATURE_CHECKSUM_SUPPORTED
+
+#ifdef TEST_CHECKSUM_FORCE_FAIL
+      static int checksumFailToggle = 0;
+      if (checksumFailToggle > 2)
+      {
+        checksumFailToggle = 0;
+        gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, true);
+      }
+      checksumFailToggle++;
+#endif // TEST_CHECKSUM_FORCE_FAIL
 
       // Update status data : Device Status
       switch (gpb_pktIO.command)
@@ -685,7 +736,7 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
           }
           else
           {
-            //gpb_status_bit_update_unprocessed_data (gpb_pktIO.statusBuffer, false);
+            gpb_status_bit_update_unprocessed_data (gpb_pktIO.statusBuffer, false);
             //gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
           }
           break;
@@ -746,6 +797,20 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
         default:
           break;
       }
+
+#ifdef FEATURE_CHECKSUM_SUPPORTED
+      // temp buff handling
+      if (gpb_status_bit_getbit_checksum_error(gpb_pktIO.statusBuffer))
+      {
+        // On checksum error, throw away old data. GBP will resend
+        gpb_cbuff_ResetTemp(&gpb_pktIO.dataBuffer);
+      }
+      else
+      {
+        // Checksum ok, keep the new data
+        gpb_cbuff_AcceptTemp(&gpb_pktIO.dataBuffer);
+      }
+#endif // FEATURE_CHECKSUM_SUPPORTED
 
       // Cleanup
       gpb_pktIO.packetState = GBP_PKT10_PARSE_HEADER_COMMAND_AND_COMPRESSION;
