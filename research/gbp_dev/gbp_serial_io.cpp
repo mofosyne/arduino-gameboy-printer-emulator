@@ -8,7 +8,9 @@
 #define GBP_PKT10_TIMEOUT_MS 5000
 
 // Testing
-#define TEST_CHECKSUM_FORCE_FAIL
+//#define TEST_CHECKSUM_FORCE_FAIL
+//#define TEST_PRETEND_BUFFER_FULL
+
 
 // Feature
 //#define FEATURE_CHECKSUM_SUPPORTED ///< WIP
@@ -718,6 +720,22 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       checksumFailToggle++;
 #endif // TEST_CHECKSUM_FORCE_FAIL
 
+#ifdef TEST_PRETEND_BUFFER_FULL
+      static int fakeFullToggle = 0;
+      if (fakeFullToggle > 5)
+      {
+        fakeFullToggle = 0;
+        gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
+      }
+      else
+      {
+        gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
+      }
+      fakeFullToggle++;
+#endif
+
+
+
       // Update status data : Device Status
       switch (gpb_pktIO.command)
       {
@@ -736,7 +754,7 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
           }
           else
           {
-            gpb_status_bit_update_unprocessed_data (gpb_pktIO.statusBuffer, false);
+            //gpb_status_bit_update_unprocessed_data (gpb_pktIO.statusBuffer, false);
             //gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
           }
           break;
