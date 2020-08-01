@@ -91,6 +91,18 @@ static inline bool gpb_cbuff_Dequeue(gpb_cbuff_t *cb, uint8_t *b)
   return true; ///< Successful
 }
 
+static inline bool gpb_cbuff_Dequeue_Peek(gpb_cbuff_t *cb, uint8_t *b, uint32_t offset)
+{
+  // Empty
+  if (cb->count == 0)
+    return false; ///< Failed
+  if (cb->count < offset)
+    return false; ///< Failed
+  // Pop value
+  *b = cb->buffer[(cb->tail + offset) % cb->capacity];
+  return true; ///< Successful
+}
+
 static inline size_t gpb_cbuff_Capacity(gpb_cbuff_t *cb){ return cb->capacity;}
 static inline size_t gpb_cbuff_Count(gpb_cbuff_t *cb)   { return cb->count;}
 static inline bool gpb_cbuff_IsFull(gpb_cbuff_t *cb)    { return (cb->count >= cb->capacity);}
@@ -266,6 +278,13 @@ uint8_t gbp_dataBuff_getByte(void)
   {
     gbp_set_unprocessed_data(false);
   }
+  return b;
+}
+
+uint8_t gbp_dataBuff_getByte_Peek(uint32_t offset)
+{
+  uint8_t b = 0;
+  gpb_cbuff_Dequeue_Peek(&gpb_pktIO.dataBuffer, &b, offset);
   return b;
 }
 
@@ -596,6 +615,15 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       break;
     case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
     case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
+      if (gpb_pktIO.packetState == GBP_PKT10_PARSE_DUMMY)
+      {
+        // This is for dumping status byte. This is only done during the dummy buffer byte phase
+        // so might as well use these bytes for documenting response of the status byte
+        gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.tx_buff >> 8) & 0xFF));
+        gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.tx_buff >> 0) & 0xFF));
+        packetRawDump.totalBytesReceived += 2;
+        break;
+      }
       gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 8) & 0xFF));
       gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
       packetRawDump.totalBytesReceived += 2;

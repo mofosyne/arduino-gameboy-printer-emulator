@@ -1,7 +1,7 @@
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 
-//#define GBP_FEATURE_RAW_DUMP
+#define GBP_FEATURE_RAW_DUMP
 
 //#define GPB_BUFFER_SIZE 650  // 640 bytes usually
 #define GPB_BUFFER_SIZE 1000  // 640 bytes usually
@@ -38,6 +38,8 @@ int gbp_printInstruction_print_density(void);
 /* Buff */
 size_t gbp_dataBuff_getByteCount(void);
 uint8_t gbp_dataBuff_getByte(void);
+uint8_t gbp_dataBuff_getByte_Peek(uint32_t offset);
+
 
 /* printer status update */
 void gbp_set_low_battery      (bool val);

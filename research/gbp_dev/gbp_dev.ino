@@ -88,8 +88,15 @@ void setup(void)
   digitalWrite(LED_STATUS_PIN, LOW);
 
   /* Welcome Message */
+#ifdef GBP_FEATURE_RAW_DUMP
+  Serial.print("/* GAMEBOY PRINTER EMULATION PROJECT (Packet Capture Mode) */\n");
+  Serial.print("/* By Brian Khuu (2020) */\n");
+  Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
+  Serial.print("//       except for the last two bytes which is from the printer\n");
+#else
   Serial.print("# GAMEBOY PRINTER EMULATION PROJECT\n");
   Serial.print("# By Brian Khuu (2020)\n");
+#endif
 
   /* Setup */
   gpb_pktIO_init(sizeof(gbp_buffer), gbp_buffer);
@@ -99,89 +106,77 @@ void setup(void)
 } // setup()
 #endif
 
+
+char *gbpCommand_toStr(int val)
+{
+  switch (val)
+  {
+    case GBP_COMMAND_INIT    : return "INIT";
+    case GBP_COMMAND_PRINT   : return "PRINT";
+    case GBP_COMMAND_DATA    : return "DATA";
+    case GBP_COMMAND_BREAK   : return "BREAK";
+    case GBP_COMMAND_INQUIRY : return "INQUIRY";
+    default: return "?";
+  }
+}
+
+
 #if 1
 void loop()
 {
 #ifdef GBP_FEATURE_RAW_DUMP
   /* tiles received */
-  static uint32_t btotal = 0;
-  static uint32_t bx = 0;
-  if (gbp_dataBuff_getByteCount() > 0)
+  static uint32_t byteTotal = 0;
+  static uint32_t pktTotalCount = 0;
+  static uint32_t pktByteIndex = 0;
+  static uint16_t pktDataLength = 0;
+  const size_t dataBuffCount = gbp_dataBuff_getByteCount();
+  if (
+      ((pktByteIndex != 0)&&(dataBuffCount>0))||
+      ((pktByteIndex == 0)&&(dataBuffCount>=6))
+      )
   {
-    for (int i = 0 ; i < gbp_dataBuff_getByteCount() ; i++)
+    const char nibbleToCharLUT[] = "0123456789ABCDEF";
+    uint8_t data_8bit = 0;
+    for (int i = 0 ; i < dataBuffCount ; i++)
     { // Display the data payload encoded in hex
-      const uint8_t data_8bit = gbp_dataBuff_getByte();
-      const char nibbleToCharLUT[] = "0123456789ABCDEF";
+      // Start of a new packet
+      if (pktByteIndex == 0)
+      {
+        pktDataLength = gbp_dataBuff_getByte_Peek(4);
+        pktDataLength |= (gbp_dataBuff_getByte_Peek(5)<<8)&0xFF00;
+        Serial.print("/* ");
+        Serial.print(pktTotalCount);
+        Serial.print(" : ");
+        Serial.print(gbpCommand_toStr(gbp_dataBuff_getByte_Peek(2)));
+        Serial.print(" */\n");
+        digitalWrite(LED_STATUS_PIN, HIGH);
+      }
+      // Print Hex Byte
+      data_8bit = gbp_dataBuff_getByte();
+      Serial.print((char)'0');
+      Serial.print((char)'x');
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
       Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-      Serial.print(((bx+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
-      btotal++; // Byte total counter
-      bx++; // Byte hex split counter
-      if (btotal == gbp_sio_lastPacketByteCount())
+      Serial.print((char)',');
+      // Splitting packets for convenience
+      if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
-        bx = 0;
-        if (gbp_init_CheckReceived(true))
-          Serial.print("\n<< INIT");
-        else if (gbp_dataPacket_CheckReceived(true))
-          Serial.print("\n<< DATA");
-        else if (gbp_dataEndPacket_CheckReceived(true))
-          Serial.print("\n<< ENDDATA");
-        else if (gbp_breakPacket_CheckReceived(true))
-          Serial.print("\n<< BREAK");
-        else if (gbp_nullPacket_CheckReceived(true))
-          Serial.print("\n<< NUL");
-        else if (gbp_printInstruction_CheckReceived(true))
-          Serial.print("\n<< PRINT");
-        else
-          Serial.print("\n<< UNKNOWN");
-
-        Serial.print("|SUM=");
-        Serial.print((char)nibbleToCharLUT[(gbp_sio_lastPacketChecksum()>>12)&0xF]);
-        Serial.print((char)nibbleToCharLUT[(gbp_sio_lastPacketChecksum()>>8)&0xF]);
-        Serial.print((char)nibbleToCharLUT[(gbp_sio_lastPacketChecksum()>>4)&0xF]);
-        Serial.print((char)nibbleToCharLUT[(gbp_sio_lastPacketChecksum()>>0)&0xF]);
-        Serial.print("|STA=");
-        Serial.print((char)nibbleToCharLUT[(gbp_sio_lastPacketStatus()>>4)&0xF]);
-        Serial.print((char)nibbleToCharLUT[(gbp_sio_lastPacketStatus()>>0)&0xF]);
-        Serial.print('\n');
+        digitalWrite(LED_STATUS_PIN, LOW);
+        Serial.print("\n");
+        pktByteIndex = 0;
+        pktTotalCount++;
+      }
+      else
+      {
+        Serial.print(((pktByteIndex+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
+        pktByteIndex++; // Byte hex split counter
+        byteTotal++; // Byte total counter
       }
     }
   }
 #endif
 
-#ifndef GBP_FEATURE_RAW_DUMP
-  /* packet received */
-  if (gbp_init_CheckReceived(true))
-  {
-    Serial.print("!\"INIT\"\n");
-    digitalWrite(LED_STATUS_PIN, HIGH);
-  }
-  if (gbp_dataEndPacket_CheckReceived(true))
-  {
-    Serial.print("!\"DATA\"\n");
-  }
-  if (gbp_breakPacket_CheckReceived(true))
-  {
-    Serial.print("!\"BREAK\"\n");
-  }
-  if (gbp_nullPacket_CheckReceived(true))
-  {
-    Serial.print("!\"NULL\"\n"); // Nothing... this is just an inquiry packet
-  }
-  if (gbp_printInstruction_CheckReceived(true))
-  {
-    Serial.print("!\"PRINT\"");
-    Serial.print(", num_of_sheets:");Serial.print(gbp_printInstruction_num_of_sheets(), DEC);
-    Serial.print(", num_of_linefeed_before_print:");Serial.print(gbp_printInstruction_num_of_linefeed_before_print(), DEC);
-    Serial.print(", num_of_linefeed_after_print:");Serial.print(gbp_printInstruction_num_of_linefeed_after_print(), DEC);
-    Serial.print(", palette_value:");Serial.print(gbp_printInstruction_palette_value(), DEC);
-    Serial.print(", print_density:");Serial.print(gbp_printInstruction_print_density(), DEC);
-    Serial.print("\r\n");
-
-    // not real printer... just finish now
-    //gbp_set_printer_busy(false);
-  }
-#endif
 
 #ifndef GBP_FEATURE_RAW_DUMP
   /* tiles received */
@@ -208,17 +203,7 @@ void loop()
       if (gbp_timeout_handler(elapsed_ms))
       {
         gbp_set_printer_busy(false);
-        Serial.println("# ERROR: Timed Out");
-        digitalWrite(LED_STATUS_PIN, LOW);
-
-        for (int i = 0 ; i < gbp_dataBuff_getByteCount() ; i++)
-        { // Display the data payload encoded in hex
-          const uint8_t data_8bit = gbp_dataBuff_getByte();
-          const char nibbleToCharLUT[] = "0123456789ABCDEF";
-          Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
-          Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-          Serial.print(((i+1)%16 == 0)?"\n":" "); ///< Insert Newline Periodically
-        }
+        Serial.println("\n\n// ERROR: Timed Out\n\n");
       }
     }
     last_millis = curr_millis;
