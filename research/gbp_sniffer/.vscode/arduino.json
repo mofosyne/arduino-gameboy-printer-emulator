@@ -1,0 +1,7 @@
+{
+    "board": "arduino:avr:nano",
+    "configuration": "cpu=atmega328old",
+    "sketch": "gbp_dev.ino",
+    "port": "/dev/tty.wchusbserial1460",
+    "output": "/tmp/ArduinoOutput/gbp_dev"
+}
