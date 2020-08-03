@@ -15,6 +15,8 @@
 /*******************************************************************************
 *******************************************************************************/
 
+//#define MINIMUM_PRINT_MODE // Skip C compatible capture for speed boost
+
 /*******************************************************************************
 *******************************************************************************/
 
@@ -275,8 +277,13 @@ void setup(void)
   /* Welcome Message */
   Serial.print("/* GAMEBOY PRINTER EMULATION PROJECT (Packet Capture Mode) */\n");
   Serial.print("/* By Brian Khuu (2020) */\n");
+#ifdef MINIMUM_PRINT_MODE
+  Serial.print("// Note: Every byte is from the gameboy except the last two byte of each packet \n");
+  Serial.print("//       which be the response from the printer (Minimum Mode)\n");
+#else
   Serial.print("// Note: Every byte is from the gameboy except when indicated by '(' or ')' to \n");
-  Serial.print("//       which it would indicate a response from the printer\n");
+  Serial.print("//       which it would indicate a response from the printer (C source format)\n");
+#endif
   Serial.print("//------------------------------------------------------------------------------\n");
   Serial.print("// REAL GAMEBOY TO GAMEBOY PRINTER PACKET CAPTURE \n");
   Serial.print("// GAME: <Game name> \n");
@@ -307,13 +314,12 @@ char *gbpCommand_toStr(int val)
   }
 }
 
-
 void loop()
 {
   /* tiles received */
   static uint32_t byteTotal = 0;
-  static uint32_t pktTotalCount = 0;
-  static uint32_t pktByteIndex = 0;
+  static uint16_t pktTotalCount = 0;
+  static uint16_t pktByteIndex = 0;
   static uint16_t pktDataLength = 0;
   const size_t dataBuffCount = gpb_cbuff_Count(&gbp_snifferDataBuffer_Gameboy);
   if (
@@ -324,32 +330,46 @@ void loop()
     const char nibbleToCharLUT[] = "0123456789ABCDEF";
     uint8_t rx_8bit = 0;
     uint8_t tx_8bit = 0;
-    for (int i = 0 ; i < dataBuffCount ; i++)
+    for (size_t i = 0 ; i < dataBuffCount ; i++)
     { // Display the data payload encoded in hex
       // Start of a new packet
       if (pktByteIndex == 0)
       {
+        /*
+          [ 00 ][ 01 ][ 02 ][ 03 ][ 04 ][ 05 ][ 5+X  ][ 5+X+1 ][ 5+X+2 ][ 5+X+3 ][ 5+X+4 ]
+          [SYNC][SYNC][COMM][COMP][LEN0][LEN1][ DATA ][ CSUM0 ][ CSUM1 ][ DUMMY ][ DUMMY ]
+        */
         uint8_t commandTypeByte = 0;
         uint8_t dataLengthByte0 = 0;
         uint8_t dataLengthByte1 = 0;
         gpb_cbuff_Dequeue_Peek(&gbp_snifferDataBuffer_Gameboy, &commandTypeByte, 2);
         gpb_cbuff_Dequeue_Peek(&gbp_snifferDataBuffer_Gameboy, &dataLengthByte0, 4);
         gpb_cbuff_Dequeue_Peek(&gbp_snifferDataBuffer_Gameboy, &dataLengthByte1, 5);
-        pktDataLength = dataLengthByte0;
-        pktDataLength |= (dataLengthByte1<<8)&0xFF00;
+        pktDataLength = 0;
+        pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
+        pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
+#ifdef MINIMUM_PRINT_MODE
+        Serial.print("# ");
+        Serial.print(pktTotalCount);
+        Serial.print(" : ");
+        Serial.print(gbpCommand_toStr(commandTypeByte));
+#else
         Serial.print("/* ");
         Serial.print(pktTotalCount);
         Serial.print(" : ");
         Serial.print(gbpCommand_toStr(commandTypeByte));
         Serial.print(" */\n");
+#endif
         digitalWrite(LED_STATUS_PIN, HIGH);
       }
       // Print Hex Byte
       gpb_cbuff_Dequeue(&gbp_snifferDataBuffer_Gameboy, &rx_8bit);
       gpb_cbuff_Dequeue(&gbp_snifferDataBuffer_Printer, &tx_8bit);
+#ifndef MINIMUM_PRINT_MODE
       Serial.print((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
       Serial.print((char)'0');
       Serial.print((char)'x');
+#endif
       if (pktByteIndex < (8+pktDataLength))
       {
         // Send bytes from gameboy to printer. This is the main packet
@@ -362,6 +382,9 @@ void loop()
         Serial.print((char)nibbleToCharLUT[(tx_8bit>>4)&0xF]);
         Serial.print((char)nibbleToCharLUT[(tx_8bit>>0)&0xF]);
       }
+#ifdef MINIMUM_PRINT_MODE
+      Serial.print((char)' ');
+#else
       Serial.print((char)',');
       if (pktByteIndex == (8+pktDataLength + 1))
       {
@@ -380,6 +403,7 @@ void loop()
           Serial.print(" */");
         }
       }
+#endif
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
