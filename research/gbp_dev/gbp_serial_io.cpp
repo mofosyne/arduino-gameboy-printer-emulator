@@ -1,6 +1,6 @@
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
-#include <Arduino.h> // Just for Serial.Print() only
+//#include <Arduino.h> // Just for Serial.Print() only
 
 #include "gameboy_printer_protocol.h"
 #include "gpb_serial_io.h"
@@ -441,6 +441,8 @@ bool gpb_pktIO_init(size_t buffSize, uint8_t *buffPtr)
 
   // Packet Parsing Subsystem
   gpb_pktIO_reset();
+
+  return true;
 }
 
 
@@ -476,6 +478,7 @@ bool gpb_sio_next(const gpb_sio_mode_t mode, const uint16_t txdata)
       gpb_sio.tx_buff |= ((txdata << 8) & 0xFF00);
       break;
   }
+  return true;
 }
 
 uint16_t gpb_sio_getWord()
