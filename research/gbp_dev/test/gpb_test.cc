@@ -10,7 +10,8 @@
  * Test Vectors Variables
 *******************************************************************************/
 uint8_t testVector[] = {
-  #include "2020-08-02_GameboyPocketCameraJP.txt"
+  //#include "2020-08-02_GameboyPocketCameraJP.txt"
+  #include "2020-08-02_PokemonSpeciallPicachuEdition.txt"
 };
 
 uint8_t testResponse[sizeof(testVector)+100] = {0};
@@ -127,7 +128,7 @@ int main(void)
           pktDataLength = 0;
           pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
           pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
-          printf("/* %02X : %s */\r\n", pktTotalCount, gbpCommand_toStr(commandTypeByte));
+          printf("/* %lu : %s */\r\n", (unsigned long)pktTotalCount, (char *)gbpCommand_toStr(commandTypeByte));
         }
         // Print Hex Byte
         uint8_t rxByte = gbp_dataBuff_getByte();
@@ -212,7 +213,7 @@ int main(void)
   {
     if (testPacketResult[i].packetMismatch || testPacketResult[i].statusMismatch)
     {
-      printf("/*  Test Vector Error for packet %02X %s%s (ID: Got=0x%02X, Exp=0x%02X) ",
+      printf("/* Test Vector Error for packet %u %s%s (ID: Got=0x%02X, Exp=0x%02X) ",
           (unsigned int) i,
           (char *) testPacketResult[i].packetMismatch ? "[Packet Mismatch]" : "",
           (char *) testPacketResult[i].statusMismatch ? "[Status Mismatch]" : "",
