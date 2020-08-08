@@ -166,7 +166,7 @@ gpb_cbuff_t gbp_snifferDataBuffer_Gameboy = {0};
 gpb_cbuff_t gbp_snifferDataBuffer_Printer = {0};
 
 // returns boolean value for led activity indicator
-bool gpb_sniffer_OnChange_ISR(const bool GBP_SC, const bool GBP_SO, const bool GBP_SI)
+inline bool gpb_sniffer_OnRisingClock_ISR(const bool GBP_SO, const bool GBP_SI)
 {
   static uint16_t preambleSO; ///< Scanning for Preamble
   static uint16_t preambleSI; ///< Scanning for Preamble
@@ -180,9 +180,6 @@ bool gpb_sniffer_OnChange_ISR(const bool GBP_SC, const bool GBP_SO, const bool G
   // Detect which side of the cable the gameboy is connected to
   if (!(gameboyConnectedToSO || gameboyConnectedToSI))
   {
-    // Expecting rising edge
-    if (!GBP_SC)
-      return false;
     // Clocking bits on rising edge
     preambleSO |= GBP_SO ? 1 : 0;
     preambleSI |= GBP_SI ? 1 : 0;
@@ -218,21 +215,13 @@ bool gpb_sniffer_OnChange_ISR(const bool GBP_SC, const bool GBP_SO, const bool G
   if (bitMaskMap > 0)
   {
     // Serial Transaction Is Active
-    if (GBP_SC)
-    {
-      // Rising Edge Clock (Rx Bit)
-      //gpb_cbuff_Enqueue(&gbp_snifferDataBuffer_Gameboy, (tx_bit<<4)|(rx_bit)); // Dev: Check bit by bit
-      rx_buff |= rx_bit ? (bitMaskMap & 0xFF) : 0; ///< Clocking bits on rising edge
-      tx_buff |= tx_bit ? (bitMaskMap & 0xFF) : 0; ///< Clocking bits on rising edge
-      bitMaskMap >>= 1; ///< One tx/rx bit cycle complete, next bit now
-      if (bitMaskMap > 0)
-        return true;
-    }
-    else
-    {
-      // Falling Edge Clock (Tx Bit)
-      return false;
-    }
+    // Rising Edge Clock (Rx Bit)
+    //gpb_cbuff_Enqueue(&gbp_snifferDataBuffer_Gameboy, (tx_bit<<4)|(rx_bit)); // Dev: Check bit by bit
+    rx_buff |= rx_bit ? (bitMaskMap & 0xFF) : 0; ///< Clocking bits on rising edge
+    tx_buff |= tx_bit ? (bitMaskMap & 0xFF) : 0; ///< Clocking bits on rising edge
+    bitMaskMap >>= 1; ///< One tx/rx bit cycle complete, next bit now
+    if (bitMaskMap > 0)
+      return true;
   }
   // Byte found
   gpb_cbuff_Enqueue(&gbp_snifferDataBuffer_Gameboy, rx_buff);
@@ -246,17 +235,30 @@ bool gpb_sniffer_OnChange_ISR(const bool GBP_SC, const bool GBP_SO, const bool G
 
 
 /**************************************************************
+ * arduino minimum stripped down implementation of digitalRead()
+ **************************************************************/
+
+// We know that we always have no timer also we know that we are using a valid port
+// And because we want to speed things up for sniffing... lets throw em all out!
+inline const bool digitalRead_Minimal(uint8_t pin)
+{
+	uint8_t port = digitalPinToPort(pin);
+	uint8_t bit = digitalPinToBitMask(pin);
+  return ((*portInputRegister(port) & bit) > 0) ? 1 : 0;
+}
+
+
+/**************************************************************
  **************************************************************/
 
 #ifdef ESP8266
-void ICACHE_RAM_ATTR serialClock_ISR(void)
+void ICACHE_RAM_ATTR serialClock_OnRising_ISR(void)
 #else
-void serialClock_ISR(void)
+void serialClock_OnRising_ISR(void)
 #endif
 {
   // Serial Clock (1 = Rising Edge) (0 = Falling Edge); Master Output Slave Input (This device is slave)
-  const bool activity = gpb_sniffer_OnChange_ISR(digitalRead(GBP_SC_PIN), digitalRead(GBP_SO_PIN), digitalRead(GBP_SI_PIN));
-  digitalWrite(LED_STATUS_PIN, (activity)?HIGH:LOW);
+  gpb_sniffer_OnRisingClock_ISR(digitalRead_Minimal(GBP_SO_PIN), digitalRead_Minimal(GBP_SI_PIN));
 }
 
 void setup(void)
@@ -297,7 +299,7 @@ void setup(void)
   gpb_cbuff_Init(&gbp_snifferDataBuffer_Printer, sizeof(gbp_buffer_Printer), gbp_buffer_Printer);
 
   /* attach ISR */
-  attachInterrupt( digitalPinToInterrupt(GBP_SC_PIN), serialClock_ISR, CHANGE);  // attach interrupt handler
+  attachInterrupt( digitalPinToInterrupt(GBP_SC_PIN), serialClock_OnRising_ISR, RISING);  // attach interrupt handler
 } // setup()
 
 
