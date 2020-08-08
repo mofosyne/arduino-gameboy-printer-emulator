@@ -233,7 +233,8 @@ static struct
   uint32_t timeout_ms;
 
   // Busy
-  int busyPacketCount;
+  int busyPacketCountdown;
+  int untransPacketCountdown;
 } gpb_pktIO;
 
 /******************************************************************************/
@@ -435,7 +436,7 @@ bool gpb_pktIO_init(size_t buffSize, uint8_t *buffPtr)
   // reset status data
   gpb_pktIO.statusBuffer = 0x0000;
   gpb_pktIO.statusBuffer = GBP_DEVICE_ID << 8;
-  gpb_pktIO.busyPacketCount = 0;
+  gpb_pktIO.busyPacketCountdown = 0;
 
   // print data buffer
   gpb_cbuff_Init(&gpb_pktIO.dataBuffer, buffSize, buffPtr);
@@ -777,22 +778,16 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       {
         // INIT --> DATA --> ENDDATA --> PRINT
         case GBP_COMMAND_INIT:
+            gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
           break;
         case GBP_COMMAND_PRINT:
           gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
-          gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
+          gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, true);
           // later... gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
+          gpb_pktIO.busyPacketCountdown = 68;
           break;
         case GBP_COMMAND_DATA:
-          if (gpb_pktIO.data_length > 0)
-          {
-            //gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, true);
-          }
-          else
-          {
-            //gpb_status_bit_update_unprocessed_data (gpb_pktIO.statusBuffer, false);
-            //gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
-          }
+          gpb_pktIO.untransPacketCountdown = 2;
           break;
         case GBP_COMMAND_BREAK:
           gpb_status_bit_update_low_battery(gpb_pktIO.statusBuffer, false);
@@ -804,13 +799,9 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
           gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
           gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, false);
         case GBP_COMMAND_INQUIRY:
-          if (gpb_status_bit_getbit_printer_busy(gpb_pktIO.statusBuffer))
+          if (gpb_pktIO.busyPacketCountdown == 0)
           {
-            gpb_pktIO.busyPacketCount++;
-            if (gpb_pktIO.busyPacketCount > 3)
-            {
-              gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
-            }
+
           }
           break;
         default:
@@ -828,6 +819,45 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
     } break;
     case GBP_PKT10_PARSE_DUMMY    :
     {
+      // Update status data : Device Status
+      switch (gpb_pktIO.command)
+      {
+        // INIT --> DATA --> ENDDATA --> PRINT
+        case GBP_COMMAND_INIT:
+          break;
+        case GBP_COMMAND_PRINT:
+          break;
+        case GBP_COMMAND_DATA:
+          gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, true);
+          if (gpb_pktIO.data_length == 0)
+          {
+            gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
+            gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
+          }
+          break;
+        case GBP_COMMAND_BREAK:
+          break;
+        case GBP_COMMAND_INQUIRY:
+          if (gpb_pktIO.untransPacketCountdown > 0)
+          {
+            gpb_pktIO.untransPacketCountdown--;
+            if (gpb_pktIO.untransPacketCountdown == 0)
+              gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
+          }
+          if (gpb_pktIO.busyPacketCountdown > 0)
+          {
+            gpb_pktIO.busyPacketCountdown--;
+            if (gpb_pktIO.busyPacketCountdown == 0)
+            {
+              gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
+//              gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
+            }
+          }
+          break;
+        default:
+          break;
+      }
+
       switch (gpb_pktIO.command)
       {
         case GBP_COMMAND_INIT:
