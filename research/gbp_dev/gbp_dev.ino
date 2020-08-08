@@ -104,7 +104,11 @@ void setup(void)
   gpb_pktIO_init(sizeof(gbp_buffer), gbp_buffer);
 
   /* attach ISR */
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+  attachInterrupt( digitalPinToInterrupt(GBP_SC_PIN), serialClock_ISR, RISING);  // attach interrupt handler
+#else
   attachInterrupt( digitalPinToInterrupt(GBP_SC_PIN), serialClock_ISR, CHANGE);  // attach interrupt handler
+#endif
 } // setup()
 #endif
 
