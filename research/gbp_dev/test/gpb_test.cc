@@ -9,7 +9,7 @@ uint8_t testVector[] = {
   #include "2020-08-02_GameboyPocketCameraJP.txt"
 };
 
-uint8_t gbp_buffer[1000] = {0};
+uint8_t gbp_buffer[100000] = {0};
 
 const char *gbpCommand_toStr(int val)
 {
