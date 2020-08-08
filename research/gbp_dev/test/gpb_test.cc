@@ -18,6 +18,7 @@ uint8_t testResponse[sizeof(testVector)+100] = {0};
 
 typedef struct
 {
+  bool packetFound;
   size_t startOfPacketBytePos;
   size_t packetMismatch; // Byte parsed does not match test vector
   size_t statusMismatch; // Status byte received does not match test vector
@@ -173,6 +174,7 @@ int main(void)
         {
           if (pktByteIndex == 0)
           {
+            testPacketResult[pktTotalCount].packetFound = true;
             testPacketResult[pktTotalCount].startOfPacketBytePos = byteTotal;
           }
           // Check if we have captured the byte correctly
@@ -216,20 +218,27 @@ int main(void)
 
 
 #if 1 // Packet Mismatch
-  printf("\r\n/* testResponse Dump */\r\n");
+  printf("\r\n/* Communication Summary */\r\n");
   for (size_t i = 0 ; i < (sizeof(testPacketResult)/sizeof(testPacketResult[0])) ; i++)
   {
-    if (testPacketResult[i].packetMismatch || testPacketResult[i].statusMismatch)
+    if (!testPacketResult[i].packetFound)
+      continue;
+
+    //if (testPacketResult[i].packetMismatch || testPacketResult[i].statusMismatch)
     {
-      printf("/* Test Vector Error for packet %3lu %s (dLen:%3lu) %s%s (ID: Got=0x%02X, Exp=0x%02X) ",
+      printf("/* pkt %3lu %s (dLen:%3lu) ",
           (unsigned long) i,
           (char *)gbpCommand_toStr(testPacketResult[i].command),
-          (unsigned long) testPacketResult[i].pktDataLength,
-          (char *) testPacketResult[i].packetMismatch ? "[Packet Mismatch]" : "",
-          (char *) testPacketResult[i].statusMismatch ? "[Status Mismatch]" : "",
-          (unsigned) testPacketResult[i].printerID,
-          (unsigned) testPacketResult[i].printerIDExpected
+          (unsigned long) testPacketResult[i].pktDataLength
         );
+      if (testPacketResult[i].printerID != testPacketResult[i].printerIDExpected)
+      {
+        printf("(ID: Got=0x%02X, Exp=0x%02X) ", (unsigned) testPacketResult[i].printerID, (unsigned) testPacketResult[i].printerIDExpected);
+      }
+      else
+      {
+        printf("(ID:0x%02X) ", (unsigned) testPacketResult[i].printerID);
+      }
       printf("(Status: Got=");
       if (testPacketResult[i].status)
       {
@@ -254,7 +263,11 @@ int main(void)
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_SUM   ) ? "SUM "    : "");
       }
-      printf(")");
+      printf(") ");
+      printf("%s%s",
+          (char *) testPacketResult[i].packetMismatch ? "[Packet Mismatch] " : "",
+          (char *) testPacketResult[i].statusMismatch ? "[Status Mismatch] " : ""
+        );
       printf("*/\r\n");
     }
   }
