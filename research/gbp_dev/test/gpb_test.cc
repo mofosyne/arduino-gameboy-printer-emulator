@@ -9,7 +9,15 @@ uint8_t testVector[] = {
   #include "2020-08-02_GameboyPocketCameraJP.txt"
 };
 
-uint8_t gbp_buffer[100000] = {0};
+uint8_t testResponse[sizeof(testVector)+100] = {0};
+
+uint8_t gbp_buffer[sizeof(testVector)+100] = {0};
+
+
+
+/*******************************************************************************
+ * Utilites
+*******************************************************************************/
 
 const char *gbpCommand_toStr(int val)
 {
@@ -24,8 +32,36 @@ const char *gbpCommand_toStr(int val)
   }
 }
 
+
+void dummy_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
+{
+  static bool txBit = false;
+
+  if (GBP_SCLK)
+  {
+    // Gameboy will read printer's bit on rise
+    static uint8_t byteMask = 1<<7;
+    static size_t tx_byteCount = 0;
+    // On rising, record test
+    testResponse[tx_byteCount] |= (txBit ? 0xFF : 0x00) & byteMask;
+    byteMask >>= 1;
+    if (byteMask == 0)
+    {
+      byteMask = 1<<7;
+      tx_byteCount++;
+    }
+  }
+
+  txBit = gpb_pktIO_OnChange_ISR(GBP_SCLK, GBP_SOUT);
+}
+
+
+/*******************************************************************************
+ * Main Test Routine
+*******************************************************************************/
 int main(void)
 {
+  printf("/* GBP Testing (Test Vector Size: %lu) */", (long unsigned) sizeof(testVector));
   // Prep
   gpb_pktIO_init(sizeof(gbp_buffer), gbp_buffer);
 
@@ -36,8 +72,8 @@ int main(void)
     for (int bi = 7 ; bi >= 0 ; bi--)
     {
       // One clock cycle
-      gpb_pktIO_OnChange_ISR(0, (byte >> bi) & 0x01);
-      gpb_pktIO_OnChange_ISR(1, (byte >> bi) & 0x01);
+      dummy_OnChange_ISR(0, (byte >> bi) & 0x01);
+      dummy_OnChange_ISR(1, (byte >> bi) & 0x01);
     }
   }
 
@@ -73,23 +109,31 @@ int main(void)
           printf("\r\n/* %02X : %s */\r\n", pktTotalCount, gbpCommand_toStr(commandTypeByte));
         }
         // Print Hex Byte
-        uint8_t rxtxByte = gbp_dataBuff_getByte();
+        uint8_t rxByte = gbp_dataBuff_getByte();
         printf((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
-        printf("0x%02X,", rxtxByte);
+        //printf("(%d)", byteTotal);
+        if (pktByteIndex < (8+pktDataLength))
+        {
+          printf("0x%02X,", rxByte);
+        }
+        else
+        {
+          printf("0x%02X,", testResponse[byteTotal]);
+        }
         if (pktByteIndex == (8+pktDataLength + 1))
         {
           printf("/*)*/");
-          if (rxtxByte)
+          if (testResponse[byteTotal])
           {
             printf(" /* Printer Status: ");
-            printf((rxtxByte & GBP_STATUS_MASK_LOWBAT) ? "LOWBAT " : "");
-            printf((rxtxByte & GBP_STATUS_MASK_ER2   ) ? "ER2 "    : "");
-            printf((rxtxByte & GBP_STATUS_MASK_ER1   ) ? "ER1 "    : "");
-            printf((rxtxByte & GBP_STATUS_MASK_ER0   ) ? "ER0 "    : "");
-            printf((rxtxByte & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN"  : "");
-            printf((rxtxByte & GBP_STATUS_MASK_FULL  ) ? "FULL "   : "");
-            printf((rxtxByte & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
-            printf((rxtxByte & GBP_STATUS_MASK_SUM   ) ? "SUM "   : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_LOWBAT) ? "LOWBAT " : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_ER2   ) ? "ER2 "    : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_ER1   ) ? "ER1 "    : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_ER0   ) ? "ER0 "    : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN"  : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_FULL  ) ? "FULL "   : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_SUM   ) ? "SUM "    : "");
             printf(" */");
           }
         }
@@ -104,11 +148,21 @@ int main(void)
         {
           printf( ((pktByteIndex+1)%16 == 0) ? "\n" : " "); ///< Insert Newline Periodically
           pktByteIndex++; // Byte hex split counter
-          byteTotal++; // Byte total counter
         }
+        byteTotal++; // Byte total counter
       }
     }
   }
+
+#if 0 // Dev: testResponse Dump
+  printf("\r\n/* testResponse Dump */\r\n");
+  for (size_t i = 0 ; i < sizeof(testResponse) ; i++)
+  {
+    const int charperline = 16*3;
+    printf("%02X", testResponse[i]);
+    printf((i%(charperline) == (charperline-1))?"\r\n":" ");
+  }
+#endif
 
   printf("\r\n/* Done */\r\n");
 }

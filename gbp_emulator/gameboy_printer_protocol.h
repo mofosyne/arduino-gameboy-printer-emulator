@@ -128,14 +128,14 @@ extern "C" {
 // Gameboy Printer Status Code Structure
 typedef struct gbp_printer_status_t
 {
-	bool low_battery;
-	bool paper_jam;
-	bool other_error;
-	bool packet_error;
-	bool unprocessed_data;
-	bool print_buffer_full;
-	bool printer_busy;
-	bool checksum_error;
+  bool low_battery;
+  bool paper_jam;
+  bool other_error;
+  bool packet_error;
+  bool unprocessed_data;
+  bool print_buffer_full;
+  bool printer_busy;
+  bool checksum_error;
 } gbp_printer_status_t;
 
 
@@ -146,20 +146,20 @@ typedef struct gbp_printer_status_t
 
 inline uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
 {
-	// This is returns a gameboy printer status byte
-	//(Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
+  // This is returns a gameboy printer status byte
+  //(Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
 
-	/*        | BITFLAG NAME                                |BIT POS            */
-	return
-	    (((printer_status_ptr->low_battery) ? 1 : 0) <<  GBP_STATUS_BIT_LOWBAT)
-	    | (((printer_status_ptr->other_error) ? 1 : 0) <<  GBP_STATUS_BIT_ER2)
-	    | (((printer_status_ptr->paper_jam) ? 1 : 0) <<  GBP_STATUS_BIT_ER1)
-	    | (((printer_status_ptr->packet_error) ? 1 : 0) <<  GBP_STATUS_BIT_ER0)
-	    | (((printer_status_ptr->unprocessed_data) ? 1 : 0) <<  GBP_STATUS_BIT_UNTRAN)
-	    | (((printer_status_ptr->print_buffer_full) ? 1 : 0) <<  GBP_STATUS_BIT_FULL)
-	    | (((printer_status_ptr->printer_busy) ? 1 : 0) <<  GBP_STATUS_BIT_BUSY)
-	    | (((printer_status_ptr->checksum_error) ? 1 : 0) <<  GBP_STATUS_BIT_SUM)
-	    ;
+  /*        | BITFLAG NAME                                |BIT POS            */
+  return
+    (((printer_status_ptr->low_battery) ? 1 : 0) <<  GBP_STATUS_BIT_LOWBAT)
+    | (((printer_status_ptr->other_error) ? 1 : 0) <<  GBP_STATUS_BIT_ER2)
+    | (((printer_status_ptr->paper_jam) ? 1 : 0) <<  GBP_STATUS_BIT_ER1)
+    | (((printer_status_ptr->packet_error) ? 1 : 0) <<  GBP_STATUS_BIT_ER0)
+    | (((printer_status_ptr->unprocessed_data) ? 1 : 0) <<  GBP_STATUS_BIT_UNTRAN)
+    | (((printer_status_ptr->print_buffer_full) ? 1 : 0) <<  GBP_STATUS_BIT_FULL)
+    | (((printer_status_ptr->printer_busy) ? 1 : 0) <<  GBP_STATUS_BIT_BUSY)
+    | (((printer_status_ptr->checksum_error) ? 1 : 0) <<  GBP_STATUS_BIT_SUM)
+    ;
 }
 
 
