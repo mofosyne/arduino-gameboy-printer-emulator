@@ -25,6 +25,8 @@ typedef struct
   uint8_t printerIDExpected;
   uint8_t status;
   uint8_t statusExpected;
+  uint8_t command;
+  uint16_t pktDataLength;
 } packetResult_t;
 
 packetResult_t testPacketResult[sizeof(testVector)] = {{0}};
@@ -46,10 +48,10 @@ const char *gbpCommand_toStr(int val)
   switch (val)
   {
     case GBP_COMMAND_INIT    : return "INIT";
-    case GBP_COMMAND_PRINT   : return "PRINT";
+    case GBP_COMMAND_PRINT   : return "PRNT";
     case GBP_COMMAND_DATA    : return "DATA";
-    case GBP_COMMAND_BREAK   : return "BREAK";
-    case GBP_COMMAND_INQUIRY : return "INQUIRY";
+    case GBP_COMMAND_BREAK   : return "BREK";
+    case GBP_COMMAND_INQUIRY : return "INQY";
     default: return "?";
   }
 }
@@ -128,7 +130,14 @@ int main(void)
           pktDataLength = 0;
           pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
           pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
-          printf("/* %lu : %s */\r\n", (unsigned long)pktTotalCount, (char *)gbpCommand_toStr(commandTypeByte));
+          printf("/* %3lu : %s (dLen:%lu) */\r\n",
+            (unsigned long) pktTotalCount,
+            (char *) gbpCommand_toStr(commandTypeByte),
+            (unsigned long) pktDataLength
+            );
+          // For packetResult_t
+          testPacketResult[pktTotalCount].command = commandTypeByte;
+          testPacketResult[pktTotalCount].pktDataLength = pktDataLength;
         }
         // Print Hex Byte
         uint8_t rxByte = gbp_dataBuff_getByte();
@@ -160,7 +169,6 @@ int main(void)
           }
         }
         // Check if packet bytes match test vector
-        //testPacketResult[pktTotalCount]
         if (pktByteIndex < (8+pktDataLength))
         {
           if (pktByteIndex == 0)
@@ -213,8 +221,10 @@ int main(void)
   {
     if (testPacketResult[i].packetMismatch || testPacketResult[i].statusMismatch)
     {
-      printf("/* Test Vector Error for packet %u %s%s (ID: Got=0x%02X, Exp=0x%02X) ",
-          (unsigned int) i,
+      printf("/* Test Vector Error for packet %3lu %s (dLen:%3lu) %s%s (ID: Got=0x%02X, Exp=0x%02X) ",
+          (unsigned long) i,
+          (char *)gbpCommand_toStr(testPacketResult[i].command),
+          (unsigned long) testPacketResult[i].pktDataLength,
           (char *) testPacketResult[i].packetMismatch ? "[Packet Mismatch]" : "",
           (char *) testPacketResult[i].statusMismatch ? "[Status Mismatch]" : "",
           (unsigned) testPacketResult[i].printerID,
