@@ -1,6 +1,8 @@
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 
+#define GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR // Away from technical accuracy towards double speed mode compatibility
+
 #define GBP_FEATURE_RAW_DUMP
 
 //#define GPB_BUFFER_SIZE 650  // 640 bytes usually
@@ -14,7 +16,11 @@ uint16_t gbp_sio_lastPacketStatus(void);
 
 bool gpb_pktIO_init(size_t buffSize, uint8_t *buffPtr);
 bool gpb_pktIO_reset(void);
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+bool gpb_pktIO_OnRising_ISR(const bool GBP_SOUT);
+#else
 bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT);
+#endif
 
 /* Parse status */
 bool gbp_timeout_handler(uint32_t elapsed_ms);

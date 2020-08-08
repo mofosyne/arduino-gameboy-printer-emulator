@@ -532,7 +532,11 @@ uint16_t gbp_sio_lastPacketStatus(void)
 
 // Assumption: Only one gameboy printer connection required
 // Return: pin state of GBP_SIN
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+bool gpb_pktIO_OnRising_ISR(const bool GBP_SOUT)
+#else
 bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
+#endif
 {
   // Based on SIO Timing Chart. Page 30 of GameBoy PROGRAMMING MANUAL Version 1.0:
   // * CPOL=1 : Clock Polarity 1. Idle on high.
@@ -542,25 +546,14 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
   // * GBP_SCLK : Serial Clock (1 = Rising Edge) (0 = Falling Edge)
   // * GBP_SOUT : Master Output Slave Input (This device is slave)
 
-#if 0 // Test Clock
-  gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, GBP_SCLK ? 1 : 0);
-#endif
-#if 0 // Logic Analyser
-  if ((GBP_SCLK))
-  {
-    int xx = 0 ;
-    xx |= (GBP_SOUT) ? 0x01 : 0;
-    xx |= (gpb_sio.SINOutputPinState) ? 0x10 : 0;
-    gpb_cbuff_Enqueue(&gpb_pktIO.dataBuffer, xx);
-  }
-#endif
-
   // Scan for preamble
   if (!gpb_sio.syncronised)
   {
+#ifndef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
     // Expecting rising edge
     if (!GBP_SCLK)
       return false;
+#endif
 
     // Clocking bits on rising edge
     gpb_sio.preamble |= GBP_SOUT ? 1 : 0;
@@ -586,11 +579,21 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
   if (gpb_sio.bitMaskMap > 0)
   {
     // Serial Transaction Is Active
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+      // Rising Edge Clock (Rx Bit)
+      gpb_sio.rx_buff |= GBP_SOUT ? (gpb_sio.bitMaskMap & 0xFFFF) : 0; ///< Clocking bits on rising edge
+      gpb_sio.bitMaskMap >>= 1; ///< One tx/rx bit cycle complete, next bit now
+      // Falling Edge Clock (Tx Bit) (Prep now for next rising edge)
+      gpb_sio.SINOutputPinState = (gpb_sio.bitMaskMap & gpb_sio.tx_buff) > 0;
+      if (gpb_sio.bitMaskMap > 0)
+        return gpb_sio.SINOutputPinState;
+#else
     if (GBP_SCLK)
     {
       // Rising Edge Clock (Rx Bit)
       gpb_sio.rx_buff |= GBP_SOUT ? (gpb_sio.bitMaskMap & 0xFFFF) : 0; ///< Clocking bits on rising edge
       gpb_sio.bitMaskMap >>= 1; ///< One tx/rx bit cycle complete, next bit now
+
       if (gpb_sio.bitMaskMap > 0)
         return gpb_sio.SINOutputPinState;
     }
@@ -600,6 +603,7 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       gpb_sio.SINOutputPinState = (gpb_sio.bitMaskMap & gpb_sio.tx_buff) > 0;
       return gpb_sio.SINOutputPinState;
     }
+#endif
   }
 
   /****************************************************************************/
@@ -878,6 +882,19 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       gpb_sio.SINOutputPinState = false;
     }
   }
+
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+  /*
+    We have processed a byte at bit pos 7, now need to prep txBit line for next
+    byte at bit Pos 0 of next byte so lets change now so that we have the correct
+    tx bit state on next rise.
+             0   1   2   3   4   5   6   7             0   1   2   3   4   5   6   7
+         __   _   _   _   _   _   _   _   ___________   _   _   _   _   _   _   _   _
+    CLK:   |_| |_| |_| |_| |_| |_| |_| |_|           |_| |_| |_| |_| |_| |_| |_| |_|
+    DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX_
+  */
+  gpb_sio.SINOutputPinState = (gpb_sio.bitMaskMap & gpb_sio.tx_buff) > 0;
+#endif
 
   return gpb_sio.SINOutputPinState;
 }

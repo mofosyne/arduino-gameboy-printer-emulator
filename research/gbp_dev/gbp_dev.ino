@@ -62,10 +62,12 @@ void serialClock_ISR(void)
 #endif
 {
   // Serial Clock (1 = Rising Edge) (0 = Falling Edge); Master Output Slave Input (This device is slave)
-  if (gpb_pktIO_OnChange_ISR(digitalRead(GBP_SC_PIN), digitalRead(GBP_SO_PIN)))
-    digitalWrite(GBP_SI_PIN, HIGH);
-  else
-    digitalWrite(GBP_SI_PIN, LOW);
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+  const bool txBit = gpb_pktIO_OnRising_ISR(digitalRead(GBP_SO_PIN));
+#else
+  const bool txBit = gpb_pktIO_OnChange_ISR(digitalRead(GBP_SC_PIN), digitalRead(GBP_SO_PIN));
+#endif
+  digitalWrite(GBP_SI_PIN, txBit ? HIGH : LOW);
 }
 
 #if 1

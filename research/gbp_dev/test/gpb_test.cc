@@ -58,7 +58,7 @@ const char *gbpCommand_toStr(int val)
 }
 
 
-void dummy_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
+void dummy_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
 {
   static bool txBit = false;
 
@@ -77,7 +77,15 @@ void dummy_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
     }
   }
 
+#ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
+  if (GBP_SCLK)
+  {
+    txBit = gpb_pktIO_OnRising_ISR(GBP_SOUT);
+  }
+#else
   txBit = gpb_pktIO_OnChange_ISR(GBP_SCLK, GBP_SOUT);
+#endif
+
 }
 
 
@@ -97,8 +105,8 @@ int main(void)
     for (int bi = 7 ; bi >= 0 ; bi--)
     {
       // One clock cycle
-      dummy_OnChange_ISR(0, (byte >> bi) & 0x01);
-      dummy_OnChange_ISR(1, (byte >> bi) & 0x01);
+      dummy_ISR(0, (byte >> bi) & 0x01);
+      dummy_ISR(1, (byte >> bi) & 0x01);
     }
   }
 
