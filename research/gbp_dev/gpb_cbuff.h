@@ -7,7 +7,8 @@
   ******************************************************************************
 
 */
-
+#ifndef GPB_CBUFF_H
+#define GPB_CBUFF_H
 /******************************************************************************/
 // # Circular Byte Buffer For Embedded Applications (Index Based)
 // Author: Brian Khuu (July 2020) (briankhuu.com) (mofosyne@gmail.com)
@@ -128,3 +129,5 @@ static inline bool gpb_cbuff_EnqueueTemp(gpb_cbuff_t *cb, uint8_t b)
 #else
 #define gpb_cbuff_EnqueueTemp(CB, B) gpb_cbuff_Enqueue(CB, B)
 #endif // FEATURE_CHECKSUM_SUPPORTED
+
+#endif // GPB_CBUFF_H

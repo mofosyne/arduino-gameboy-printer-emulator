@@ -14,6 +14,7 @@
 
 #include "gameboy_printer_protocol.h"
 #include "gpb_serial_io.h"
+#include "gbp_pkt.h"
 
 const char *gbp_pkt_commandType_toStr(int val)
 {
@@ -28,3 +29,7 @@ const char *gbp_pkt_commandType_toStr(int val)
   }
 }
 
+gbp_pkt_parsed_t gbp_pkt_process_packet()
+{
+
+}

@@ -1,5 +1,6 @@
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
+#include "gpb_cbuff.h"
 
 #define GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR // Away from technical accuracy towards double speed mode compatibility
 
@@ -25,7 +26,11 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT);
 /* Timeout */
 bool gbp_serial_io_timeout_handler(uint32_t elapsed_ms);
 
-/* Direct buffer access */
+/* Indirect Buffer Access*/
+// Dev Note: Is intended for module use
+gpb_cbuff_t *gpb_serial_get_cbuff(void);
+
+/* Direct Buffer Access */
 // Dev Note: Is used during testing and simpler implementations
 size_t gbp_serial_io_dataBuff_getByteCount(void);
 uint8_t gbp_serial_io_dataBuff_getByte(void);
