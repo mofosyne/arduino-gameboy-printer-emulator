@@ -1437,12 +1437,13 @@ FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 
 # Contributors / Thanks
 
-* @BjornB2 : For adding improvements in downloading images for jsdecoder folder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/15  
+* @BjornB2 : For adding improvements in downloading images for jsdecoder folder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/15
 For adding color palette dropdown https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/18
 
 * @virtuaCode : For helping to fix rendering issues with the jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/9
 
 * @HerrZatacke : For adding the feature to render a separate image for each received image in jsdecoder https://github.com/mofosyne/arduino-gameboy-printer-emulator/pull/19
 
-* @imwestm: West McGowan for submitting a handy picture of how to wire this project up as well as feedback to improve the instructions in this readme.
+* @imwestm : West McGowan for submitting a handy picture of how to wire this project up as well as feedback to improve the instructions in this readme.
 
+* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games.
