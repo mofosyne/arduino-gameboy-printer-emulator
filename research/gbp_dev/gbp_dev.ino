@@ -142,7 +142,7 @@ void loop()
       ((pktByteIndex == 0)&&(dataBuffCount>=6))
       )
   {
-    const char nibbleToCharLUT[] = "0 123456789ABCDEF";
+    const char nibbleToCharLUT[] = "0123456789ABCDEF";
     uint8_t data_8bit = 0;
     for (int i = 0 ; i < dataBuffCount ; i++)
     { // Display the data payload encoded in hex
@@ -198,6 +198,7 @@ void loop()
     }
   }
 #endif
+
 
   // Trigger Timeout and reset the printer if byte stopped being received.
   {

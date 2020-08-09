@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../gameboy_printer_protocol.h"
+#include "gameboy_printer_protocol.h"
 #include "gpb_serial_io.h"
 
 #define FEATURE_PACKET_DUMP

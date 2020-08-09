@@ -19,10 +19,12 @@
 
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
-//#include <Arduino.h> // Just for Serial.Print() only
 
 #include "gameboy_printer_protocol.h"
 #include "gpb_serial_io.h"
+#include "gpb_cbuff.h"
+
+/******************************************************************************/
 
 #define GBP_PKT10_TIMEOUT_MS 5000
 
@@ -35,143 +37,7 @@
 
 #define GPB_BUSY_PACKET_COUNT 3 // 68 Inquiry packets is generally approximately how long it takes for a real printer to print. This is not a real printer so can be shorter
 
-/******************************************************************************/
-// # Circular Byte Buffer For Embedded Applications (Index Based)
-// Author: Brian Khuu (July 2020) (briankhuu.com) (mofosyne@gmail.com)
-// This Gist (Pointer): https://gist.github.com/mofosyne/d7a4a8d6a567133561c18aaddfd82e6f
-// This Gist (Index): https://gist.github.com/mofosyne/82020d5c0e1e11af0eb9b05c73734956
-#include <stdint.h> // uint8_t
-#include <stddef.h> // size_t
-#include <stdbool.h> // bool
 
-typedef struct gpb_cbuff_t
-{
-  size_t capacity; ///< Maximum number of items in the buffer
-  size_t count;    ///< Number of items in the buffer
-  uint8_t *buffer; ///< Data Buffer
-  size_t head;     ///< Head Index
-  size_t tail;     ///< Tail Index
-
-#ifdef FEATURE_CHECKSUM_SUPPORTED
-  // Temp
-  size_t countTemp;    ///< Number of items in the buffer
-  size_t headTemp;     ///< Head Index
-#endif // FEATURE_CHECKSUM_SUPPORTED
-} gpb_cbuff_t;
-
-static inline bool gpb_cbuff_Init(gpb_cbuff_t *cb, size_t capacity, uint8_t *buffPtr)
-{
-  gpb_cbuff_t emptyCB = {0};
-  if ((cb == NULL) || (buffPtr == NULL))
-    return false; ///< Failed
-  // Init Struct
-  *cb = emptyCB;
-  cb->capacity = capacity;
-  cb->buffer   = buffPtr;
-  cb->count    = 0;
-  cb->head     = 0;
-  cb->tail     = 0;
-  return true; ///< Successful
-}
-
-static inline bool gpb_cbuff_Reset(gpb_cbuff_t *cb)
-{
-  cb->count = 0;
-  cb->head = 0;
-  cb->tail = 0;
-
-  return true; ///< Successful
-}
-
-static inline bool gpb_cbuff_Enqueue(gpb_cbuff_t *cb, uint8_t b)
-{
-  // Full
-  if (cb->count >= cb->capacity)
-    return false; ///< Failed
-  // Push value
-  cb->buffer[cb->head] = b;
-  // Increment head
-  cb->head = (cb->head + 1) % cb->capacity;
-  cb->count = cb->count + 1;
-  return true; ///< Successful
-}
-
-static inline bool gpb_cbuff_Dequeue(gpb_cbuff_t *cb, uint8_t *b)
-{
-  // Empty
-  if (cb->count == 0)
-    return false; ///< Failed
-  // Pop value
-  *b = cb->buffer[cb->tail];
-  // Increment tail
-  cb->tail = (cb->tail + 1) % cb->capacity;
-  cb->count = cb->count - 1;
-  return true; ///< Successful
-}
-
-static inline bool gpb_cbuff_Dequeue_Peek(gpb_cbuff_t *cb, uint8_t *b, uint32_t offset)
-{
-  // Empty
-  if (cb->count == 0)
-    return false; ///< Failed
-  if (cb->count < offset)
-    return false; ///< Failed
-  // Pop value
-  *b = cb->buffer[(cb->tail + offset) % cb->capacity];
-  return true; ///< Successful
-}
-
-static inline size_t gpb_cbuff_Capacity(gpb_cbuff_t *cb) { return cb->capacity;}
-static inline size_t gpb_cbuff_Count(gpb_cbuff_t *cb)   { return cb->count;}
-static inline bool gpb_cbuff_IsFull(gpb_cbuff_t *cb)    { return (cb->count >= cb->capacity);}
-static inline bool gpb_cbuff_IsEmpty(gpb_cbuff_t *cb)   { return (cb->count == 0);}
-
-#ifdef FEATURE_CHECKSUM_SUPPORTED
-/* Temp Enqeue */
-static inline bool gpb_cbuff_ResetTemp(gpb_cbuff_t *cb)
-{
-  cb->countTemp = 0;
-  cb->headTemp  = cb->head ;
-}
-
-static inline bool gpb_cbuff_AcceptTemp(gpb_cbuff_t *cb)
-{
-  cb->count += cb->countTemp;
-  cb->head  = cb->headTemp  ;
-  return true; ///< Successful
-}
-
-static inline bool gpb_cbuff_EnqueueTemp(gpb_cbuff_t *cb, uint8_t b)
-{
-  // Full
-  if (cb->countTemp >= (cb->capacity - cb->count))
-    return false; ///< Failed
-  // Push value
-  cb->buffer[cb->headTemp] = b;
-  // Increment headTemp
-  cb->headTemp = (cb->headTemp + 1) % cb->capacity;
-  cb->countTemp = cb->countTemp + 1;
-  return true; ///< Successful
-}
-#else
-#define gpb_cbuff_EnqueueTemp(CB, B) gpb_cbuff_Enqueue(CB, B)
-#endif // FEATURE_CHECKSUM_SUPPORTED
-
-/******************************************************************************/
-/******************************************************************************/
-
-#ifdef GBP_FEATURE_RAW_DUMP
-static struct
-{
-  size_t totalBytesReceived;
-  size_t lastPacketByteCount;
-  size_t lastPacketChecksum;
-  uint16_t lastPacketStatus;
-} packetRawDump;
-#endif
-
-
-/******************************************************************************/
 /******************************************************************************/
 
 typedef enum
@@ -255,6 +121,73 @@ static struct
   int untransPacketCountdown;
   int dataPacketCountdown;
 } gpb_pktIO;
+
+
+/*******************************************************************************
+ * Serial IO
+*******************************************************************************/
+
+static bool gpb_sio_next(const gpb_sio_mode_t mode, const uint16_t txdata)
+{
+  gpb_sio.rx_buff = 0;
+  gpb_sio.mode = mode;
+  switch (mode)
+  {
+    case GPB_SIO_MODE_RESET            :
+      gpb_sio.bitMaskMap = 0;
+      gpb_sio.SINOutputPinState = false;
+      gpb_sio.tx_buff = 0xFFFF;
+      gpb_sio.syncronised = false;
+      break;
+    case GPB_SIO_MODE_8BITS                :
+      gpb_sio.bitMaskMap = (uint16_t)1 << (8 - 1);
+      gpb_sio.tx_buff = txdata;
+      break;
+    case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
+      gpb_sio.bitMaskMap = (uint16_t)1 << (16 - 1);
+      gpb_sio.tx_buff = txdata;
+      break;
+    case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
+      gpb_sio.bitMaskMap = (uint16_t)1 << (16 - 1);
+      gpb_sio.tx_buff = 0;
+      gpb_sio.tx_buff |= ((txdata >> 8) & 0x00FF);
+      gpb_sio.tx_buff |= ((txdata << 8) & 0xFF00);
+      break;
+  }
+  return true;
+}
+
+static uint16_t gpb_sio_getWord()
+{
+  uint16_t temp = 0;
+  switch (gpb_sio.mode)
+  {
+    case GPB_SIO_MODE_RESET            :
+      break;
+    case GPB_SIO_MODE_8BITS                :
+      temp |= ((gpb_sio.rx_buff >> 0) & 0x00FF);
+      break;
+    case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
+      temp |= ((gpb_sio.rx_buff >> 0) & 0xFFFF);
+      break;
+    case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
+      temp |= ((gpb_sio.rx_buff >> 8) & 0x00FF);
+      temp |= ((gpb_sio.rx_buff << 8) & 0xFF00);
+      break;
+  }
+  return temp;
+}
+
+static uint8_t gpb_sio_getByte(const int bytePos)
+{
+  switch (bytePos)
+  {
+    case 0: return ((gpb_sio.rx_buff >> 0) & 0xFF);
+    case 1: return ((gpb_sio.rx_buff >> 8) & 0xFF);
+    default: return 0;
+  }
+}
+
 
 /******************************************************************************/
 
@@ -352,73 +285,6 @@ bool gpb_serial_io_init(size_t buffSize, uint8_t *buffPtr)
 
 /******************************************************************************/
 
-bool gpb_sio_next(const gpb_sio_mode_t mode, const uint16_t txdata)
-{
-  gpb_sio.rx_buff = 0;
-  gpb_sio.mode = mode;
-  switch (mode)
-  {
-    case GPB_SIO_MODE_RESET            :
-      gpb_sio.bitMaskMap = 0;
-      gpb_sio.SINOutputPinState = false;
-      gpb_sio.tx_buff = 0xFFFF;
-      gpb_sio.syncronised = false;
-#ifdef GBP_FEATURE_RAW_DUMP
-      packetRawDump.lastPacketByteCount = packetRawDump.totalBytesReceived;
-#endif
-      break;
-    case GPB_SIO_MODE_8BITS                :
-      gpb_sio.bitMaskMap = (uint16_t)1 << (8 - 1);
-      gpb_sio.tx_buff = txdata;
-      break;
-    case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
-      gpb_sio.bitMaskMap = (uint16_t)1 << (16 - 1);
-      gpb_sio.tx_buff = txdata;
-      break;
-    case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
-      gpb_sio.bitMaskMap = (uint16_t)1 << (16 - 1);
-      gpb_sio.tx_buff = 0;
-      gpb_sio.tx_buff |= ((txdata >> 8) & 0x00FF);
-      gpb_sio.tx_buff |= ((txdata << 8) & 0xFF00);
-      break;
-  }
-  return true;
-}
-
-uint16_t gpb_sio_getWord()
-{
-  uint16_t temp = 0;
-  switch (gpb_sio.mode)
-  {
-    case GPB_SIO_MODE_RESET            :
-      break;
-    case GPB_SIO_MODE_8BITS                :
-      temp |= ((gpb_sio.rx_buff >> 0) & 0x00FF);
-      break;
-    case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
-      temp |= ((gpb_sio.rx_buff >> 0) & 0xFFFF);
-      break;
-    case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
-      temp |= ((gpb_sio.rx_buff >> 8) & 0x00FF);
-      temp |= ((gpb_sio.rx_buff << 8) & 0xFF00);
-      break;
-  }
-  return temp;
-}
-
-uint8_t gpb_sio_getByte(const int bytePos)
-{
-  switch (bytePos)
-  {
-    case 0: return ((gpb_sio.rx_buff >> 0) & 0xFF);
-    case 1: return ((gpb_sio.rx_buff >> 8) & 0xFF);
-    default: return 0;
-  }
-}
-
-
-/******************************************************************************/
-
 // Assumption: Only one gameboy printer connection required
 // Return: pin state of GBP_SIN
 #ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
@@ -502,13 +368,11 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
   {
     gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, GBP_SYNC_WORD_0);
     gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, GBP_SYNC_WORD_1);
-    packetRawDump.totalBytesReceived += 2;
   }
   switch (gpb_sio.mode)
   {
     case GPB_SIO_MODE_8BITS                :
       gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
-      packetRawDump.totalBytesReceived += 1;
       break;
     case GPB_SIO_MODE_16BITS_BIG_ENDIAN    :
     case GPB_SIO_MODE_16BITS_LITTLE_ENDIAN :
@@ -518,12 +382,10 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
         // so might as well use these bytes for documenting response of the status byte
         gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.tx_buff >> 8) & 0xFF));
         gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.tx_buff >> 0) & 0xFF));
-        packetRawDump.totalBytesReceived += 2;
         break;
       }
       gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 8) & 0xFF));
       gpb_cbuff_EnqueueTemp(&gpb_pktIO.dataBuffer, (uint8_t)((gpb_sio.rx_buff >> 0) & 0xFF));
-      packetRawDump.totalBytesReceived += 2;
       break;
     default:
       break;
@@ -712,11 +574,6 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
         default:
           break;
       }
-
-#ifdef GBP_FEATURE_RAW_DUMP
-      packetRawDump.lastPacketChecksum = gpb_pktIO.checksumCalc;
-      packetRawDump.lastPacketStatus = gpb_pktIO.statusBuffer;
-#endif
 
       // Start sending device id and status byte
       gpb_pktIO.packetState = GBP_PKT10_PARSE_DUMMY;
