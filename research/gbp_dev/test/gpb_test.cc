@@ -5,6 +5,8 @@
 #include "../gameboy_printer_protocol.h"
 #include "gpb_serial_io.h"
 
+#define FEATURE_PACKET_DUMP
+#define FEATURE_PACKET_COMMUNICATION_SUMMARY
 
 /*******************************************************************************
  * Test Vectors Variables
@@ -139,19 +141,21 @@ int main(void)
           pktDataLength = 0;
           pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
           pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
+#ifdef FEATURE_PACKET_DUMP
           printf("/* %3lu : %s (dLen:%lu) */\r\n",
             (unsigned long) pktTotalCount,
             (char *) gbpCommand_toStr(commandTypeByte),
             (unsigned long) pktDataLength
             );
+#endif
           // For packetResult_t
           testPacketResult[pktTotalCount].command = commandTypeByte;
           testPacketResult[pktTotalCount].pktDataLength = pktDataLength;
         }
         // Print Hex Byte
         uint8_t rxByte = gbp_dataBuff_getByte();
+#ifdef FEATURE_PACKET_DUMP
         printf((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
-        //printf("(%d)", byteTotal);
         if (pktByteIndex < (8+pktDataLength))
         {
           printf("0x%02X,", rxByte);
@@ -170,13 +174,14 @@ int main(void)
             printf((testResponse[byteTotal] & GBP_STATUS_MASK_ER2   ) ? "ER2 "    : "");
             printf((testResponse[byteTotal] & GBP_STATUS_MASK_ER1   ) ? "ER1 "    : "");
             printf((testResponse[byteTotal] & GBP_STATUS_MASK_ER0   ) ? "ER0 "    : "");
-            printf((testResponse[byteTotal] & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN"  : "");
+            printf((testResponse[byteTotal] & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN " : "");
             printf((testResponse[byteTotal] & GBP_STATUS_MASK_FULL  ) ? "FULL "   : "");
             printf((testResponse[byteTotal] & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
             printf((testResponse[byteTotal] & GBP_STATUS_MASK_SUM   ) ? "SUM "    : "");
             printf(" */");
           }
         }
+#endif
         // Check if packet bytes match test vector
         if (pktByteIndex < (8+pktDataLength))
         {
@@ -210,13 +215,17 @@ int main(void)
         // Splitting packets for convenience
         if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
         {
+#ifdef FEATURE_PACKET_DUMP
           printf("\r\n");
+#endif
           pktByteIndex = 0;
           pktTotalCount++;
         }
         else
         {
+#ifdef FEATURE_PACKET_DUMP
           printf( ((pktByteIndex+1)%16 == 0) ? "\n" : " "); ///< Insert Newline Periodically
+#endif
           pktByteIndex++; // Byte hex split counter
         }
         byteTotal++; // Byte total counter
@@ -225,7 +234,7 @@ int main(void)
   }
 
 
-#if 1 // Packet Mismatch
+#ifdef FEATURE_PACKET_COMMUNICATION_SUMMARY
   printf("\r\n/* Communication Summary */\r\n");
   for (size_t i = 0 ; i < (sizeof(testPacketResult)/sizeof(testPacketResult[0])) ; i++)
   {
@@ -254,7 +263,7 @@ int main(void)
         printf((testPacketResult[i].status & GBP_STATUS_MASK_ER2   ) ? "ER2 "    : "");
         printf((testPacketResult[i].status & GBP_STATUS_MASK_ER1   ) ? "ER1 "    : "");
         printf((testPacketResult[i].status & GBP_STATUS_MASK_ER0   ) ? "ER0 "    : "");
-        printf((testPacketResult[i].status & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN"  : "");
+        printf((testPacketResult[i].status & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN "  : "");
         printf((testPacketResult[i].status & GBP_STATUS_MASK_FULL  ) ? "FULL "   : "");
         printf((testPacketResult[i].status & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
         printf((testPacketResult[i].status & GBP_STATUS_MASK_SUM   ) ? "SUM "    : "");
@@ -266,7 +275,7 @@ int main(void)
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_ER2   ) ? "ER2 "    : "");
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_ER1   ) ? "ER1 "    : "");
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_ER0   ) ? "ER0 "    : "");
-        printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN"  : "");
+        printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN "  : "");
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_FULL  ) ? "FULL "   : "");
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
         printf((testPacketResult[i].statusExpected & GBP_STATUS_MASK_SUM   ) ? "SUM "    : "");

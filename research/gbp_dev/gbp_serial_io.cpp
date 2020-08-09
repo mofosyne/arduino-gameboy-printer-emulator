@@ -232,9 +232,10 @@ static struct
   bool packetReceivedNotify;
   uint32_t timeout_ms;
 
-  // Busy
+  // Status Packet Sequencing (For faking the printer)
   int busyPacketCountdown;
   int untransPacketCountdown;
+  int dataPacketCountdown;
 } gpb_pktIO;
 
 /******************************************************************************/
@@ -778,16 +779,16 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       {
         // INIT --> DATA --> ENDDATA --> PRINT
         case GBP_COMMAND_INIT:
+            gpb_pktIO.dataPacketCountdown = 6;
+            gpb_pktIO.untransPacketCountdown = 0;
+            gpb_pktIO.busyPacketCountdown = 0;
             gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
           break;
         case GBP_COMMAND_PRINT:
-          gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
-          gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, true);
-          // later... gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
           gpb_pktIO.busyPacketCountdown = 68;
           break;
         case GBP_COMMAND_DATA:
-          gpb_pktIO.untransPacketCountdown = 2;
+          gpb_pktIO.untransPacketCountdown = 3;
           break;
         case GBP_COMMAND_BREAK:
           gpb_status_bit_update_low_battery(gpb_pktIO.statusBuffer, false);
@@ -799,9 +800,26 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
           gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
           gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, false);
         case GBP_COMMAND_INQUIRY:
-          if (gpb_pktIO.busyPacketCountdown == 0)
+          if (gpb_pktIO.untransPacketCountdown > 0)
           {
-
+            gpb_pktIO.untransPacketCountdown--;
+            if (gpb_pktIO.untransPacketCountdown == 0)
+            {
+              gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
+              if (gpb_pktIO.busyPacketCountdown > 0)
+              {
+                gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, true);
+                gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
+              }
+            }
+          }
+          else if (gpb_pktIO.busyPacketCountdown > 0)
+          {
+            gpb_pktIO.busyPacketCountdown--;
+            if (gpb_pktIO.busyPacketCountdown == 0)
+            {
+              gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
+            }
           }
           break;
         default:
@@ -828,30 +846,26 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
         case GBP_COMMAND_PRINT:
           break;
         case GBP_COMMAND_DATA:
+          if (gpb_pktIO.dataPacketCountdown > 0)
+          {
+            gpb_pktIO.dataPacketCountdown--;
+            if (gpb_pktIO.dataPacketCountdown == 0)
+            {
+              gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
+            }
+          }
           gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, true);
           if (gpb_pktIO.data_length == 0)
           {
-            gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
             gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
           }
           break;
         case GBP_COMMAND_BREAK:
           break;
         case GBP_COMMAND_INQUIRY:
-          if (gpb_pktIO.untransPacketCountdown > 0)
+          if ((gpb_pktIO.untransPacketCountdown == 0)&&(gpb_pktIO.busyPacketCountdown == 0))
           {
-            gpb_pktIO.untransPacketCountdown--;
-            if (gpb_pktIO.untransPacketCountdown == 0)
-              gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
-          }
-          if (gpb_pktIO.busyPacketCountdown > 0)
-          {
-            gpb_pktIO.busyPacketCountdown--;
-            if (gpb_pktIO.busyPacketCountdown == 0)
-            {
-              gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, false);
-//              gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
-            }
+              gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
           }
           break;
         default:
