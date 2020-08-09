@@ -82,10 +82,10 @@ void dummy_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
 #ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
   if (GBP_SCLK)
   {
-    txBit = gpb_pktIO_OnRising_ISR(GBP_SOUT);
+    txBit = gpb_serial_io_OnRising_ISR(GBP_SOUT);
   }
 #else
-  txBit = gpb_pktIO_OnChange_ISR(GBP_SCLK, GBP_SOUT);
+  txBit = gpb_serial_io_OnChange_ISR(GBP_SCLK, GBP_SOUT);
 #endif
 
 }
@@ -98,7 +98,7 @@ int main(void)
 {
   printf("/* GBP Testing (Test Vector Size: %lu) */", (long unsigned) sizeof(testVector));
   // Prep
-  gpb_pktIO_init(sizeof(gbp_buffer), gbp_buffer);
+  gpb_serial_io_init(sizeof(gbp_buffer), gbp_buffer);
 
   // Process
   for (size_t i = 0 ; i < sizeof(testVector) ; i++)
@@ -113,14 +113,14 @@ int main(void)
   }
 
   // Display
-  while (gbp_dataBuff_getByteCount() > 0)
+  while (gbp_serial_io_dataBuff_getByteCount() > 0)
   {
     /* tiles received */
     static uint32_t byteTotal = 0;
     static uint16_t pktTotalCount = 0;
     static uint16_t pktByteIndex = 0;
     static uint16_t pktDataLength = 0;
-    const size_t dataBuffCount = gbp_dataBuff_getByteCount();
+    const size_t dataBuffCount = gbp_serial_io_dataBuff_getByteCount();
     if (
         ((pktByteIndex != 0)&&(dataBuffCount>0))||
         ((pktByteIndex == 0)&&(dataBuffCount>=6))
@@ -135,9 +135,9 @@ int main(void)
             [ 00 ][ 01 ][ 02 ][ 03 ][ 04 ][ 05 ][ 5+X  ][ 5+X+1 ][ 5+X+2 ][ 5+X+3 ][ 5+X+4 ]
             [SYNC][SYNC][COMM][COMP][LEN0][LEN1][ DATA ][ CSUM0 ][ CSUM1 ][ DUMMY ][ DUMMY ]
           */
-          uint8_t commandTypeByte = gbp_dataBuff_getByte_Peek(2);
-          uint8_t dataLengthByte0 = gbp_dataBuff_getByte_Peek(4);
-          uint8_t dataLengthByte1 = gbp_dataBuff_getByte_Peek(5);
+          uint8_t commandTypeByte = gbp_serial_io_dataBuff_getByte_Peek(2);
+          uint8_t dataLengthByte0 = gbp_serial_io_dataBuff_getByte_Peek(4);
+          uint8_t dataLengthByte1 = gbp_serial_io_dataBuff_getByte_Peek(5);
           pktDataLength = 0;
           pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
           pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
@@ -153,7 +153,7 @@ int main(void)
           testPacketResult[pktTotalCount].pktDataLength = pktDataLength;
         }
         // Print Hex Byte
-        uint8_t rxByte = gbp_dataBuff_getByte();
+        uint8_t rxByte = gbp_serial_io_dataBuff_getByte();
 #ifdef FEATURE_PACKET_DUMP
         printf((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
         if (pktByteIndex < (8+pktDataLength))

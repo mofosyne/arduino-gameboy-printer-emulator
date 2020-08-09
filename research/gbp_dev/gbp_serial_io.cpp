@@ -1,3 +1,22 @@
+/*
+  # Gameboy Printer Serial IO
+  * Author:  Brian Khuu (2020-08-09)
+  * Licence: GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
+  * Purpose: This module focus on capturing packets from a gameboy to a virtual printer
+
+  ******************************************************************************
+
+  ## Dev Note (2020-08-09):
+    I was trying to do most of the processing here, however I think it makes
+    more sense to simply grab a stream of packets then process that in a separate
+    module. This will also make maintainance easier this way.
+
+  ## Refactor Note (2020-08-09):
+    You may want to eventally remove parsing of certain fields since we will be
+    handling these fields later on. But for now leave it here just in case its
+    important.
+*/
+
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 //#include <Arduino.h> // Just for Serial.Print() only
@@ -11,13 +30,10 @@
 //#define TEST_CHECKSUM_FORCE_FAIL
 //#define TEST_PRETEND_BUFFER_FULL
 
-
 // Feature
 //#define FEATURE_CHECKSUM_SUPPORTED ///< WIP
 
 #define GPB_BUSY_PACKET_COUNT 3 // 68 Inquiry packets is generally approximately how long it takes for a real printer to print. This is not a real printer so can be shorter
-
-
 
 /******************************************************************************/
 // # Circular Byte Buffer For Embedded Applications (Index Based)
@@ -242,11 +258,11 @@ static struct
 
 /******************************************************************************/
 
-bool gbp_timeout_handler(uint32_t elapsed_ms)
+bool gbp_serial_io_timeout_handler(uint32_t elapsed_ms)
 {
   if (gpb_pktIO.breakPacketReceived)
   {
-    gpb_pktIO_reset();
+    gpb_serial_io_reset();
     return true;
   }
 
@@ -255,157 +271,40 @@ bool gbp_timeout_handler(uint32_t elapsed_ms)
     gpb_pktIO.timeout_ms = (gpb_pktIO.timeout_ms > elapsed_ms) ? (gpb_pktIO.timeout_ms - elapsed_ms) : 0;
     if (gpb_pktIO.timeout_ms == 0)
     {
-      gpb_pktIO_reset();
+      gpb_serial_io_reset();
       return true;
     }
   }
   return false;
 }
 
-bool gbp_packetWasReceived(bool reset)
-{
-  bool received = gpb_pktIO.packetReceivedNotify;
-  if (reset)
-    gpb_pktIO.packetReceivedNotify = false;
-  return received;
-}
-
-size_t gbp_dataBuff_getByteCount(void)
+size_t gbp_serial_io_dataBuff_getByteCount(void)
 {
   return gpb_cbuff_Count(&gpb_pktIO.dataBuffer);
 }
 
-uint8_t gbp_dataBuff_getByte(void)
+uint8_t gbp_serial_io_dataBuff_getByte(void)
 {
   uint8_t b = 0;
   gpb_cbuff_Dequeue(&gpb_pktIO.dataBuffer, &b);
   if (gpb_cbuff_Count(&gpb_pktIO.dataBuffer) == 0)
   {
-    gbp_set_unprocessed_data(false);
+    gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
   }
   return b;
 }
 
-uint8_t gbp_dataBuff_getByte_Peek(uint32_t offset)
+uint8_t gbp_serial_io_dataBuff_getByte_Peek(uint32_t offset)
 {
   uint8_t b = 0;
   gpb_cbuff_Dequeue_Peek(&gpb_pktIO.dataBuffer, &b, offset);
   return b;
 }
 
-/******************************************************************************/
-
-bool gbp_init_CheckReceived(bool clear)
-{
-  bool ret = gpb_pktIO.initReceived;
-  if (clear)
-    gpb_pktIO.initReceived = false;
-  return ret;
-}
-
-bool gbp_printInstruction_CheckReceived(bool clear)
-{
-  bool ret = gpb_pktIO.printInstructionReceived;
-  if (clear)
-    gpb_pktIO.printInstructionReceived = false;
-  return ret;
-}
-
-bool gbp_dataPacket_CheckReceived(bool clear)
-{
-  bool ret = gpb_pktIO.dataPacketReceived;
-  if (clear)
-    gpb_pktIO.dataPacketReceived = false;
-  return ret;
-}
-
-bool gbp_dataEndPacket_CheckReceived(bool clear)
-{
-  bool ret = gpb_pktIO.dataEndPacketReceived;
-  if (clear)
-    gpb_pktIO.dataEndPacketReceived = false;
-  return ret;
-}
-
-bool gbp_breakPacket_CheckReceived(bool clear)
-{
-  bool ret = gpb_pktIO.breakPacketReceived;
-  if (clear)
-    gpb_pktIO.breakPacketReceived = false;
-  return ret;
-}
-
-bool gbp_nullPacket_CheckReceived(bool clear)
-{
-  bool ret = gpb_pktIO.nulPacketReceived;
-  if (clear)
-    gpb_pktIO.nulPacketReceived = false;
-  return ret;
-}
-
 
 /******************************************************************************/
 
-int gbp_printInstruction_num_of_sheets(void)
-{
-  if (gpb_pktIO.printInstructionReceived)
-    return -1;
-  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS  ]);
-}
-
-int gbp_printInstruction_num_of_linefeed_before_print(void)
-{
-  if (gpb_pktIO.printInstructionReceived)
-    return -1;
-  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED] >> 4) & 0x0F;
-}
-
-int gbp_printInstruction_num_of_linefeed_after_print(void)
-{
-  if (gpb_pktIO.printInstructionReceived)
-    return -1;
-  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]) & 0x0F;
-}
-
-int gbp_printInstruction_palette_value(void)
-{
-  if (gpb_pktIO.printInstructionReceived)
-    return -1;
-  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE  ]);
-}
-
-int gbp_printInstruction_print_density(void)
-{
-  if (gpb_pktIO.printInstructionReceived)
-    return -1;
-  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY  ]);
-}
-
-
-/******************************************************************************/
-
-void gbp_set_low_battery(bool val) {gpb_status_bit_update_low_battery(gpb_pktIO.statusBuffer, val);}
-void gbp_set_other_error(bool val) {gpb_status_bit_update_other_error(gpb_pktIO.statusBuffer, val);}
-void gbp_set_paper_jam(bool val) {gpb_status_bit_update_paper_jam(gpb_pktIO.statusBuffer, val);}
-void gbp_set_packet_error(bool val) {gpb_status_bit_update_packet_error(gpb_pktIO.statusBuffer, val);}
-void gbp_set_unprocessed_data(bool val) {gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, val);}
-void gbp_set_print_buffer_full(bool val) {gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, val);}
-void gbp_set_printer_busy(bool val) {gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, val);}
-void gbp_set_checksum_error(bool val) {gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, val);}
-
-bool gbp_get_low_battery(void) {return gpb_status_bit_getbit_low_battery(gpb_pktIO.statusBuffer);}
-bool gbp_get_other_error(void) {return gpb_status_bit_getbit_other_error(gpb_pktIO.statusBuffer);}
-bool gbp_get_paper_jam(void) {return gpb_status_bit_getbit_paper_jam(gpb_pktIO.statusBuffer);}
-bool gbp_get_packet_error(void) {return gpb_status_bit_getbit_packet_error(gpb_pktIO.statusBuffer);}
-bool gbp_get_unprocessed_data(void) {return gpb_status_bit_getbit_unprocessed_data(gpb_pktIO.statusBuffer);}
-bool gbp_get_print_buffer_full(void) {return gpb_status_bit_getbit_print_buffer_full(gpb_pktIO.statusBuffer);}
-bool gbp_get_printer_busy(void) {return gpb_status_bit_getbit_printer_busy(gpb_pktIO.statusBuffer);}
-bool gbp_get_checksum_error(void) {return gpb_status_bit_getbit_checksum_error(gpb_pktIO.statusBuffer);}
-
-
-/******************************************************************************/
-
-bool gpb_pktIO_reset(void)
+bool gpb_serial_io_reset(void)
 {
   gpb_sio.syncronised = false;
   gpb_sio.rx_buff = 0;
@@ -434,7 +333,7 @@ bool gpb_pktIO_reset(void)
   return true;
 }
 
-bool gpb_pktIO_init(size_t buffSize, uint8_t *buffPtr)
+bool gpb_serial_io_init(size_t buffSize, uint8_t *buffPtr)
 {
   // reset status data
   gpb_pktIO.statusBuffer = 0x0000;
@@ -445,7 +344,7 @@ bool gpb_pktIO_init(size_t buffSize, uint8_t *buffPtr)
   gpb_cbuff_Init(&gpb_pktIO.dataBuffer, buffSize, buffPtr);
 
   // Packet Parsing Subsystem
-  gpb_pktIO_reset();
+  gpb_serial_io_reset();
 
   return true;
 }
@@ -517,29 +416,15 @@ uint8_t gpb_sio_getByte(const int bytePos)
   }
 }
 
-#ifdef GBP_FEATURE_RAW_DUMP
-size_t gbp_sio_lastPacketByteCount(void)
-{
-  return packetRawDump.lastPacketByteCount;
-}
-size_t gbp_sio_lastPacketChecksum(void)
-{
-  return packetRawDump.lastPacketChecksum;
-}
-uint16_t gbp_sio_lastPacketStatus(void)
-{
-  return packetRawDump.lastPacketStatus;
-}
-#endif
 
 /******************************************************************************/
 
 // Assumption: Only one gameboy printer connection required
 // Return: pin state of GBP_SIN
 #ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
-bool gpb_pktIO_OnRising_ISR(const bool GBP_SOUT)
+bool gpb_serial_io_OnRising_ISR(const bool GBP_SOUT)
 #else
-bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
+bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
 #endif
 {
   // Based on SIO Timing Chart. Page 30 of GameBoy PROGRAMMING MANUAL Version 1.0:
@@ -772,7 +657,7 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
         gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
       }
       fakeFullToggle++;
-#endif
+#endif // TEST_PRETEND_BUFFER_FULL
 
 
 
@@ -947,3 +832,62 @@ bool gpb_pktIO_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
 
 
 /******************************************************************************/
+
+#if 0 // Not sure if required yet
+int gbp_printInstruction_num_of_sheets(void)
+{
+  if (gpb_pktIO.printInstructionReceived)
+    return -1;
+  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS  ]);
+}
+
+int gbp_printInstruction_num_of_linefeed_before_print(void)
+{
+  if (gpb_pktIO.printInstructionReceived)
+    return -1;
+  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED] >> 4) & 0x0F;
+}
+
+int gbp_printInstruction_num_of_linefeed_after_print(void)
+{
+  if (gpb_pktIO.printInstructionReceived)
+    return -1;
+  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]) & 0x0F;
+}
+
+int gbp_printInstruction_palette_value(void)
+{
+  if (gpb_pktIO.printInstructionReceived)
+    return -1;
+  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE  ]);
+}
+
+int gbp_printInstruction_print_density(void)
+{
+  if (gpb_pktIO.printInstructionReceived)
+    return -1;
+  return (gpb_pktIO.printInstructionBuffer[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY  ]);
+}
+
+
+/******************************************************************************/
+
+/* printer status update */
+void gbp_set_low_battery(bool val) {gpb_status_bit_update_low_battery(gpb_pktIO.statusBuffer, val);}
+void gbp_set_other_error(bool val) {gpb_status_bit_update_other_error(gpb_pktIO.statusBuffer, val);}
+void gbp_set_paper_jam(bool val) {gpb_status_bit_update_paper_jam(gpb_pktIO.statusBuffer, val);}
+void gbp_set_packet_error(bool val) {gpb_status_bit_update_packet_error(gpb_pktIO.statusBuffer, val);}
+void gbp_set_unprocessed_data(bool val) {gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, val);}
+void gbp_set_print_buffer_full(bool val) {gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, val);}
+void gbp_set_printer_busy(bool val) {gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, val);}
+void gbp_set_checksum_error(bool val) {gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, val);}
+bool gbp_get_low_battery(void) {return gpb_status_bit_getbit_low_battery(gpb_pktIO.statusBuffer);}
+bool gbp_get_other_error(void) {return gpb_status_bit_getbit_other_error(gpb_pktIO.statusBuffer);}
+bool gbp_get_paper_jam(void) {return gpb_status_bit_getbit_paper_jam(gpb_pktIO.statusBuffer);}
+bool gbp_get_packet_error(void) {return gpb_status_bit_getbit_packet_error(gpb_pktIO.statusBuffer);}
+bool gbp_get_unprocessed_data(void) {return gpb_status_bit_getbit_unprocessed_data(gpb_pktIO.statusBuffer);}
+bool gbp_get_print_buffer_full(void) {return gpb_status_bit_getbit_print_buffer_full(gpb_pktIO.statusBuffer);}
+bool gbp_get_printer_busy(void) {return gpb_status_bit_getbit_printer_busy(gpb_pktIO.statusBuffer);}
+bool gbp_get_checksum_error(void) {return gpb_status_bit_getbit_checksum_error(gpb_pktIO.statusBuffer);}
+
+#endif

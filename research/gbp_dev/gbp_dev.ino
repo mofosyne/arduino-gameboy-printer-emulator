@@ -63,9 +63,9 @@ void serialClock_ISR(void)
 {
   // Serial Clock (1 = Rising Edge) (0 = Falling Edge); Master Output Slave Input (This device is slave)
 #ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
-  const bool txBit = gpb_pktIO_OnRising_ISR(digitalRead(GBP_SO_PIN));
+  const bool txBit = gpb_serial_io_OnRising_ISR(digitalRead(GBP_SO_PIN));
 #else
-  const bool txBit = gpb_pktIO_OnChange_ISR(digitalRead(GBP_SC_PIN), digitalRead(GBP_SO_PIN));
+  const bool txBit = gpb_serial_io_OnChange_ISR(digitalRead(GBP_SC_PIN), digitalRead(GBP_SO_PIN));
 #endif
   digitalWrite(GBP_SI_PIN, txBit ? HIGH : LOW);
 }
@@ -101,7 +101,7 @@ void setup(void)
 #endif
 
   /* Setup */
-  gpb_pktIO_init(sizeof(gbp_buffer), gbp_buffer);
+  gpb_serial_io_init(sizeof(gbp_buffer), gbp_buffer);
 
   /* attach ISR */
 #ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
@@ -136,30 +136,30 @@ void loop()
   static uint32_t pktTotalCount = 0;
   static uint32_t pktByteIndex = 0;
   static uint16_t pktDataLength = 0;
-  const size_t dataBuffCount = gbp_dataBuff_getByteCount();
+  const size_t dataBuffCount = gbp_serial_io_dataBuff_getByteCount();
   if (
       ((pktByteIndex != 0)&&(dataBuffCount>0))||
       ((pktByteIndex == 0)&&(dataBuffCount>=6))
       )
   {
-    const char nibbleToCharLUT[] = "0123456789ABCDEF";
+    const char nibbleToCharLUT[] = "0 123456789ABCDEF";
     uint8_t data_8bit = 0;
     for (int i = 0 ; i < dataBuffCount ; i++)
     { // Display the data payload encoded in hex
       // Start of a new packet
       if (pktByteIndex == 0)
       {
-        pktDataLength = gbp_dataBuff_getByte_Peek(4);
-        pktDataLength |= (gbp_dataBuff_getByte_Peek(5)<<8)&0xFF00;
+        pktDataLength = gbp_serial_io_dataBuff_getByte_Peek(4);
+        pktDataLength |= (gbp_serial_io_dataBuff_getByte_Peek(5)<<8)&0xFF00;
         Serial.print("/* ");
         Serial.print(pktTotalCount);
         Serial.print(" : ");
-        Serial.print(gbpCommand_toStr(gbp_dataBuff_getByte_Peek(2)));
+        Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
         Serial.print(" */\n");
         digitalWrite(LED_STATUS_PIN, HIGH);
       }
       // Print Hex Byte
-      data_8bit = gbp_dataBuff_getByte();
+      data_8bit = gbp_serial_io_dataBuff_getByte();
       Serial.print((char)'0');
       Serial.print((char)'x');
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
@@ -186,11 +186,11 @@ void loop()
 
 #ifndef GBP_FEATURE_RAW_DUMP
   /* tiles received */
-  if (gbp_dataBuff_getByteCount() >= 16)
+  if (gbp_serial_io_dataBuff_getByteCount() >= 16)
   {
     for (uint16_t i = 0 ; i < 16 ; i++)
     { // Display the data payload encoded in hex
-      const uint8_t data_8bit = gbp_dataBuff_getByte();
+      const uint8_t data_8bit = gbp_serial_io_dataBuff_getByte();
       const char nibbleToCharLUT[] = "0123456789ABCDEF";
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
       Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
@@ -206,10 +206,10 @@ void loop()
     if (curr_millis > last_millis)
     {
       uint32_t elapsed_ms = curr_millis - last_millis;
-      if (gbp_timeout_handler(elapsed_ms))
+      if (gbp_serial_io_timeout_handler(elapsed_ms))
       {
-        gbp_set_printer_busy(false);
         Serial.println("\n\n// ERROR: Timed Out\n\n");
+        digitalWrite(LED_STATUS_PIN, LOW);
       }
     }
     last_millis = curr_millis;
