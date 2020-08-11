@@ -26,11 +26,6 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT);
 /* Timeout */
 bool gbp_serial_io_timeout_handler(uint32_t elapsed_ms);
 
-/* Indirect Buffer Access*/
-// Dev Note: Is intended for module use
-gpb_cbuff_t *gpb_serial_get_cbuff(void);
-
-/* Direct Buffer Access */
 // Dev Note: Is used during testing and simpler implementations
 size_t gbp_serial_io_dataBuff_getByteCount(void);
 uint8_t gbp_serial_io_dataBuff_getByte(void);

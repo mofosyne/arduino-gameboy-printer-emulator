@@ -159,30 +159,11 @@ void loop()
       }
       // Print Hex Byte
       data_8bit = gbp_serial_io_dataBuff_getByte();
-      Serial.print((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":""); // Start Of Status Byte Delimitation
       Serial.print((char)'0');
       Serial.print((char)'x');
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
       Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
       Serial.print((char)',');
-      if (pktByteIndex == (8+pktDataLength + 1))
-      {
-        // End of Status Byte Delimitation
-        printf("/*)*/");
-        if (data_8bit)
-        {
-          printf(" /* Printer Status: ");
-          printf((data_8bit & GBP_STATUS_MASK_LOWBAT) ? "LOWBAT " : "");
-          printf((data_8bit & GBP_STATUS_MASK_ER2   ) ? "ER2 "    : "");
-          printf((data_8bit & GBP_STATUS_MASK_ER1   ) ? "ER1 "    : "");
-          printf((data_8bit & GBP_STATUS_MASK_ER0   ) ? "ER0 "    : "");
-          printf((data_8bit & GBP_STATUS_MASK_UNTRAN) ? "UNTRAN " : "");
-          printf((data_8bit & GBP_STATUS_MASK_FULL  ) ? "FULL "   : "");
-          printf((data_8bit & GBP_STATUS_MASK_BUSY  ) ? "BUSY "   : "");
-          printf((data_8bit & GBP_STATUS_MASK_SUM   ) ? "SUM "    : "");
-          printf(" */");
-        }
-      }
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {

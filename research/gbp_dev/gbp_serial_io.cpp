@@ -191,11 +191,6 @@ static uint8_t gpb_sio_getByte(const int bytePos)
 
 /******************************************************************************/
 
-gpb_cbuff_t *gpb_serial_get_cbuff(void)
-{
-  return &gpb_pktIO.dataBuffer;
-}
-
 bool gbp_serial_io_timeout_handler(uint32_t elapsed_ms)
 {
   if (gpb_pktIO.breakPacketReceived)
