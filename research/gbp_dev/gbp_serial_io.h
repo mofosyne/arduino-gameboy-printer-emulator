@@ -1,6 +1,6 @@
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
-#include "gpb_cbuff.h"
+#include "gbp_cbuff.h"
 
 #define GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR // Away from technical accuracy towards double speed mode compatibility
 

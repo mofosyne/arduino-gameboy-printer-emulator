@@ -3,15 +3,16 @@
 #include <stdbool.h>
 
 #include "gameboy_printer_protocol.h"
-#include "gpb_serial_io.h"
+#include "gbp_serial_io.h"
+#include "gbp_pkt.h"
 
-#define FEATURE_PACKET_DUMP
-#define FEATURE_PACKET_COMMUNICATION_SUMMARY
+//#define FEATURE_PACKET_SERIAL_IO
+#define FEATURE_PACKET_TEST_PARSE
 
 /*******************************************************************************
  * Test Vectors Variables
 *******************************************************************************/
-uint8_t testVector[] = {
+const uint8_t testVector[] = {
   //#include "2020-08-02_GameboyPocketCameraJP.txt"
   #include "2020-08-02_PokemonSpeciallPicachuEdition.txt"
 };
@@ -33,6 +34,7 @@ typedef struct
 } packetResult_t;
 
 packetResult_t testPacketResult[sizeof(testVector)] = {{0}};
+
 
 
 /*******************************************************************************
@@ -113,6 +115,7 @@ int main(void)
   }
 
   // Display
+#ifdef FEATURE_PACKET_SERIAL_IO
   while (gbp_serial_io_dataBuff_getByteCount() > 0)
   {
     /* tiles received */
@@ -141,20 +144,17 @@ int main(void)
           pktDataLength = 0;
           pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
           pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
-#ifdef FEATURE_PACKET_DUMP
           printf("/* %3lu : %s (dLen:%lu) */\r\n",
             (unsigned long) pktTotalCount,
             (char *) gbpCommand_toStr(commandTypeByte),
             (unsigned long) pktDataLength
             );
-#endif
           // For packetResult_t
           testPacketResult[pktTotalCount].command = commandTypeByte;
           testPacketResult[pktTotalCount].pktDataLength = pktDataLength;
         }
         // Print Hex Byte
         uint8_t rxByte = gbp_serial_io_dataBuff_getByte();
-#ifdef FEATURE_PACKET_DUMP
         printf((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
         if (pktByteIndex < (8+pktDataLength))
         {
@@ -181,7 +181,6 @@ int main(void)
             printf(" */");
           }
         }
-#endif
         // Check if packet bytes match test vector
         if (pktByteIndex < (8+pktDataLength))
         {
@@ -215,17 +214,13 @@ int main(void)
         // Splitting packets for convenience
         if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
         {
-#ifdef FEATURE_PACKET_DUMP
           printf("\r\n");
-#endif
           pktByteIndex = 0;
           pktTotalCount++;
         }
         else
         {
-#ifdef FEATURE_PACKET_DUMP
           printf( ((pktByteIndex+1)%16 == 0) ? "\n" : " "); ///< Insert Newline Periodically
-#endif
           pktByteIndex++; // Byte hex split counter
         }
         byteTotal++; // Byte total counter
@@ -233,8 +228,6 @@ int main(void)
     }
   }
 
-
-#ifdef FEATURE_PACKET_COMMUNICATION_SUMMARY
   printf("\r\n/* Communication Summary */\r\n");
   for (size_t i = 0 ; i < (sizeof(testPacketResult)/sizeof(testPacketResult[0])) ; i++)
   {
@@ -288,17 +281,42 @@ int main(void)
       printf("*/\r\n");
     }
   }
-#endif
+#endif // FEATURE_PACKET_SERIAL_IO
 
-#if 0 // Dev: testResponse Dump
-  printf("\r\n/* testResponse Dump */\r\n");
-  for (size_t i = 0 ; i < sizeof(testResponse) ; i++)
+#ifdef FEATURE_PACKET_TEST_PARSE
+  gbp_pktBuff_t gbp_pktBuff = {GBP_REC_NONE,0};
+  gbp_pkt_init(&gbp_pktBuff);
+  printf("\r\n");
+  for (size_t i = 0 ; i < sizeof(testVector) ; i++)
   {
-    const int charperline = 16*3;
-    printf("%02X", testResponse[i]);
-    printf((i%(charperline) == (charperline-1))?"\r\n":" ");
-  }
+    if (gbp_pkt_processByte((const uint8_t) testVector[i], &gbp_pktBuff))
+    {
+#if 1
+      if (gbp_pktBuff.received == GBP_REC_GOT_DATA_TILE)
+      {
+        for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
+        {
+          printf("%02X ",gbp_pktBuff.payloadBuff[i]);
+        }
+        printf("\r\n");
+      }
+#else
+      printf("%s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | ",
+          gbp_pkt_commandType_toStr(gbp_pktBuff.command),
+          (unsigned) gbp_pktBuff.compression,
+          (unsigned) gbp_pktBuff.dataLength,
+          (unsigned) gbp_pktBuff.printerID,
+          (unsigned) gbp_pktBuff.status
+        );
+      for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
+      {
+        printf("%02X ",gbp_pktBuff.payloadBuff[i]);
+      }
+      printf("\r\n");
 #endif
+    }
+  }
+#endif //FEATURE_PACKET_TEST_PARSE
 
   printf("\r\n/* Done */\r\n");
 }

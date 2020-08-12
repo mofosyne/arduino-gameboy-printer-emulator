@@ -21,8 +21,8 @@
 #include <stddef.h> // size_t
 
 #include "gameboy_printer_protocol.h"
-#include "gpb_serial_io.h"
-#include "gpb_cbuff.h"
+#include "gbp_serial_io.h"
+#include "gbp_cbuff.h"
 
 /******************************************************************************/
 

@@ -1,9 +1,9 @@
 CXX = g++
-CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -I. -I..
+CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -I.
 LDFLAGS =  -fsanitize=address
 
 SRC_CC = test/gpb_test.cc
-SRC_CPP = gbp_serial_io.cpp
+SRC_CPP = gbp_serial_io.cpp gbp_pkt.cpp
 OBJ = $(SRC_CC:.cc=.o) $(SRC_CPP:.cpp=.o)
 EXEC = gpb_test
 

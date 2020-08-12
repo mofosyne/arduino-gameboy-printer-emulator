@@ -18,7 +18,7 @@
             ],
             "intelliSenseMode": "clang-x64",
             "compilerPath": "/usr/local/bin/gcc-9",
-            "cStandard": "c11",
+            "cStandard": "c99",
             "cppStandard": "gnu++14"
         }
     ],
