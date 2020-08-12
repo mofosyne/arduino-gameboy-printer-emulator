@@ -9,6 +9,7 @@
 //#define FEATURE_PACKET_SERIAL_IO
 #define FEATURE_PACKET_TEST_PARSE
 
+
 /*******************************************************************************
  * Test Vectors Variables
 *******************************************************************************/
@@ -291,7 +292,6 @@ int main(void)
   {
     if (gbp_pkt_processByte((const uint8_t) testVector[i], &gbp_pktBuff))
     {
-#if 1
       if (gbp_pktBuff.received == GBP_REC_GOT_DATA_TILE)
       {
         for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
@@ -300,20 +300,21 @@ int main(void)
         }
         printf("\r\n");
       }
-#else
-      printf("%s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | ",
-          gbp_pkt_commandType_toStr(gbp_pktBuff.command),
-          (unsigned) gbp_pktBuff.compression,
-          (unsigned) gbp_pktBuff.dataLength,
-          (unsigned) gbp_pktBuff.printerID,
-          (unsigned) gbp_pktBuff.status
-        );
-      for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
+      else
       {
-        printf("%02X ",gbp_pktBuff.payloadBuff[i]);
+        printf("! %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | ",
+            gbpCommand_toStr(gbp_pktBuff.command),
+            (unsigned) gbp_pktBuff.compression,
+            (unsigned) gbp_pktBuff.dataLength,
+            (unsigned) gbp_pktBuff.printerID,
+            (unsigned) gbp_pktBuff.status
+          );
+        for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
+        {
+          printf("%02X ",gbp_pktBuff.payloadBuff[i]);
+        }
+        printf("\r\n");
       }
-      printf("\r\n");
-#endif
     }
   }
 #endif //FEATURE_PACKET_TEST_PARSE

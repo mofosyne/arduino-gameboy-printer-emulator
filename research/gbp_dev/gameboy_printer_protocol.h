@@ -17,6 +17,9 @@
     Released 11/09/1999
 
 ------------------------------------------------------------------------------*/
+#ifndef GAMEBOY_PRINTER_PROTOCOL_H
+#define GAMEBOY_PRINTER_PROTOCOL_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -207,3 +210,4 @@ inline uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
 #ifdef __cplusplus
 }
 #endif
+#endif // GAMEBOY_PRINTER_PROTOCOL_H

@@ -16,19 +16,6 @@
 #include "gbp_serial_io.h"
 #include "gbp_pkt.h"
 
-const char *gbp_pkt_commandType_toStr(int val)
-{
-  switch (val)
-  {
-    case GBP_COMMAND_INIT    : return "INIT";
-    case GBP_COMMAND_PRINT   : return "PRNT";
-    case GBP_COMMAND_DATA    : return "DATA";
-    case GBP_COMMAND_BREAK   : return "BREK";
-    case GBP_COMMAND_INQUIRY : return "INQY";
-    default: return "?";
-  }
-}
-
 bool gbp_pkt_init(gbp_pktBuff_t *_pktBuff)
 {
   _pktBuff->pktByteIndex = 0;
@@ -70,7 +57,7 @@ bool gbp_pkt_processByte(const uint8_t _byte, gbp_pktBuff_t *_pktBuff)
     }
 
     // Data packets are streamed
-    if ((_pktBuff->command == GBP_COMMAND_DATA)&&(_pktBuff->dataLength!=0))
+    if ((_pktBuff->pktByteIndex == 6)&&(_pktBuff->command == GBP_COMMAND_DATA)&&(_pktBuff->dataLength!=0))
     {
       // Indicate received packet
       _pktBuff->received = GBP_REC_GOT_DATA_HEADER;
@@ -80,20 +67,19 @@ bool gbp_pkt_processByte(const uint8_t _byte, gbp_pktBuff_t *_pktBuff)
     return false;
   }
 
-#if 1
   if ((_pktBuff->command == GBP_COMMAND_DATA)&&(_pktBuff->dataLength!=0))
   {
     // Parse tile
     if (_pktBuff->pktByteIndex < (8+_pktBuff->dataLength))
     {
       const uint16_t payloadIndex = _pktBuff->pktByteIndex - 6;
-      const uint16_t offset   = (payloadIndex/GBP_PKT_TILE_SIZE_IN_BYTE)*GBP_PKT_TILE_SIZE_IN_BYTE;
+      const uint16_t offset  = (payloadIndex/GBP_PKT_TILE_SIZE_IN_BYTE)*GBP_PKT_TILE_SIZE_IN_BYTE;
       const uint8_t buffsize = payloadIndex%GBP_PKT_TILE_SIZE_IN_BYTE + 1;
       _pktBuff->payloadBuff[buffsize-1] = _byte;
       if (buffsize == GBP_PKT_TILE_SIZE_IN_BYTE)
       {
         _pktBuff->payloadBuffOffset = offset;
-        _pktBuff->payloadBuffSize = GBP_PKT_TILE_SIZE_IN_BYTE;
+        _pktBuff->payloadBuffSize = buffsize;
         _pktBuff->received = GBP_REC_GOT_DATA_TILE;
       }
     }
@@ -101,10 +87,12 @@ bool gbp_pkt_processByte(const uint8_t _byte, gbp_pktBuff_t *_pktBuff)
     // Increment
     if (_pktBuff->pktByteIndex == (8+_pktBuff->dataLength))
     {
+      // Printer ID Found
       _pktBuff->printerID = _byte;
     }
     else if (_pktBuff->pktByteIndex == (8+_pktBuff->dataLength + 1))
     {
+      // Status Byte Found
       // End of packet reached
       _pktBuff->status = _byte;
       _pktBuff->pktByteIndex = 0;
@@ -114,7 +102,6 @@ bool gbp_pkt_processByte(const uint8_t _byte, gbp_pktBuff_t *_pktBuff)
     return _pktBuff->received != GBP_REC_NONE;
   }
   else
-#endif
   {
     if (_pktBuff->command == GBP_COMMAND_PRINT)
     {

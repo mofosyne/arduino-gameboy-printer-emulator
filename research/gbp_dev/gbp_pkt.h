@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "gameboy_printer_protocol.h"
 
 #define GBP_PKT_TILE_SIZE_IN_BYTE 16
 #define GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE GBP_PKT_TILE_SIZE_IN_BYTE
@@ -45,6 +46,34 @@ typedef struct
   uint8_t payloadBuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE];
 } gbp_pktBuff_t;
 
-const char *gbp_pkt_commandType_toStr(int val);
 bool gbp_pkt_init(gbp_pktBuff_t *_pktBuff);
 bool gbp_pkt_processByte(const uint8_t _byte, gbp_pktBuff_t *_pktBuff);
+
+/*******************************************************************************
+ * Print Instruction
+*******************************************************************************/
+
+static inline int gbp_pkt_printInstruction_num_of_sheets(gbp_pktBuff_t *_pktBuff)
+{
+  return (_pktBuff->payloadBuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS  ]);
+}
+
+static inline int gbp_pkt_printInstruction_num_of_linefeed_before_print(gbp_pktBuff_t *_pktBuff)
+{
+  return (_pktBuff->payloadBuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED] >> 4) & 0x0F;
+}
+
+static inline int gbp_pkt_printInstruction_num_of_linefeed_after_print(gbp_pktBuff_t *_pktBuff)
+{
+  return (_pktBuff->payloadBuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]) & 0x0F;
+}
+
+static inline int gbp_pkt_printInstruction_palette_value(gbp_pktBuff_t *_pktBuff)
+{
+  return (_pktBuff->payloadBuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE  ]);
+}
+
+static inline int gbp_pkt_printInstruction_print_density(gbp_pktBuff_t *_pktBuff)
+{
+  return (_pktBuff->payloadBuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY  ]);
+}
