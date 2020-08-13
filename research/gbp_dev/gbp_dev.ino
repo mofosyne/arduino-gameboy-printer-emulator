@@ -15,8 +15,8 @@
 #include "gpb_serial_io.h"
 #include "gbp_pkt.h"
 
-// GBP_FEATURE_PACKET_CAPTURE_MODE
-#define GBP_FEATURE_PARSE_PACKET_MODE
+#define GBP_FEATURE_PACKET_CAPTURE_MODE
+//#define GBP_FEATURE_PARSE_PACKET_MODE
 
 /* Gameboy Link Cable Mapping to Arduino Pin */
 // Note: Serial Clock Pin must be attached to an interrupt pin of the arduino
@@ -59,7 +59,7 @@ uint8_t gbp_buffer[GPB_BUFFER_SIZE] = {0};
  **************************************************************/
 
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
-gbp_pktBuff_t gbp_pktBuff = {GBP_REC_NONE,0};
+gbp_pkt_t gbp_pktBuff = {GBP_REC_NONE,0};
 #endif
 
 #ifdef ESP8266

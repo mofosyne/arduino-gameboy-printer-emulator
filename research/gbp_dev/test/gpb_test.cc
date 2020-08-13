@@ -14,8 +14,9 @@
  * Test Vectors Variables
 *******************************************************************************/
 const uint8_t testVector[] = {
-  //#include "2020-08-02_GameboyPocketCameraJP.txt"
-  #include "2020-08-02_PokemonSpeciallPicachuEdition.txt"
+  #include "2020-08-02_GameboyPocketCameraJP.txt" // Single Image
+  //#include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
+  //#include "2020-08-10_Pokemon_trading_card_gbp_dev.txt" // Compression
 };
 
 uint8_t testResponse[sizeof(testVector)+100] = {0};
@@ -156,7 +157,7 @@ int main(void)
         }
         // Print Hex Byte
         uint8_t rxByte = gbp_serial_io_dataBuff_getByte();
-        printf((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
+        //printf((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
         if (pktByteIndex < (8+pktDataLength))
         {
           printf("0x%02X,", rxByte);
@@ -165,9 +166,9 @@ int main(void)
         {
           printf("0x%02X,", testResponse[byteTotal]);
         }
+        //printf((pktByteIndex == (8+pktDataLength + 1))?"/*)*/":"");
         if (pktByteIndex == (8+pktDataLength + 1))
         {
-          printf("/*)*/");
           if (testResponse[byteTotal])
           {
             printf(" /* Printer Status: ");
@@ -285,22 +286,16 @@ int main(void)
 #endif // FEATURE_PACKET_SERIAL_IO
 
 #ifdef FEATURE_PACKET_TEST_PARSE
-  gbp_pktBuff_t gbp_pktBuff = {GBP_REC_NONE,0};
+  uint8_t buff[16] = {0};
+  uint8_t buffSize = 0;
+  gbp_pkt_t gbp_pktBuff = {GBP_REC_NONE, 0};
   gbp_pkt_init(&gbp_pktBuff);
   printf("\r\n");
   for (size_t i = 0 ; i < sizeof(testVector) ; i++)
   {
-    if (gbp_pkt_processByte((const uint8_t) testVector[i], &gbp_pktBuff))
+    if (gbp_pkt_processByte((const uint8_t) testVector[i], &gbp_pktBuff, buff, &buffSize, sizeof(buff)))
     {
-      if (gbp_pktBuff.received == GBP_REC_GOT_DATA_TILE)
-      {
-        for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
-        {
-          printf("%02X ",gbp_pktBuff.payloadBuff[i]);
-        }
-        printf("\r\n");
-      }
-      else
+      if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
       {
         printf("! %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | ",
             gbpCommand_toStr(gbp_pktBuff.command),
@@ -309,9 +304,17 @@ int main(void)
             (unsigned) gbp_pktBuff.printerID,
             (unsigned) gbp_pktBuff.status
           );
-        for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
+        for (int i = 0 ; i < buffSize ; i++)
         {
-          printf("%02X ",gbp_pktBuff.payloadBuff[i]);
+          printf("%02X ",buff[i]);
+        }
+        printf("\r\n");
+      }
+      else
+      {
+        for (int i = 0 ; i < buffSize ; i++)
+        {
+          printf("%02X ", buff[i]);
         }
         printf("\r\n");
       }
