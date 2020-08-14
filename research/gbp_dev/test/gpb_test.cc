@@ -14,9 +14,9 @@
  * Test Vectors Variables
 *******************************************************************************/
 const uint8_t testVector[] = {
-  #include "2020-08-02_GameboyPocketCameraJP.txt" // Single Image
+  //#include "2020-08-02_GameboyPocketCameraJP.txt" // Single Image
   //#include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
-  //#include "2020-08-10_Pokemon_trading_card_gbp_dev.txt" // Compression
+  #include "2020-08-10_Pokemon_trading_card_gbp_dev.txt" // Compression
 };
 
 uint8_t testResponse[sizeof(testVector)+100] = {0};
@@ -285,6 +285,23 @@ int main(void)
   }
 #endif // FEATURE_PACKET_SERIAL_IO
 
+
+
+
+#if 0
+  uint8_t testbuff[] = {0x82, 0x00, 0x0B, 0x0F, 0x0F, 0x10, 0x10, 0x2F, 0x20, 0x28, 0x27, 0x28, 0x24, 0x28, 0x24, 0x82};
+  gbp_pkt_t gbp_pkttestBuff = {GBP_REC_NONE, 0};
+  static gbp_pkt_tileAcc_t tiletestBuff = {0};
+  printf("\r\n-----\r\n");
+  while (gbp_pkt_decompressor(&gbp_pkttestBuff, testbuff, sizeof(testbuff), &tiletestBuff))
+  {
+    gbp_pkt_get_tile(&tiletestBuff);
+  }
+  printf("\r\n-----\r\n");
+#endif //FEATURE_PACKET_TEST_PARSE
+
+
+
 #ifdef FEATURE_PACKET_TEST_PARSE
   uint8_t buff[16] = {0};
   uint8_t buffSize = 0;
@@ -293,7 +310,7 @@ int main(void)
   printf("\r\n");
   for (size_t i = 0 ; i < sizeof(testVector) ; i++)
   {
-    if (gbp_pkt_processByte((const uint8_t) testVector[i], &gbp_pktBuff, buff, &buffSize, sizeof(buff)))
+    if (gbp_pkt_processByte(&gbp_pktBuff, testVector[i], buff, &buffSize, sizeof(buff)))
     {
       if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
       {
@@ -312,11 +329,31 @@ int main(void)
       }
       else
       {
+#if 1
+        // Support compression payload
+        static gbp_pkt_tileAcc_t tileBuff = {0};
+        while (gbp_pkt_decompressor(&gbp_pktBuff, buff, buffSize, &tileBuff))
+        {
+          if (gbp_pkt_get_tile(&tileBuff))
+          {
+#if 1
+            // Got tile
+            for (int i = 0 ; i < 16 ; i++)
+            {
+              printf("%02X ", tileBuff.tile[i]);
+            }
+            printf("\r\n");
+#endif
+          }
+        }
+#else
+        // Basic no compression parsing
         for (int i = 0 ; i < buffSize ; i++)
         {
           printf("%02X ", buff[i]);
         }
         printf("\r\n");
+#endif
       }
     }
   }

@@ -23,7 +23,7 @@ bool gbp_pkt_init(gbp_pkt_t *_pkt)
 }
 
 // returns true if packet is received
-bool gbp_pkt_processByte( const uint8_t _byte, gbp_pkt_t *_pkt, uint8_t buffer[], uint8_t *bufferSize, const uint8_t bufferMax)
+bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const uint8_t bufferMax)
 {
   /*
     [ 00 ][ 01 ][ 02 ][ 03 ][ 04 ][ 05 ][ 5+X ][5+X+1][5+X+2][5+X+3][5+X+4]
@@ -124,3 +124,218 @@ bool gbp_pkt_processByte( const uint8_t _byte, gbp_pkt_t *_pkt, uint8_t buffer[]
   _pkt->pktByteIndex++;
   return _pkt->received != GBP_REC_NONE;
 }
+
+
+/*******************************************************************************
+*******************************************************************************/
+
+static bool gbp_pkt_tileAccumulator(gbp_pkt_tileAcc_t *tileBuff, const uint8_t byte)
+{
+  if (tileBuff->count == 16)
+  {
+    return true;
+  }
+
+  tileBuff->tile[tileBuff->count] = byte;
+  tileBuff->count++;
+  return tileBuff->count == 16;
+}
+
+bool gbp_pkt_get_tile(gbp_pkt_tileAcc_t *tileBuff)
+{
+  if (tileBuff->count < 16)
+    return false;
+
+  tileBuff->count = 0;
+  return true;
+}
+
+/*******************************************************************************
+*******************************************************************************/
+
+bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff)
+{
+  static size_t buffIndex = 0;
+
+#if 0
+  if (buffIndex == 0)
+  {
+    for (size_t i = 0 ; i < buffSize ; i++)
+    {
+      printf("%02X ", buff[i]);
+    }
+    printf("\r\n");
+  }
+#endif
+
+
+  if (!_pkt->compression)
+  {
+    while (1)
+    {
+      // for (buffIndex = 0; buffIndex < buffSize ; buffIndex++)
+      if (buffIndex < buffSize)
+      {
+        if (gbp_pkt_tileAccumulator(tileBuff, buff[buffIndex++]))
+        {
+          return true; // Got tile
+        }
+      }
+      else
+      {
+        buffIndex = 0; // Reset for next buffer
+        return false;
+      }
+    }
+  }
+  else
+  {
+    while (1)
+    {
+      // for (buffIndex = 0; buffIndex < buffSize ; buffIndex++)
+      if (buffIndex < buffSize)
+      {
+        // Compressed payload (Run length encoding)
+        // Refactor: Move to struct
+        static bool compressedRun;
+        static bool repeatByteGet;
+        static uint8_t repeatByte;
+        static uint8_t loopRunLength;
+        if (loopRunLength == 0)
+        {
+          // Start of either a raw run of byte or compressed run of byte
+          uint8_t b = buff[buffIndex++];
+          if (b <= 0x7F)
+          {
+            // (0x7F=127) its a classical run, read the n bytes after (Raphael-Boichot)
+            loopRunLength = b + 1;
+            compressedRun = false;
+          }
+          else
+          {
+            // (0x80 = 128) for (b>128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
+            loopRunLength = b - 128 + 2;
+            compressedRun = true;
+            repeatByteGet = true;
+          }
+        }
+        else if (repeatByteGet)
+        {
+          // Grab loop byte
+          uint8_t b = buff[buffIndex++];
+          repeatByte = b;
+          repeatByteGet = false;
+        }
+        else
+        {
+          const uint8_t b = (compressedRun) ? repeatByte : buff[buffIndex++];
+#if 0
+          static int ii = 0;
+          if (ii++ < 100)
+          {
+            if (compressedRun)
+              printf("[com len=%3d b='%02X'] = %02X \r\n", loopRunLength, repeatByte, b);
+            else
+              printf("[raw len=%3d ] = %02X \r\n", loopRunLength, b);
+          }
+#endif
+          loopRunLength--;
+          if (gbp_pkt_tileAccumulator(tileBuff, b))
+          {
+            return true; // Got tile
+          }
+        }
+      }
+      else
+      {
+        buffIndex = 0; // Reset for next buffer
+        return false;
+      }
+    }
+  }
+  return false;
+}
+
+#if 0
+bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, uint8_t tileBuff[16])
+{
+  // Assumption: No mixure of compression and non compression packets
+  static size_t i = 0;
+  while (1)
+  {
+    if (!(i < buffSize))
+    {
+      // Done processing incoming buffer
+      i = 0;
+      break;
+    }
+
+    // Get Byte
+    const uint8_t b = buff[i++];
+
+    // Process Byte
+    if (_pkt->compression)
+    {
+      // Compressed payload (Run length encoding)
+      // Refactor: Move to struct
+      static bool compressedRun;
+      static bool repeatByteGet;
+      static uint8_t repeatByte;
+      static uint8_t loopRunLength;
+      if (loopRunLength == 0)
+      {
+        // Start of either a raw run of byte or compressed run of byte
+        if (b <= 0x7F)
+        {
+          // (0x7F=127) its a classical run, read the n bytes after
+          loopRunLength = b+1;
+          compressedRun = false;
+          repeatByteGet = true;
+        }
+        else
+        {
+          // for (b>128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
+          loopRunLength = b-128+2;
+          compressedRun = true;
+        }
+      }
+      else if (compressedRun && repeatByteGet)
+      {
+        // Grab loop byte
+        repeatByte = b;
+        repeatByteGet = false;
+      }
+      else
+      {
+        loopRunLength--;
+        printf("[%s %3d '%02X' %02X] \r\n", compressedRun?"c":"r", loopRunLength, repeatByte, b);
+
+        if (compressedRun)
+        {
+          if (gbp_pkt_tileAccumulator(&(_pkt->tileCounter), repeatByte, tileBuff))
+          {
+            return true;
+          }
+        }
+        else
+        {
+          if (gbp_pkt_tileAccumulator(&(_pkt->tileCounter), b, tileBuff))
+          {
+            return true;
+          }
+        }
+      }
+    }
+    else
+    {
+      // Raw payload passthough
+      if(gbp_pkt_tileAccumulator(&(_pkt->tileCounter), b, tileBuff))
+      {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+#endif

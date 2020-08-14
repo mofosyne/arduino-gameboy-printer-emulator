@@ -34,11 +34,23 @@ typedef struct
   uint16_t dataLength;
   uint8_t printerID;
   uint8_t status;
+
+  uint8_t tileCounter;
 } gbp_pkt_t;
 
-bool gbp_pkt_init(gbp_pkt_t *_pkt);
-bool gbp_pkt_processByte( const uint8_t _byte, gbp_pkt_t *_pkt, uint8_t buffer[], uint8_t *bufferSize, const uint8_t bufferMax);
+typedef struct
+{
+  unsigned char count;
+  unsigned char tile[16];
+} gbp_pkt_tileAcc_t;
 
+
+
+bool gbp_pkt_init(gbp_pkt_t *_pkt);
+bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const uint8_t bufferMax);
+bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff);
+
+bool gbp_pkt_get_tile(gbp_pkt_tileAcc_t *tileBuff);
 
 /*******************************************************************************
  * Print Instruction
