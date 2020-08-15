@@ -1,13 +1,30 @@
 /*************************************************************************
  *
- * GAMEBOY PRINTER EMULATION PROJECT (Arduino) (Dev Version)
+ * GAMEBOY PRINTER EMULATION PROJECT V2 (Arduino)
+ * Copyright (C) 2020 Brian Khuu
  *
- * Creation Date: 2017-4-6
- * PURPOSE: To capture gameboy printer images without a gameboy printer.
- *           This version is to investigate gameboy behaviour.
- * AUTHOR: Brian Khuu
+ * PURPOSE: To capture gameboy printer images without a gameboy printer
+ *          via the arduino platform. (Tested on the arduino nano)
+ *          This version is to investigate gameboy behaviour.
+ *          This was originally started on 2017-4-6 but updated on 2020-08-16
+ * LICENCE:
+ *   This file is part of Arduino Gameboy Printer Emulator.
+ *
+ *   Arduino Gameboy Printer Emulator is free software:
+ *   you can redistribute it and/or modify it under the terms of the
+ *   GNU General Public License as published by the Free Software Foundation,
+ *   either version 3 of the License, or (at your option) any later version.
+ *
+ *   Arduino Gameboy Printer Emulator is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Arduino Gameboy Printer Emulator.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 
@@ -140,9 +157,14 @@ void setup(void)
 #endif
 
   /* Welcome Message */
-  Serial.print("# GAMEBOY PRINTER EMULATION PROJECT V2\n");
-  Serial.print("# By Brian Khuu (2020)\n");
-  Serial.print("# https://mofosyne.github.io/arduino-gameboy-printer-emulator/\n");
+  Serial.print("# GAMEBOY PRINTER Emulator V2 : Copyright (C) 2020 Brian Khuu\n");
+  Serial.print("# JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html\n");
+  Serial.print("# --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---\n");
+  Serial.print("# This program comes with ABSOLUTELY NO WARRANTY;\n");
+  Serial.print("# This is free software, and you are welcome to redistribute it\n");
+  Serial.print("# under certain conditions. Refer to LICENSE file for detail.\n");
+  Serial.print("# --- \n");
+
 } // setup()
 
 void loop()
@@ -186,30 +208,34 @@ void loop()
   {
     switch (Serial.read())
     {
-      case 'r':
-        Serial.print("! Parse Mode\n");
+      case 'p':
+        Serial.print("# (P)arse Mode\n");
+        Serial.print("# GAMEBOY PRINTER Emulator V2 (Brian Khuu 2020)\n");
+        Serial.print("# To Decode This: https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html\n");
         packet_capture_mode_enabled = false;
         packet_capture_mode_cstyle = false;
         break;
 
-      case 'p':
-        Serial.print("# Raw Packet Capture Mode\n");
-        Serial.print("# Note: Each byte is from each GBP packet is from the gameboy\n");
-        Serial.print("#       except for the last two bytes which is from the printer\n");
+      case 'r':
+        Serial.print("// (R)aw Packet Capture Mode\n");
+        Serial.print("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)\n");
+        Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
+        Serial.print("//       except for the last two bytes which is from the printer\n");
         packet_capture_mode_enabled = true;
         packet_capture_mode_cstyle = false;
         break;
 
       case 'c':
-        Serial.print("/* GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020) */\n");
-        Serial.print("/* Note: Each byte is from each GBP packet is from the gameboy */\n");
-        Serial.print("/*       except for the last two bytes which is from the printer */\n");
+        Serial.print("/* (C)Style Packet Capture Mode */\n");
+        Serial.print("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)\n");
+        Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
+        Serial.print("//       except for the last two bytes which is from the printer\n");
         packet_capture_mode_enabled = true;
         packet_capture_mode_cstyle = true;
         break;
 
       case '?':
-        Serial.print("r=resetToDefault, p=capture, c=cStyleCapture, d=debug, ?=help\n");
+        Serial.print("p=packetMode, r=rawMode, c=cStyleCapture, d=debug, ?=help\n");
         break;
 
       case 'd':
@@ -310,6 +336,7 @@ void gbp_parse_packet_loop()
         }
 #else
         // Simplified support for gameboy camera only application
+        // Dev Note: Good for checking if everything above decompressor is working
         if (gbp_pktbuffSize == GBP_TILE_SIZE_IN_BYTE)
         {
           // Got Tile
@@ -353,14 +380,11 @@ void gbp_packet_capture_loop(bool cStyle)
       {
         pktDataLength = gbp_serial_io_dataBuff_getByte_Peek(4);
         pktDataLength |= (gbp_serial_io_dataBuff_getByte_Peek(5)<<8)&0xFF00;
-        if (cStyle)
-        {
-          Serial.print("/* ");
-          Serial.print(pktTotalCount);
-          Serial.print(" : ");
-          Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
-          Serial.print(" */\n");
-        }
+        Serial.print("// ");
+        Serial.print(pktTotalCount);
+        Serial.print(" : ");
+        Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
+        Serial.print("\n");
         digitalWrite(LED_STATUS_PIN, HIGH);
       }
       // Print Hex Byte
@@ -372,10 +396,7 @@ void gbp_packet_capture_loop(bool cStyle)
       }
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
       Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-      if (cStyle)
-      {
-        Serial.print((char)',');
-      }
+      Serial.print((char)(cStyle?',':' '));
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {

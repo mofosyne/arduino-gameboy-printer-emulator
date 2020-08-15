@@ -1,21 +1,41 @@
 /*******************************************************************************
-
-  # GAMEBOY PRINTER EMULATION PROJECT
-
-  - Creation Date: 2017-4-6
-  - Revised  Date: 2017-11-27
-  - PURPOSE: Header file for gameboy printer
-  - AUTHOR: Brian Khuu
-
-  Below header file was revised again in 2017-11-27 because I found the
-  gameboy programming manual, which points out exactly how the communication
-  works.
-
-  Source Documentation:
-    GameBoy PROGRAMMING MANUAL Version 1.0
-    DMG-06-4216-001-A
-    Released 11/09/1999
-
+ *
+ * GAMEBOY PRINTER EMULATION PROJECT V2
+ * Copyright (C) 2020 Brian Khuu
+ *
+ * PURPOSE: Header file for gameboy printer
+ * LICENCE:
+ *   This file is part of Arduino Gameboy Printer Emulator.
+ *
+ *   Arduino Gameboy Printer Emulator is free software:
+ *   you can redistribute it and/or modify it under the terms of the
+ *   GNU General Public License as published by the Free Software Foundation,
+ *   either version 3 of the License, or (at your option) any later version.
+ *
+ *   Arduino Gameboy Printer Emulator is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Arduino Gameboy Printer Emulator.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * HISTORY:
+ *   - Creation Date: 2017-4-6
+ *   - Revised 1 Date: 2017-11-27
+ *   - Revised 2 Date: 2020-08-16
+ *   - PURPOSE:
+ *   - AUTHOR: Brian Khuu
+ *
+ *   # Rev1:
+ *   Below header file was revised again in 2017-11-27 because I found the
+ *   gameboy programming manual, which points out exactly how the communication
+ *   works.
+ *
+ *   # Rev2:
+ *   Revised again to strip out stuff that didn't end up being used for V2 of the
+ *   gameboy printer emulation project for arduino.
+ *
 ------------------------------------------------------------------------------*/
 #ifndef GAMEBOY_PRINTER_PROTOCOL_H
 #define GAMEBOY_PRINTER_PROTOCOL_H
@@ -30,9 +50,10 @@ extern "C" {
 
   # Manual Measurement With Oscilloscope
 
-    - Clock Frequency: 8kHz (127.63 us)
-    - Transmission Speed: 867 baud (1.153ms per 8bit symbol)
-    - Between Symbol Period: 229.26 us
+    - Clock Frequency (Normal Speed Mode): 8kHz (127.63 us)
+    - Clock Frequency (Double Speed Mode): 16kHz (63.81 us)
+    - Transmission Speed: 867 baud (1.153ms per 8bit symbol) on normal mode
+    - Between Symbol Period: 229.26 us on normal mode
 
     ```
                            1.153ms
@@ -49,7 +70,7 @@ extern "C" {
     * CPOL=1 : Clock Polarity 1. Idle on high.
     * CPHA=1 : Clock Phase 1. Change on falling. Check bit on rising edge.
 
-  # Gameboy Link Pinout
+  # Gameboy Link Pinout (Gameboy Original/Color Link Cable Pinout)
 
     - Pin 1 :  GBP_VCC_PIN  : VDD35
     - Pin 2 :  GBP_SO_PIN   : SO
@@ -103,7 +124,7 @@ extern "C" {
 
 /* Compression Flag */
 #define GBP_COMPRESSION_DISABLED  0x00
-#define GBP_COMPRESSION_ENABLED   0x01
+#define GBP_COMPRESSION_ENABLED   0x01 // Run Length Encoded Compression
 
 /* Device ID Byte */
 // According to the GB programming manual. This is a device ID number.
