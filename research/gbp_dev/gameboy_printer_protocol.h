@@ -137,6 +137,13 @@ extern "C" {
 #define GBP_STATUS_MASK_BUSY        (1<<1) // Printer Busy
 #define GBP_STATUS_MASK_SUM         (1<<0) // Checksum Error
 
+
+/*******************************************************************************
+ * Gameboy Tile
+*******************************************************************************/
+#define GBP_TILE_SIZE_IN_BYTE 16
+
+
 /*******************************************************************************
   MACROS
 *******************************************************************************/
@@ -162,49 +169,6 @@ extern "C" {
 #define gpb_status_bit_getbit_print_buffer_full(X) gpb_getBit(X, GBP_STATUS_BIT_FULL)
 #define gpb_status_bit_getbit_printer_busy(X)      gpb_getBit(X, GBP_STATUS_BIT_BUSY)
 #define gpb_status_bit_getbit_checksum_error(X)    gpb_getBit(X, GBP_STATUS_BIT_SUM)
-
-
-
-/*******************************************************************************
-  Structures
-*******************************************************************************/
-#include <stdbool.h>
-// Gameboy Printer Status Code Structure
-typedef struct gbp_printer_status_t
-{
-  bool low_battery;
-  bool paper_jam;
-  bool other_error;
-  bool packet_error;
-  bool unprocessed_data;
-  bool print_buffer_full;
-  bool printer_busy;
-  bool checksum_error;
-} gbp_printer_status_t;
-
-
-/*******************************************************************************
-  UTILITIES FUNCTIONS
-*******************************************************************************/
-#include <stdint.h> // uint8_t
-
-inline uint8_t gbp_status_byte(struct gbp_printer_status_t *printer_status_ptr)
-{
-  // This is returns a gameboy printer status byte
-  //(Based on description in http://gbdev.gg8.se/wiki/articles/Gameboy_Printer )
-
-  /*        | BITFLAG NAME                                |BIT POS            */
-  return
-    (((printer_status_ptr->low_battery) ? 1 : 0) <<  GBP_STATUS_BIT_LOWBAT)
-    | (((printer_status_ptr->other_error) ? 1 : 0) <<  GBP_STATUS_BIT_ER2)
-    | (((printer_status_ptr->paper_jam) ? 1 : 0) <<  GBP_STATUS_BIT_ER1)
-    | (((printer_status_ptr->packet_error) ? 1 : 0) <<  GBP_STATUS_BIT_ER0)
-    | (((printer_status_ptr->unprocessed_data) ? 1 : 0) <<  GBP_STATUS_BIT_UNTRAN)
-    | (((printer_status_ptr->print_buffer_full) ? 1 : 0) <<  GBP_STATUS_BIT_FULL)
-    | (((printer_status_ptr->printer_busy) ? 1 : 0) <<  GBP_STATUS_BIT_BUSY)
-    | (((printer_status_ptr->checksum_error) ? 1 : 0) <<  GBP_STATUS_BIT_SUM)
-    ;
-}
 
 
 #ifdef __cplusplus

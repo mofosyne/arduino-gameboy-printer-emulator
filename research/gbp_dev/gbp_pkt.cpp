@@ -7,8 +7,6 @@
   ******************************************************************************
 
 */
-
-#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -16,120 +14,222 @@
 #include "gbp_serial_io.h"
 #include "gbp_pkt.h"
 
-bool gbp_pkt_init(gbp_pktBuff_t *_pktBuff)
+bool gbp_pkt_init(gbp_pkt_t *_pkt)
 {
-  _pktBuff->pktByteIndex = 0;
+  _pkt->pktByteIndex = 0;
   return true;
 }
 
 // returns true if packet is received
-bool gbp_pkt_processByte(const uint8_t _byte, gbp_pktBuff_t *_pktBuff)
+bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax)
 {
   /*
-    [ 00 ][ 01 ][ 02 ][ 03 ][ 04 ][ 05 ][5+X ][5+X+1][5+X+2][5+X+3][5+X+4]
-    [SYNC][SYNC][COMM][COMP][LEN0][LEN1][DATA][CSUM0][CSUM1][DUMMY][DUMMY]
+    [ 00 ][ 01 ][ 02 ][ 03 ][ 04 ][ 05 ][ 5+X ][5+X+1][5+X+2][5+X+3][5+X+4]
+    [SYNC][SYNC][COMM][COMP][LEN0][LEN1][DATAX][CSUM0][CSUM1][DUMMY][DUMMY]
   */
-  _pktBuff->received = GBP_REC_NONE;
+
+  // Dev Note: Minimum required size of 4 bytes for printer instruction packet
+  //  data payload can be streamed so doesn't have to fit full size
+  if (bufferMax < 4)
+    return false;
+
+  _pkt->received = GBP_REC_NONE;
 
   // Parsing fixed packet header
-  if(_pktBuff->pktByteIndex <= 5)
+  if(_pkt->pktByteIndex <= 5)
   {
-    if (_pktBuff->pktByteIndex == 1)
+    if (_pkt->pktByteIndex == 1)
     {
-      _pktBuff->command     = 0;
-      _pktBuff->compression = 0;
-      _pktBuff->dataLength  = 0;
-      _pktBuff->printerID   = 0;
-      _pktBuff->status      = 0;
-      _pktBuff->payloadBuffOffset = 0;
-      _pktBuff->payloadBuffSize = 0;
+      _pkt->command     = 0;
+      _pkt->compression = 0;
+      _pkt->dataLength  = 0;
+      _pkt->printerID   = 0;
+      _pkt->status      = 0;
+      *bufferSize = 0;
     }
 
-    switch (_pktBuff->pktByteIndex)
+    switch (_pkt->pktByteIndex)
     {
-      case 0: _pktBuff->pktByteIndex = (_byte == 0x88) ? 1 : 0; break;
-      case 1: _pktBuff->pktByteIndex = (_byte == 0x33) ? 2 : 0; break;
-      case 2: _pktBuff->pktByteIndex++; _pktBuff->command = _byte; break;
-      case 3: _pktBuff->pktByteIndex++; _pktBuff->compression = _byte; break;
-      case 4: _pktBuff->pktByteIndex++; _pktBuff->dataLength =  ((uint16_t)_byte<<0)&0x00FF; break;
-      case 5: _pktBuff->pktByteIndex++; _pktBuff->dataLength |= ((uint16_t)_byte<<8)&0xFF00; break;
+      case 0: _pkt->pktByteIndex = (_byte == 0x88) ? 1 : 0; break;
+      case 1: _pkt->pktByteIndex = (_byte == 0x33) ? 2 : 0; break;
+      case 2: _pkt->pktByteIndex++; _pkt->command = _byte; break;
+      case 3: _pkt->pktByteIndex++; _pkt->compression = _byte; break;
+      case 4: _pkt->pktByteIndex++; _pkt->dataLength =  ((uint16_t)_byte<<0)&0x00FF; break;
+      case 5: _pkt->pktByteIndex++; _pkt->dataLength |= ((uint16_t)_byte<<8)&0xFF00; break;
       default: break;
     }
 
     // Data packets are streamed
-    if ((_pktBuff->pktByteIndex == 6)&&(_pktBuff->command == GBP_COMMAND_DATA)&&(_pktBuff->dataLength!=0))
+    if (_pkt->pktByteIndex == 6)
     {
-      // Indicate received packet
-      _pktBuff->received = GBP_REC_GOT_DATA_HEADER;
-      return true;
+      if (bufferMax > _pkt->dataLength)
+      {
+        // Payload fits into buffer
+        return false;
+      }
+      else
+      {
+        // Must stream...
+        _pkt->received = GBP_REC_GOT_PACKET;
+        return true;
+      }
     }
 
     return false;
   }
 
-  if ((_pktBuff->command == GBP_COMMAND_DATA)&&(_pktBuff->dataLength!=0))
+  // Capture Bytes to buffer if needed
+  if ((6 <= _pkt->pktByteIndex) && (_pkt->pktByteIndex < (6+_pkt->dataLength)))
   {
-    // Parse tile
-    if (_pktBuff->pktByteIndex < (8+_pktBuff->dataLength))
+    // Byte is from payload... add to buffer
+    const uint16_t payloadIndex = _pkt->pktByteIndex - 6;
+    //const uint16_t offset       = (payloadIndex/bufferMax) * bufferMax;
+    const uint16_t bufferUsage  = payloadIndex%bufferMax + 1;
+    buffer[bufferUsage - 1] = _byte;
+    *bufferSize = bufferUsage;
+    if (bufferUsage == _pkt->dataLength)
     {
-      const uint16_t payloadIndex = _pktBuff->pktByteIndex - 6;
-      const uint16_t offset  = (payloadIndex/GBP_PKT_TILE_SIZE_IN_BYTE)*GBP_PKT_TILE_SIZE_IN_BYTE;
-      const uint8_t buffsize = payloadIndex%GBP_PKT_TILE_SIZE_IN_BYTE + 1;
-      _pktBuff->payloadBuff[buffsize-1] = _byte;
-      if (buffsize == GBP_PKT_TILE_SIZE_IN_BYTE)
+      // Fits fully in buffer
+    }
+    else if (bufferUsage == bufferMax)
+    {
+      _pkt->received = GBP_REC_GOT_PAYLOAD_PARTAL;
+    }
+  } else if (_pkt->pktByteIndex == (6+_pkt->dataLength))
+  {
+    *bufferSize = _pkt->dataLength%bufferMax;
+  }
+
+  // Increment
+  if (_pkt->pktByteIndex == (8+_pkt->dataLength))
+  {
+    _pkt->printerID = _byte;
+  }
+  else if (_pkt->pktByteIndex == (8+_pkt->dataLength + 1))
+  {
+    // End of packet reached
+    _pkt->status = _byte;
+    _pkt->pktByteIndex = 0;
+    // Indicate received packet
+    if (bufferMax > _pkt->dataLength)
+    {
+      // Payload fits into buffer
+      _pkt->received = GBP_REC_GOT_PACKET;
+      return true;
+    }
+    else
+    {
+      // Finished streaming
+      _pkt->received = GBP_REC_GOT_PACKET_END;
+      return true;
+    }
+  }
+
+  _pkt->pktByteIndex++;
+  return _pkt->received != GBP_REC_NONE;
+}
+
+
+/*******************************************************************************
+  Tile Accumulator
+*******************************************************************************/
+
+static bool gbp_pkt_tileAccu_insertByte(gbp_pkt_tileAcc_t *tileBuff, const uint8_t byte)
+{
+  if (tileBuff->count == GBP_TILE_SIZE_IN_BYTE)
+    return true;
+
+  tileBuff->tile[tileBuff->count] = byte;
+  tileBuff->count++;
+  return tileBuff->count == GBP_TILE_SIZE_IN_BYTE;
+}
+
+bool gbp_pkt_tileAccu_tileReadyCheck(gbp_pkt_tileAcc_t *tileBuff)
+{
+  if (tileBuff->count < GBP_TILE_SIZE_IN_BYTE)
+    return false;
+
+  tileBuff->count = 0;
+  return true;
+}
+
+
+/*******************************************************************************
+*******************************************************************************/
+
+bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff)
+{
+  if (!_pkt->compression)
+  {
+    // Uncompressed payload // e.g. Gameboy Camera
+    while (1)
+    {
+      // for (buffIndex = 0; buffIndex < buffSize ; buffIndex++)
+      if (_pkt->buffIndex < buffSize)
       {
-        _pktBuff->payloadBuffOffset = offset;
-        _pktBuff->payloadBuffSize = buffsize;
-        _pktBuff->received = GBP_REC_GOT_DATA_TILE;
+        if (gbp_pkt_tileAccu_insertByte(tileBuff, buff[_pkt->buffIndex++]))
+        {
+          return true; // Got tile
+        }
+      }
+      else
+      {
+        _pkt->buffIndex = 0; // Reset for next buffer
+        return false;
       }
     }
-
-    // Increment
-    if (_pktBuff->pktByteIndex == (8+_pktBuff->dataLength))
-    {
-      // Printer ID Found
-      _pktBuff->printerID = _byte;
-    }
-    else if (_pktBuff->pktByteIndex == (8+_pktBuff->dataLength + 1))
-    {
-      // Status Byte Found
-      // End of packet reached
-      _pktBuff->status = _byte;
-      _pktBuff->pktByteIndex = 0;
-      return false;
-    }
-    _pktBuff->pktByteIndex++;
-    return _pktBuff->received != GBP_REC_NONE;
   }
   else
   {
-    if (_pktBuff->command == GBP_COMMAND_PRINT)
+    // Compressed payload (Run length encoding) // e.g. Pokemon Trading Card
+    while (1)
     {
-      if ((_pktBuff->payloadBuffSize < _pktBuff->dataLength) &&
-        (_pktBuff->payloadBuffSize < GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE))
+      // for (buffIndex = 0; buffIndex < buffSize ; buffIndex++)
+      // Dev Note: Need to also check if we have completed adding looped byte even if all incoming bytes have been read
+      if ((_pkt->buffIndex < buffSize) || (_pkt->compressedRun && !_pkt->repeatByteGet && (_pkt->loopRunLength != 0)))
       {
-        _pktBuff->payloadBuff[_pktBuff->payloadBuffSize] = _byte;
-        _pktBuff->payloadBuffSize = _pktBuff->payloadBuffSize + 1;
+        // Incoming Bytes Avaliable
+        if (_pkt->loopRunLength == 0)
+        {
+          // Start of either a raw run of byte or compressed run of byte
+          uint8_t b = buff[_pkt->buffIndex++];
+          if (b < 128)
+          {
+            // (0x7F=127) its a classical run, read the n bytes after (Raphael-Boichot)
+            _pkt->loopRunLength = b + 1;
+            _pkt->compressedRun = false;
+          }
+          else if (b >= 128)
+          {
+            // (0x80 = 128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
+            _pkt->loopRunLength = b - 128 + 2;
+            _pkt->compressedRun = true;
+            _pkt->repeatByteGet = true;
+          }
+        }
+        else if (_pkt->repeatByteGet)
+        {
+          // Grab loop byte
+          uint8_t b = buff[_pkt->buffIndex++];
+          _pkt->repeatByte = b;
+          _pkt->repeatByteGet = false;
+        }
+        else
+        {
+          const uint8_t b = (_pkt->compressedRun) ? _pkt->repeatByte : buff[_pkt->buffIndex++];
+          _pkt->loopRunLength--;
+          if (gbp_pkt_tileAccu_insertByte(tileBuff, b))
+          {
+            return true; // Got tile
+          }
+        }
+      }
+      else
+      {
+        _pkt->buffIndex = 0; // Reset for next buffer
+        return false;
       }
     }
-
-    // Increment
-    if (_pktBuff->pktByteIndex == (8+_pktBuff->dataLength))
-    {
-      _pktBuff->printerID = _byte;
-    }
-    else if (_pktBuff->pktByteIndex == (8+_pktBuff->dataLength + 1))
-    {
-      // End of packet reached
-      _pktBuff->status = _byte;
-      _pktBuff->pktByteIndex = 0;
-      // Indicate received packet
-      _pktBuff->received = GBP_REC_GOT_PACKET;
-      return true;
-    }
-    _pktBuff->pktByteIndex++;
-    return false;
   }
-
   return false;
 }
