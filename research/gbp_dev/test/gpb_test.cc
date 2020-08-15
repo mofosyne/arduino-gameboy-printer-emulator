@@ -15,8 +15,8 @@
 *******************************************************************************/
 const uint8_t testVector[] = {
   //#include "2020-08-02_GameboyPocketCameraJP.txt" // Single Image
-  //#include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
-  #include "2020-08-10_Pokemon_trading_card_gbp_dev.txt" // Compression
+  #include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
+  //#include "2020-08-10_Pokemon_trading_card_gbp_dev.txt" // Compression
 };
 
 uint8_t testResponse[sizeof(testVector)+100] = {0};
@@ -287,20 +287,23 @@ int main(void)
 
 
 #ifdef FEATURE_PACKET_TEST_PARSE
-  uint8_t buff[16] = {0};
-  uint8_t buffSize = 0;
-  uint8_t pktCounter = 0;
+  uint8_t pktCounter = 0; // Dev Varible
+  //////
   gbp_pkt_t gbp_pktBuff = {GBP_REC_NONE, 0};
+  uint8_t gbp_pktbuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE] = {0};
+  uint8_t gbp_pktbuffSize = 0;
+  gbp_pkt_tileAcc_t tileBuff = {0};
+  //////
   gbp_pkt_init(&gbp_pktBuff);
   printf("\r\n");
   for (size_t i = 0 ; i < sizeof(testVector) ; i++)
   {
-    if (gbp_pkt_processByte(&gbp_pktBuff, testVector[i], buff, &buffSize, sizeof(buff)))
+    if (gbp_pkt_processByte(&gbp_pktBuff, testVector[i], gbp_pktbuff, &gbp_pktbuffSize, sizeof(gbp_pktbuff)))
     {
       if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
       {
         pktCounter++;
-        printf("! %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d |",
+        printf("! %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d | ",
             gbpCommand_toStr(gbp_pktBuff.command),
             (unsigned) gbp_pktBuff.compression,
             (unsigned) gbp_pktBuff.dataLength,
@@ -308,54 +311,31 @@ int main(void)
             (unsigned) gbp_pktBuff.status,
             (unsigned) pktCounter
           );
-        for (int i = 0 ; i < buffSize ; i++)
+        for (int i = 0 ; i < gbp_pktbuffSize ; i++)
         {
-          printf("%02X ",buff[i]);
+          printf("%02X ", gbp_pktbuff[i]);
         }
         printf("\r\n");
       }
       else
       {
-#if 1
         // Support compression payload
-        static gbp_pkt_tileAcc_t tileBuff = {0};
-        while (gbp_pkt_decompressor(&gbp_pktBuff, buff, buffSize, &tileBuff))
+        while (gbp_pkt_decompressor(&gbp_pktBuff, gbp_pktbuff, gbp_pktbuffSize, &tileBuff))
         {
-          if (gbp_pkt_get_tile(&tileBuff))
+          if (gbp_pkt_tileAccu_tileReadyCheck(&tileBuff))
           {
-#if 1
             // Got tile
-            for (int i = 0 ; i < 16 ; i++)
+            for (int i = 0 ; i < GBP_TILE_SIZE_IN_BYTE ; i++)
             {
               printf("%02X ", tileBuff.tile[i]);
             }
             printf("\r\n");
-#endif
           }
         }
-#if 0
-        if (tileBuff.count)
-        {
-          // Unfinished Tile (bug?)
-          for (int i = 0 ; i < tileBuff.count ; i++)
-          {
-            printf("%02X ", tileBuff.tile[i]);
-          }
-          printf("...\r\n");
-        }
-#endif
-#else
-        // Basic no compression parsing
-        for (int i = 0 ; i < buffSize ; i++)
-        {
-          printf("%02X ", buff[i]);
-        }
-        printf("\r\n");
-#endif
       }
     }
   }
 #endif //FEATURE_PACKET_TEST_PARSE
 
-  printf("\r\n/* Done */\r\n");
+  printf("/* Done */\r\n");
 }

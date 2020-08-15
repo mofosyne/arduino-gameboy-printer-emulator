@@ -6,13 +6,12 @@
 
 */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stdint.h> // uint8_t
+#include <stddef.h> // size_t
+#include <stdbool.h> // bool
 #include "gameboy_printer_protocol.h"
 
-#define GBP_PKT_TILE_SIZE_IN_BYTE 16
-#define GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE GBP_PKT_TILE_SIZE_IN_BYTE
+#define GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE GBP_TILE_SIZE_IN_BYTE
 
 typedef enum
 {
@@ -36,6 +35,7 @@ typedef struct
   uint8_t status;
 
   /* Decompressor */
+  size_t buffIndex;
   bool compressedRun;
   bool repeatByteGet;
   uint8_t repeatByte;
@@ -43,22 +43,18 @@ typedef struct
 
 } gbp_pkt_t;
 
-
-
 typedef struct
 {
   // This is the tile data accumulator
   unsigned char count;
-  unsigned char tile[16];
+  unsigned char tile[GBP_TILE_SIZE_IN_BYTE];
 } gbp_pkt_tileAcc_t;
 
 
-
 bool gbp_pkt_init(gbp_pkt_t *_pkt);
-bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const uint8_t bufferMax);
+bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax);
 bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff);
-
-bool gbp_pkt_get_tile(gbp_pkt_tileAcc_t *tileBuff);
+bool gbp_pkt_tileAccu_tileReadyCheck(gbp_pkt_tileAcc_t *tileBuff);
 
 /*******************************************************************************
  * Print Instruction
