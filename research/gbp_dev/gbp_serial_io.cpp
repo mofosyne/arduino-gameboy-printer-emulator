@@ -36,7 +36,7 @@
 
 /******************************************************************************/
 
-#define GBP_PKT10_TIMEOUT_MS 100
+#define GBP_PKT10_TIMEOUT_MS 300
 
 // Testing
 //#define TEST_CHECKSUM_FORCE_FAIL
