@@ -286,25 +286,10 @@ int main(void)
 #endif // FEATURE_PACKET_SERIAL_IO
 
 
-
-
-#if 0
-  uint8_t testbuff[] = {0x82, 0x00, 0x0B, 0x0F, 0x0F, 0x10, 0x10, 0x2F, 0x20, 0x28, 0x27, 0x28, 0x24, 0x28, 0x24, 0x82};
-  gbp_pkt_t gbp_pkttestBuff = {GBP_REC_NONE, 0};
-  static gbp_pkt_tileAcc_t tiletestBuff = {0};
-  printf("\r\n-----\r\n");
-  while (gbp_pkt_decompressor(&gbp_pkttestBuff, testbuff, sizeof(testbuff), &tiletestBuff))
-  {
-    gbp_pkt_get_tile(&tiletestBuff);
-  }
-  printf("\r\n-----\r\n");
-#endif //FEATURE_PACKET_TEST_PARSE
-
-
-
 #ifdef FEATURE_PACKET_TEST_PARSE
   uint8_t buff[16] = {0};
   uint8_t buffSize = 0;
+  uint8_t pktCounter = 0;
   gbp_pkt_t gbp_pktBuff = {GBP_REC_NONE, 0};
   gbp_pkt_init(&gbp_pktBuff);
   printf("\r\n");
@@ -314,12 +299,14 @@ int main(void)
     {
       if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
       {
-        printf("! %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | ",
+        pktCounter++;
+        printf("! %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d |",
             gbpCommand_toStr(gbp_pktBuff.command),
             (unsigned) gbp_pktBuff.compression,
             (unsigned) gbp_pktBuff.dataLength,
             (unsigned) gbp_pktBuff.printerID,
-            (unsigned) gbp_pktBuff.status
+            (unsigned) gbp_pktBuff.status,
+            (unsigned) pktCounter
           );
         for (int i = 0 ; i < buffSize ; i++)
         {
@@ -346,6 +333,17 @@ int main(void)
 #endif
           }
         }
+#if 0
+        if (tileBuff.count)
+        {
+          // Unfinished Tile (bug?)
+          for (int i = 0 ; i < tileBuff.count ; i++)
+          {
+            printf("%02X ", tileBuff.tile[i]);
+          }
+          printf("...\r\n");
+        }
+#endif
 #else
         // Basic no compression parsing
         for (int i = 0 ; i < buffSize ; i++)

@@ -156,19 +156,6 @@ bool gbp_pkt_get_tile(gbp_pkt_tileAcc_t *tileBuff)
 bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff)
 {
   static size_t buffIndex = 0;
-
-#if 0
-  if (buffIndex == 0)
-  {
-    for (size_t i = 0 ; i < buffSize ; i++)
-    {
-      printf("%02X ", buff[i]);
-    }
-    printf("\r\n");
-  }
-#endif
-
-
   if (!_pkt->compression)
   {
     while (1)
@@ -192,31 +179,45 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
   {
     while (1)
     {
+      static bool compressedRun;
+      static bool repeatByteGet;
+      static uint8_t repeatByte;
+      static uint8_t loopRunLength;
+
+      // Grab Byte?
       // for (buffIndex = 0; buffIndex < buffSize ; buffIndex++)
-      if (buffIndex < buffSize)
+      if (compressedRun && !repeatByteGet && (loopRunLength != 0))
       {
+        loopRunLength--;
+        if (gbp_pkt_tileAccumulator(tileBuff, repeatByte))
+        {
+          return true; // Got tile
+        }
+      }
+      else if (buffIndex < buffSize)
+      {
+        // Incoming Bytes Avaliable
+
         // Compressed payload (Run length encoding)
         // Refactor: Move to struct
-        static bool compressedRun;
-        static bool repeatByteGet;
-        static uint8_t repeatByte;
-        static uint8_t loopRunLength;
         if (loopRunLength == 0)
         {
           // Start of either a raw run of byte or compressed run of byte
           uint8_t b = buff[buffIndex++];
-          if (b <= 0x7F)
+          if (b < 128)
           {
             // (0x7F=127) its a classical run, read the n bytes after (Raphael-Boichot)
             loopRunLength = b + 1;
             compressedRun = false;
+            //printf("[rlen=%3d ] = %02X (%02X %02X)\r\n", loopRunLength, b, (int)buffIndex, (int)buffSize);
           }
-          else
+          else if (b >= 128)
           {
-            // (0x80 = 128) for (b>128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
+            // (0x80 = 128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
             loopRunLength = b - 128 + 2;
             compressedRun = true;
             repeatByteGet = true;
+            //printf("[clen=%3d ] = %02X (%02X %02X)\r\n", loopRunLength, b, (int)buffIndex, (int)buffSize);
           }
         }
         else if (repeatByteGet)
@@ -230,13 +231,13 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
         {
           const uint8_t b = (compressedRun) ? repeatByte : buff[buffIndex++];
 #if 0
-          static int ii = 0;
-          if (ii++ < 100)
+          //static int ii = 0;
+          //if (ii++ < 100)
           {
             if (compressedRun)
-              printf("[com len=%3d b='%02X'] = %02X \r\n", loopRunLength, repeatByte, b);
+              printf("[com len=%3d b='%02X'] = %02X (%02X %02X)\r\n", loopRunLength, repeatByte, b, (int)buffIndex, (int)buffSize);
             else
-              printf("[raw len=%3d ] = %02X \r\n", loopRunLength, b);
+              printf("[raw len=%3d ] = %02X (%02X %02X)\r\n", loopRunLength, b, (int)buffIndex, (int)buffSize);
           }
 #endif
           loopRunLength--;
@@ -255,87 +256,3 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
   }
   return false;
 }
-
-#if 0
-bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, uint8_t tileBuff[16])
-{
-  // Assumption: No mixure of compression and non compression packets
-  static size_t i = 0;
-  while (1)
-  {
-    if (!(i < buffSize))
-    {
-      // Done processing incoming buffer
-      i = 0;
-      break;
-    }
-
-    // Get Byte
-    const uint8_t b = buff[i++];
-
-    // Process Byte
-    if (_pkt->compression)
-    {
-      // Compressed payload (Run length encoding)
-      // Refactor: Move to struct
-      static bool compressedRun;
-      static bool repeatByteGet;
-      static uint8_t repeatByte;
-      static uint8_t loopRunLength;
-      if (loopRunLength == 0)
-      {
-        // Start of either a raw run of byte or compressed run of byte
-        if (b <= 0x7F)
-        {
-          // (0x7F=127) its a classical run, read the n bytes after
-          loopRunLength = b+1;
-          compressedRun = false;
-          repeatByteGet = true;
-        }
-        else
-        {
-          // for (b>128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
-          loopRunLength = b-128+2;
-          compressedRun = true;
-        }
-      }
-      else if (compressedRun && repeatByteGet)
-      {
-        // Grab loop byte
-        repeatByte = b;
-        repeatByteGet = false;
-      }
-      else
-      {
-        loopRunLength--;
-        printf("[%s %3d '%02X' %02X] \r\n", compressedRun?"c":"r", loopRunLength, repeatByte, b);
-
-        if (compressedRun)
-        {
-          if (gbp_pkt_tileAccumulator(&(_pkt->tileCounter), repeatByte, tileBuff))
-          {
-            return true;
-          }
-        }
-        else
-        {
-          if (gbp_pkt_tileAccumulator(&(_pkt->tileCounter), b, tileBuff))
-          {
-            return true;
-          }
-        }
-      }
-    }
-    else
-    {
-      // Raw payload passthough
-      if(gbp_pkt_tileAccumulator(&(_pkt->tileCounter), b, tileBuff))
-      {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-#endif
