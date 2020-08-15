@@ -35,11 +35,19 @@ typedef struct
   uint8_t printerID;
   uint8_t status;
 
-  uint8_t tileCounter;
+  /* Decompressor */
+  bool compressedRun;
+  bool repeatByteGet;
+  uint8_t repeatByte;
+  uint8_t loopRunLength;
+
 } gbp_pkt_t;
+
+
 
 typedef struct
 {
+  // This is the tile data accumulator
   unsigned char count;
   unsigned char tile[16];
 } gbp_pkt_tileAcc_t;

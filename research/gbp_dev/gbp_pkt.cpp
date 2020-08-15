@@ -179,68 +179,43 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
   {
     while (1)
     {
-      static bool compressedRun;
-      static bool repeatByteGet;
-      static uint8_t repeatByte;
-      static uint8_t loopRunLength;
-
       // Grab Byte?
       // for (buffIndex = 0; buffIndex < buffSize ; buffIndex++)
-      if (compressedRun && !repeatByteGet && (loopRunLength != 0))
-      {
-        loopRunLength--;
-        if (gbp_pkt_tileAccumulator(tileBuff, repeatByte))
-        {
-          return true; // Got tile
-        }
-      }
-      else if (buffIndex < buffSize)
+      if ((buffIndex < buffSize) || (_pkt->compressedRun && !_pkt->repeatByteGet && (_pkt->loopRunLength != 0)))
       {
         // Incoming Bytes Avaliable
 
         // Compressed payload (Run length encoding)
         // Refactor: Move to struct
-        if (loopRunLength == 0)
+        if (_pkt->loopRunLength == 0)
         {
           // Start of either a raw run of byte or compressed run of byte
           uint8_t b = buff[buffIndex++];
           if (b < 128)
           {
             // (0x7F=127) its a classical run, read the n bytes after (Raphael-Boichot)
-            loopRunLength = b + 1;
-            compressedRun = false;
-            //printf("[rlen=%3d ] = %02X (%02X %02X)\r\n", loopRunLength, b, (int)buffIndex, (int)buffSize);
+            _pkt->loopRunLength = b + 1;
+            _pkt->compressedRun = false;
           }
           else if (b >= 128)
           {
             // (0x80 = 128) its a compressed run, read the next byte and repeat (Raphael-Boichot)
-            loopRunLength = b - 128 + 2;
-            compressedRun = true;
-            repeatByteGet = true;
-            //printf("[clen=%3d ] = %02X (%02X %02X)\r\n", loopRunLength, b, (int)buffIndex, (int)buffSize);
+            _pkt->loopRunLength = b - 128 + 2;
+            _pkt->compressedRun = true;
+            _pkt->repeatByteGet = true;
           }
         }
-        else if (repeatByteGet)
+        else if (_pkt->repeatByteGet)
         {
           // Grab loop byte
           uint8_t b = buff[buffIndex++];
-          repeatByte = b;
-          repeatByteGet = false;
+          _pkt->repeatByte = b;
+          _pkt->repeatByteGet = false;
         }
         else
         {
-          const uint8_t b = (compressedRun) ? repeatByte : buff[buffIndex++];
-#if 0
-          //static int ii = 0;
-          //if (ii++ < 100)
-          {
-            if (compressedRun)
-              printf("[com len=%3d b='%02X'] = %02X (%02X %02X)\r\n", loopRunLength, repeatByte, b, (int)buffIndex, (int)buffSize);
-            else
-              printf("[raw len=%3d ] = %02X (%02X %02X)\r\n", loopRunLength, b, (int)buffIndex, (int)buffSize);
-          }
-#endif
-          loopRunLength--;
+          const uint8_t b = (_pkt->compressedRun) ? _pkt->repeatByte : buff[buffIndex++];
+          _pkt->loopRunLength--;
           if (gbp_pkt_tileAccumulator(tileBuff, b))
           {
             return true; // Got tile
