@@ -15,7 +15,7 @@
 #include "gbp_serial_io.h"
 #include "gbp_pkt.h"
 
-//#define GBP_FEATURE_PACKET_CAPTURE_MODE
+#define GBP_FEATURE_PACKET_CAPTURE_MODE
 #define GBP_FEATURE_PARSE_PACKET_MODE
 
 /* Gameboy Link Cable Mapping to Arduino Pin */
@@ -50,11 +50,8 @@
 /*******************************************************************************
 *******************************************************************************/
 
-
-#define GBP_PACKET_TIMEOUT_MS 100 // ms timeout period to wait for next byte in a packet
-
-// 640 bytes usually
-#define GBP_BUFFER_SIZE 700
+// Dev Note: Gamboy camera sends data payload of 640 bytes usually
+#define GBP_BUFFER_SIZE 10
 
 /* Serial IO */
 // This circular buffer contains a stream of raw packets from the gameboy
@@ -144,74 +141,90 @@ void setup(void)
 
   /* Welcome Message */
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
-  Serial.print("/* GAMEBOY PRINTER EMULATION PROJECT (Packet Capture Mode) */\n");
+  Serial.print("/* GAMEBOY PRINTER EMULATION PROJECT V2 (Packet Capture Mode) */\n");
   Serial.print("/* By Brian Khuu (2020) */\n");
+  Serial.print("// https://mofosyne.github.io/arduino-gameboy-printer-emulator/");
   Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
   Serial.print("//       except for the last two bytes which is from the printer\n");
 #endif
 
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
-  Serial.print("# GAMEBOY PRINTER EMULATION PROJECT\n");
+  Serial.print("# GAMEBOY PRINTER EMULATION PROJECT V2\n");
   Serial.print("# By Brian Khuu (2020)\n");
+  Serial.print("# https://mofosyne.github.io/arduino-gameboy-printer-emulator/\n");
 #endif
 } // setup()
 
 void loop()
 {
-#ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
-  /* tiles received */
-  static uint32_t byteTotal = 0;
-  static uint32_t pktTotalCount = 0;
-  static uint32_t pktByteIndex = 0;
-  static uint16_t pktDataLength = 0;
-  const size_t dataBuffCount = gbp_serial_io_dataBuff_getByteCount();
-  if (
-      ((pktByteIndex != 0)&&(dataBuffCount>0))||
-      ((pktByteIndex == 0)&&(dataBuffCount>=6))
-      )
+  static uint16_t sioWaterline = 0;
+  static bool debug_mode = false;
+  static bool packet_capture_mode_enabled = false;
+
+  if (packet_capture_mode_enabled)
   {
-    const char nibbleToCharLUT[] = "0123456789ABCDEF";
-    uint8_t data_8bit = 0;
-    for (int i = 0 ; i < dataBuffCount ; i++)
-    { // Display the data payload encoded in hex
-      // Start of a new packet
-      if (pktByteIndex == 0)
-      {
-        pktDataLength = gbp_serial_io_dataBuff_getByte_Peek(4);
-        pktDataLength |= (gbp_serial_io_dataBuff_getByte_Peek(5)<<8)&0xFF00;
-        Serial.print("/* ");
-        Serial.print(pktTotalCount);
-        Serial.print(" : ");
-        Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
-        Serial.print(" */\n");
-        digitalWrite(LED_STATUS_PIN, HIGH);
-      }
-      // Print Hex Byte
-      data_8bit = gbp_serial_io_dataBuff_getByte();
-      Serial.print((char)'0');
-      Serial.print((char)'x');
-      Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
-      Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-      Serial.print((char)',');
-      // Splitting packets for convenience
-      if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
-      {
-        digitalWrite(LED_STATUS_PIN, LOW);
-        Serial.print("\n");
-        pktByteIndex = 0;
-        pktTotalCount++;
-      }
-      else
-      {
-        Serial.print(((pktByteIndex+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
-        pktByteIndex++; // Byte hex split counter
-        byteTotal++; // Byte total counter
-      }
+    gbp_packet_capture_loop();
+  }
+  else
+  {
+    gbp_parse_packet_loop();
+  }
+
+  // Trigger Timeout and reset the printer if byte stopped being received.
+  static uint32_t last_millis = 0;
+  uint32_t curr_millis = millis();
+  if (curr_millis > last_millis)
+  {
+    uint32_t elapsed_ms = curr_millis - last_millis;
+    if (gbp_serial_io_timeout_handler(elapsed_ms))
+    {
+#if defined(GBP_FEATURE_PARSE_PACKET_MODE)
+      Serial.println("\n\n# Timed Out\n\n");
+#elif defined(GBP_FEATURE_PACKET_CAPTURE_MODE)
+      Serial.println("\n\n// Timed Out\n\n");
+#else
+      Serial.println("\n\n// Timed Out\n\n");
+#endif
+      digitalWrite(LED_STATUS_PIN, LOW);
     }
   }
-#endif
+  last_millis = curr_millis;
 
+  // Diagnostics Console
+  while (Serial.available() > 0)
+  {
+    switch (Serial.read())
+    {
+      case 'p':
+        Serial.print("Parse Mode\n");
+        packet_capture_mode_enabled = false;
+        break;
 
+      case 'r':
+        Serial.print("Raw Packet Capture Mode\n");
+        packet_capture_mode_enabled = true;
+        break;
+
+      case '?':
+        Serial.print("p=parseMode, r=rawMode, d=debug, ?=help\n");
+        break;
+
+      case 'd':
+        debug_mode = ~debug_mode;
+        Serial.print("waterline: ");
+        Serial.print(gbp_serial_io_dataBuff_waterline(false));
+        Serial.print("B out of ");
+        Serial.print(gbp_serial_io_dataBuff_max());
+        Serial.print("B\n");
+        break;
+    }
+  };
+} // loop()
+
+/******************************************************************************/
+
+void gbp_parse_packet_loop()
+{
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
   const char nibbleToCharLUT[] = "0123456789ABCDEF";
   for (int i = 0 ; i < gbp_serial_io_dataBuff_getByteCount() ; i++)
@@ -310,130 +323,62 @@ void loop()
 #endif
       }
     }
-
-
-#if 0
-    if (gbp_pkt_processByte((const uint8_t) gbp_serial_io_dataBuff_getByte(), &gbp_pktBuff))
-    {
-      switch (gbp_pktBuff.received)
-      {
-        case GBP_REC_GOT_DATA_HEADER :
-        case GBP_REC_GOT_PACKET      :
-        {
-          Serial.print((char)'!');
-          Serial.print((char)'{');
-          Serial.print("\"command\":\"");
-          Serial.print(gbpCommand_toStr(gbp_pktBuff.command));
-          Serial.print("\"");
-          if (gbp_pktBuff.command == GBP_COMMAND_INQUIRY)
-          {
-            // !{"command":"INQY","status":{"lowbatt":0,"jam":0,"err":0,"pkterr":0,"unproc":1,"full":0,"bsy":0,"chk_err":0}}
-            Serial.print(", \"status\":{");
-            Serial.print("\"LowBat\":");
-            Serial.print(gpb_status_bit_getbit_low_battery(gbp_pktBuff.status)      ? '1' : '0');
-            Serial.print(",\"ER2\":");
-            Serial.print(gpb_status_bit_getbit_other_error(gbp_pktBuff.status)      ? '1' : '0');
-            Serial.print(",\"ER1\":");
-            Serial.print(gpb_status_bit_getbit_paper_jam(gbp_pktBuff.status)        ? '1' : '0');
-            Serial.print(",\"ER0\":");
-            Serial.print(gpb_status_bit_getbit_packet_error(gbp_pktBuff.status)     ? '1' : '0');
-            Serial.print(",\"Untran\":");
-            Serial.print(gpb_status_bit_getbit_unprocessed_data(gbp_pktBuff.status) ? '1' : '0');
-            Serial.print(",\"Full\":");
-            Serial.print(gpb_status_bit_getbit_print_buffer_full(gbp_pktBuff.status)? '1' : '0');
-            Serial.print(",\"Busy\":");
-            Serial.print(gpb_status_bit_getbit_printer_busy(gbp_pktBuff.status)     ? '1' : '0');
-            Serial.print(",\"Sum\":");
-            Serial.print(gpb_status_bit_getbit_checksum_error(gbp_pktBuff.status)   ? '1' : '0');
-            Serial.print((char)'}');
-          }
-          if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
-          {
-            //!{"command":"PRNT","sheets":1,"margin_upper":1,"margin_lower":3,"pallet":228,"density":64 }
-            Serial.print(", \"sheets\":");
-            Serial.print(gbp_pkt_printInstruction_num_of_sheets(&gbp_pktBuff));
-            Serial.print(", \"margin_upper\":");
-            Serial.print(gbp_pkt_printInstruction_num_of_linefeed_before_print(&gbp_pktBuff));
-            Serial.print(", \"margin_lower\":");
-            Serial.print(gbp_pkt_printInstruction_num_of_linefeed_after_print(&gbp_pktBuff));
-            Serial.print(", \"pallet\":");
-            Serial.print(gbp_pkt_printInstruction_palette_value(&gbp_pktBuff));
-            Serial.print(", \"density\":");
-            Serial.print(gbp_pkt_printInstruction_print_density(&gbp_pktBuff));
-          }
-          if (gbp_pktBuff.command == GBP_COMMAND_DATA)
-          {
-            Serial.print(", \"compressed\":");
-            Serial.print(gbp_pktBuff.compression);
-            Serial.print(", \"more\":");
-            Serial.print((gbp_pktBuff.dataLength != 0)?'1':'0');
-          }
-          Serial.print((char)'}');
-          Serial.print("\r\n");
-        } break;
-        case GBP_REC_GOT_DATA_TILE   :
-        {
-          for (int i = 0 ; i < gbp_pktBuff.payloadBuffSize ; i++)
-          {
-            const uint8_t data_8bit = gbp_pktBuff.payloadBuff[i];
-            Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
-            Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-            Serial.print((char)' ');
-          }
-          Serial.print("\r\n");
-        } break;
-        default: break;
-      }
-    }
-#endif
   }
 #endif
+}
 
-  // Trigger Timeout and reset the printer if byte stopped being received.
+void gbp_packet_capture_loop(void)
+{
+#ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
+  /* tiles received */
+  static uint32_t byteTotal = 0;
+  static uint32_t pktTotalCount = 0;
+  static uint32_t pktByteIndex = 0;
+  static uint16_t pktDataLength = 0;
+  const size_t dataBuffCount = gbp_serial_io_dataBuff_getByteCount();
+  if (
+      ((pktByteIndex != 0)&&(dataBuffCount>0))||
+      ((pktByteIndex == 0)&&(dataBuffCount>=6))
+      )
   {
-    static uint32_t last_millis = 0;
-    uint32_t curr_millis = millis();
-    if (curr_millis > last_millis)
-    {
-      uint32_t elapsed_ms = curr_millis - last_millis;
-      if (gbp_serial_io_timeout_handler(elapsed_ms))
+    const char nibbleToCharLUT[] = "0123456789ABCDEF";
+    uint8_t data_8bit = 0;
+    for (int i = 0 ; i < dataBuffCount ; i++)
+    { // Display the data payload encoded in hex
+      // Start of a new packet
+      if (pktByteIndex == 0)
       {
-#if defined(GBP_FEATURE_PARSE_PACKET_MODE)
-        Serial.println("\n\n# Timed Out\n\n");
-#elif defined(GBP_FEATURE_PACKET_CAPTURE_MODE)
-        Serial.println("\n\n// Timed Out\n\n");
-#else
-        Serial.println("\n\n// Timed Out\n\n");
-#endif
+        pktDataLength = gbp_serial_io_dataBuff_getByte_Peek(4);
+        pktDataLength |= (gbp_serial_io_dataBuff_getByte_Peek(5)<<8)&0xFF00;
+        Serial.print("/* ");
+        Serial.print(pktTotalCount);
+        Serial.print(" : ");
+        Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
+        Serial.print(" */\n");
+        digitalWrite(LED_STATUS_PIN, HIGH);
+      }
+      // Print Hex Byte
+      data_8bit = gbp_serial_io_dataBuff_getByte();
+      Serial.print((char)'0');
+      Serial.print((char)'x');
+      Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
+      Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
+      Serial.print((char)',');
+      // Splitting packets for convenience
+      if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
+      {
         digitalWrite(LED_STATUS_PIN, LOW);
+        Serial.print("\n");
+        pktByteIndex = 0;
+        pktTotalCount++;
+      }
+      else
+      {
+        Serial.print(((pktByteIndex+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
+        pktByteIndex++; // Byte hex split counter
+        byteTotal++; // Byte total counter
       }
     }
-    last_millis = curr_millis;
   }
-
-#if 0
-  // Diagnostics Console
-  while (Serial.available() > 0)
-  {
-    switch (Serial.read())
-    {
-      case '?':
-        Serial.print("parse_state:");
-        Serial.println(gbp_printer.gbp_packet_parser.parse_state,HEX);
-        Serial.print("data_index:");
-        Serial.println(gbp_printer.gbp_packet_parser.data_index,HEX);
-        Serial.print("next timeout in:");
-        Serial.println(gbp_printer.uptime_til_timeout_ms);
-        Serial.print("milis():");
-        Serial.println(millis());
-        Serial.print("synced:");
-        Serial.println(gbp_printer.gbp_rx_tx_byte_buffer.syncronised);
-        break;
-
-      case '!':
-        Serial.print("\n");
-        break;
-    }
-  };
 #endif
-} // loop()
+}

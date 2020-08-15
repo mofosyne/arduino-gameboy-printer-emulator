@@ -24,6 +24,8 @@ bool gbp_serial_io_timeout_handler(uint32_t elapsed_ms);
 size_t  gbp_serial_io_dataBuff_getByteCount(void);
 uint8_t gbp_serial_io_dataBuff_getByte(void);
 uint8_t gbp_serial_io_dataBuff_getByte_Peek(uint32_t offset);
+uint16_t gbp_serial_io_dataBuff_waterline(bool resetWaterline);
+uint16_t gbp_serial_io_dataBuff_max(void);
 
 /******************************************************************************/
 #endif

@@ -22,7 +22,7 @@
 
 /******************************************************************************/
 
-#define GBP_PKT10_TIMEOUT_MS 5000
+#define GBP_PKT10_TIMEOUT_MS 100
 
 // Testing
 //#define TEST_CHECKSUM_FORCE_FAIL
@@ -104,6 +104,9 @@ static struct
   int busyPacketCountdown;
   int untransPacketCountdown;
   int dataPacketCountdown;
+
+  // Dev
+  uint16_t dataBufferWaterline;
 } gpb_pktIO;
 
 
@@ -216,6 +219,21 @@ uint8_t gbp_serial_io_dataBuff_getByte_Peek(uint32_t offset)
   uint8_t b = 0;
   gpb_cbuff_Dequeue_Peek(&gpb_pktIO.dataBuffer, &b, offset);
   return b;
+}
+
+uint16_t gbp_serial_io_dataBuff_waterline(bool resetWaterline)
+{
+  uint16_t retval = gpb_pktIO.dataBufferWaterline;
+  if (resetWaterline)
+  {
+    gpb_pktIO.dataBufferWaterline = 0;
+  }
+  return retval;
+}
+
+uint16_t gbp_serial_io_dataBuff_max(void)
+{
+  return gpb_cbuff_Capacity(&gpb_pktIO.dataBuffer);
 }
 
 
@@ -380,6 +398,13 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       break;
     default:
       break;
+  }
+
+  // Track upper usage of buffer
+  uint16_t waterline = gpb_cbuff_Count(&gpb_pktIO.dataBuffer);
+  if (waterline > gpb_pktIO.dataBufferWaterline)
+  {
+    gpb_pktIO.dataBufferWaterline = waterline;
   }
 
   /* Packet Timeout Reset */
