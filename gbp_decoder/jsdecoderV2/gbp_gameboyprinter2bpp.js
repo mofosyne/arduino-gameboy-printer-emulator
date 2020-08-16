@@ -131,6 +131,10 @@ function render_gbp(rawBytes)
                     {
                         return 'INIT'
                     }
+                    else if (command.command === 'PRNT' && command.margin_lower === 3)
+                    {
+                        return 'PRNTCUT'
+                    }
                 } catch (error)
                 {
                     throw new Error('Error while trying to parse JSON data block in line ' + (1 + line_number));
@@ -141,11 +145,22 @@ function render_gbp(rawBytes)
         .filter(Boolean)
         .forEach(function (tile_element)
         {
-            if ((tile_element === 'INIT'))
+
+            if ((tile_element === 'INIT' && currentImage))
+            {
+                //
+            }
+            else if ((tile_element === 'INIT' && !currentImage))
             {
                 currentImage = [];
+            }
+            else if ((tile_element === 'PRNTCUT'))
+            {
                 images.push(currentImage);
-            } else {
+                currentImage = [];
+            }
+            else
+            {
                 try
                 {
                     currentImage.push(tile_element);
