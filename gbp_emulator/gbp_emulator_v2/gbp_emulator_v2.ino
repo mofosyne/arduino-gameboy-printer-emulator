@@ -158,7 +158,7 @@ void setup(void)
 
   /* Welcome Message */
   Serial.print("# GAMEBOY PRINTER Emulator V2 : Copyright (C) 2020 Brian Khuu\n");
-  Serial.print("# JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html\n");
+  Serial.print("# JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html\n");
   Serial.print("# --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---\n");
   Serial.print("# This program comes with ABSOLUTELY NO WARRANTY;\n");
   Serial.print("# This is free software, and you are welcome to redistribute it\n");
