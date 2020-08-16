@@ -86,6 +86,8 @@ Gameboy Original/Color Link Cable Pinout
 Next download `./gbp_emulator/gbp_emulator_v2/gpb_emulator_v2.ino` to your arduino nano.
 After that, open the serial console and set the baud rate to 115200 baud.
 
+* [All Version Release Notes](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_emulator/)
+
 ### Download the image
 
 Press the download button in your gameboy. The emulator will automatically start to download and dump the data as a string of hex in the console display.
@@ -96,7 +98,7 @@ One you done that, your image will show up below. You can then right click on th
 
 A copy of the decoder is accessible here as well:
 * [V2 JS Decoder: Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
-* [V1 JS Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV1/gameboy_printer_js_decoder.html)
+* [All Version Release Notes](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/)
 
 You are all done!
 

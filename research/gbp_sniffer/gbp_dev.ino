@@ -15,7 +15,7 @@
 /*******************************************************************************
 *******************************************************************************/
 
-//#define MINIMUM_PRINT_MODE // Skip C compatible capture for speed boost
+//#define CSTYLE_PRINT_MODE // C style verbose output for use as test vectors
 
 /*******************************************************************************
 *******************************************************************************/
@@ -279,13 +279,8 @@ void setup(void)
   /* Welcome Message */
   Serial.print("/* GAMEBOY PRINTER EMULATION PROJECT (Packet Capture Mode) */\n");
   Serial.print("/* By Brian Khuu (2020) */\n");
-#ifdef MINIMUM_PRINT_MODE
   Serial.print("// Note: Every byte is from the gameboy except the last two byte of each packet \n");
-  Serial.print("//       which be the response from the printer (Minimum Mode)\n");
-#else
-  Serial.print("// Note: Every byte is from the gameboy except when indicated by '(' or ')' to \n");
-  Serial.print("//       which it would indicate a response from the printer (C source format)\n");
-#endif
+  Serial.print("//       which will be the response from the printer\n");
   Serial.print("//------------------------------------------------------------------------------\n");
   Serial.print("// REAL GAMEBOY TO GAMEBOY PRINTER PACKET CAPTURE \n");
   Serial.print("// GAME: <Game name> \n");
@@ -308,10 +303,10 @@ char *gbpCommand_toStr(int val)
   switch (val)
   {
     case GBP_COMMAND_INIT    : return "INIT";
-    case GBP_COMMAND_PRINT   : return "PRINT";
+    case GBP_COMMAND_PRINT   : return "PRNT";
     case GBP_COMMAND_DATA    : return "DATA";
-    case GBP_COMMAND_BREAK   : return "BREAK";
-    case GBP_COMMAND_INQUIRY : return "INQUIRY";
+    case GBP_COMMAND_BREAK   : return "BREK";
+    case GBP_COMMAND_INQUIRY : return "INQY";
     default: return "?";
   }
 }
@@ -350,25 +345,17 @@ void loop()
         pktDataLength = 0;
         pktDataLength |= ((uint16_t)dataLengthByte0<<0)&0x00FF;
         pktDataLength |= ((uint16_t)dataLengthByte1<<8)&0xFF00;
-#ifdef MINIMUM_PRINT_MODE
-        Serial.print("# ");
+        Serial.print("// ");
         Serial.print(pktTotalCount);
         Serial.print(" : ");
         Serial.print(gbpCommand_toStr(commandTypeByte));
-#else
-        Serial.print("/* ");
-        Serial.print(pktTotalCount);
-        Serial.print(" : ");
-        Serial.print(gbpCommand_toStr(commandTypeByte));
-        Serial.print(" */\n");
-#endif
+        Serial.print("\n");
         digitalWrite(LED_STATUS_PIN, HIGH);
       }
       // Print Hex Byte
       gpb_cbuff_Dequeue(&gbp_snifferDataBuffer_Gameboy, &rx_8bit);
       gpb_cbuff_Dequeue(&gbp_snifferDataBuffer_Printer, &tx_8bit);
-#ifndef MINIMUM_PRINT_MODE
-      Serial.print((pktByteIndex == (8+pktDataLength + 0))?"/*(*/ ":"");
+#ifdef CSTYLE_PRINT_MODE
       Serial.print((char)'0');
       Serial.print((char)'x');
 #endif
@@ -384,13 +371,13 @@ void loop()
         Serial.print((char)nibbleToCharLUT[(tx_8bit>>4)&0xF]);
         Serial.print((char)nibbleToCharLUT[(tx_8bit>>0)&0xF]);
       }
-#ifdef MINIMUM_PRINT_MODE
-      Serial.print((char)' ');
-#else
+#ifdef CSTYLE_PRINT_MODE
       Serial.print((char)',');
+#endif
+      Serial.print((char)' ');
       if (pktByteIndex == (8+pktDataLength + 1))
       {
-        Serial.print(" /*)*/");
+#ifdef CSTYLE_PRINT_MODE
         if (tx_8bit)
         {
           Serial.print(" /* Printer Status: ");
@@ -404,8 +391,8 @@ void loop()
           if (tx_8bit & GBP_STATUS_MASK_SUM   ) { Serial.print("SUM ");}
           Serial.print(" */");
         }
-      }
 #endif
+      }
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
@@ -416,7 +403,9 @@ void loop()
       }
       else
       {
+#ifdef CSTYLE_PRINT_MODE
         Serial.print(((pktByteIndex+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
+#endif
         pktByteIndex++; // Byte hex split counter
         byteTotal++; // Byte total counter
       }

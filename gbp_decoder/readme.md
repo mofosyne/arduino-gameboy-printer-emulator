@@ -13,10 +13,15 @@ output into the web browser and render the image. This is the easiest
 This contains incremental improvements from the community to support multiple
 photos in a single stream as well as to color the photos.
 
+* [Open V1 JS Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
+
+
 ### V1 - 2017-04-6
 
 First release. Kept here due to simpler coding structure which would be good for
 understanding the basics. And also with less checks, it's good for developments.
+
+* [Open V1 JS Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV1/gameboy_printer_js_decoder.html)
 
 ## Octave/Matlab Tile Decoder
 
