@@ -25,6 +25,7 @@ disp('DATA PACKET RECEIVED')
 DATA=1;
 end
 
+% Deactivate these comments if the image does not print
 % str='Timed Out';
 % if not(isempty(strfind(a,str)))
 % disp('PRINT DATA TO A NEW FILE DUE TO TIMEOUT')
@@ -32,10 +33,8 @@ end
 % PRINTING=PRINTING+1;
 % end
 
-str='PRINTER';
-if (isempty(strfind(a,str)));
 
-    str='PRINT';
+str='PRNT';
 if not(isempty(strfind(a,str)))
 a=fgets(fid);
 % We get the current palette here
@@ -51,7 +50,7 @@ PRINTING=PRINTING+1;
 end
 end
 
-end
+
 
 if DATA==1
     %extract data packet
