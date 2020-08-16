@@ -1,12 +1,27 @@
 # Gameboy Octave Fake Printer Simulator V1
 
-Author
+* Date of script: 2020-08-16
+* Author: *Raphaël BOICHOT*
+
+Author of this script is *Raphaël BOICHOT* and was posted here with his permission.
+
+The purpose of this octave/matlab script is to do an accurate simulation of an
+ output of a gameboy printer and the effect of the thermal printer head on the
+ gameboy printer roll. This is not the same as a typical receipt printer as you
+ will see in the historical writeup below.
+
+Here is the simulation of the fake printer:
+
+![](./images/superMarioWorldPortraitSimulated.png)
+
+Compared to a pixel perfect output:
+
+![](./images/superMarioWorldPortraitOriginal.png)
 
 
+## Historical background 2020-08-16
 
-## History 2020-08-16
-
-This conversation occoured in Gameboy Camera Club in discord, contact us for an invite link.
+This conversation occurred in Gameboy Camera Club in discord, contact us for an invite link.
 
 During discussion between *Raphaël BOICHOT* and *maxs - thatguywithagameboycamera*
 Raphaël BOICHOT got an idea to simulate the paper output of the gameboy printer.
