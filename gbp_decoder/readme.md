@@ -13,7 +13,7 @@ output into the web browser and render the image. This is the easiest
 This contains incremental improvements from the community to support multiple
 photos in a single stream as well as to color the photos.
 
-* [Open V1 JS Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
+* [Open V2 JS Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
 
 
 ### V1 - 2017-04-6
