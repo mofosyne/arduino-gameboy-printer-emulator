@@ -39,4 +39,4 @@ Rapha�l BOICHOT contributed a decoder specifically written to simulate the
 imperfection of a real printer. The development is quite facinating and may be
 of interest for gameboy emulator developers.
 
-* [Click here to read the write up about this script and it's development](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/octaveFakePrinterSimulatorV1/readme.md)
+* [Click here to read the write up about this script and it's development](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/octaveFakePrinterSimulatorV1/)
