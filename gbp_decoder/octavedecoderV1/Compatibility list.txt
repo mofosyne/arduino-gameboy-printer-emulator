@@ -1,0 +1,16 @@
+Games						compression	baud rate	compatibility with Arduino
+Harvest Moon 2					non-compressed	normal speed	working
+Game Boy Camera					non-compressed	normal speed	working
+The Legend of Zelda: Link's Awakening DX  	non-compressed	double speed	Working
+Pokémon Trading card game			compressed	normal speed	Working
+Pokémon Yellow/red/blue				non-compressed	normal speed	Working
+Pokémon Gold/Silver/Crystal			non-compressed	normal speed	Working
+Pokemon Pinball					non-compressed	normal speed	Working
+Super Mario Bros. Deluxe			non-compressed	double speed	Working 
+Mary-Kate and Ashley Pocket Planner		non-compressed	normal speed	Working
+Tony Hawk's Pro-Skater 2 			non-compressed	double speed	Working but uses a special palette
+Donkey Kong Country				non-compressed	normal speed	Working
+Disney Tarzan					non-compressed	normal-speed	Working but uses a bugged palette
+Little Nicky					non-compressed	normal speed	Working but uses a special palette
+Disney Dinosaurs				non-compressed  normal speed	Working
+E.T. The Extra-Terrestrial - Digital Companion	non-compressed	normal speed	Working 

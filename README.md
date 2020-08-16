@@ -80,41 +80,42 @@ Gameboy Original/Color Link Cable Pinout
 
 ### Programming the emulator
 
-* File: `./gbp_emulator/gpb_emulator.ino` + `gameboy_printer_protocol.h`
+* Arduino Project File: `./gbp_emulator/gbp_emulator_v2/gpb_emulator_v2.ino`
 * Baud 115200 baud
 
-Next download `./gbp_emulator/gpb_emulator.ino` to your arduino nano.
+Next download `./gbp_emulator/gbp_emulator_v2/gpb_emulator_v2.ino` to your arduino nano.
 After that, open the serial console and set the baud rate to 115200 baud.
 
 ### Download the image
 
 Press the download button in your gameboy. The emulator will automatically start to download and dump the data as a string of hex in the console display.
 
-After the download has complete. Copy the content of the console to the javascript decoder in `./jsdecoder/gameboy_printer_js_decoder.html`. Press click to render button.
+After the download has complete. Copy the content of the console to the javascript decoder in `./gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html`. Press click to render button.
 
 One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
 
 A copy of the decoder is accessible here as well:
-* [Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html)
-* [Old Decoder](http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html)
+* [V2 JS Decoder: Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
+* [V1 JS Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV1/gameboy_printer_js_decoder.html)
 
 You are all done!
 
 ## Project Makeup
 
 * Arduino sketch emulating a gameboy printer to a computer via a serial link.
-    - `./gbp_emulator/gpb_emulator.ino` : Main source file
-    - `./gbp_emulator/gameboy_printer_protocol.h` : Reusable header containing information about the gameboy protocol
+    - `./gbp_emulator<Version>/gpb_emulator_<Version>.ino` : Main source file
+    - `./gbp_emulator<Version>/gameboy_printer_protocol.h` : Reusable header containing information about the gameboy protocol
     - The serial output is outputting a gameboy tile per line filled with hex. (Based on http://www.huderlem.com/demos/gameboy2bpp.html)
     - A tile in the serial output is 16 hex char per line: e.g. `55 00 FB 00 5D 00 FF 00 55 00 FF 00 55 00 FF 00`
 
 * Javascript gameboy printer hex stream rendering to image in browser.
-    - [js decoder page](./jsdecoder/gameboy_printer_js_decoder.html)
-    - `./jsdecoder/gameboy_printer_js_decoder.html` :
+    - [js decoder page](./gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
+    - `./gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html` :
     - This is a convenient way to convert the hex payload into canvas image that can be downloaded.
 
 * Research folder.
     - Contains some files that I found online to research this project
+    - Also a sniffer to listen to the communication between a real gameboy and a real printer.
 
 * Sample Images
     - Some sample images along with the sample logs. There has been some changes to the serial output, but the hex format remains the same.
@@ -1446,4 +1447,4 @@ For adding color palette dropdown https://github.com/mofosyne/arduino-gameboy-pr
 
 * @imwestm : West McGowan for submitting a handy picture of how to wire this project up as well as feedback to improve the instructions in this readme.
 
-* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games.
+* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games. Also contributed a matlab/octave decoder implementation.
