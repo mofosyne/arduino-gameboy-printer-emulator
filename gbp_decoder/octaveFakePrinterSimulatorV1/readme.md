@@ -26,7 +26,7 @@ This conversation occurred in Gameboy Camera Club in discord, contact us for an 
 During discussion between *Raphaël BOICHOT* and *maxs - thatguywithagameboycamera*
 Raphaël BOICHOT got an idea to simulate the paper output of the gameboy printer.
 
-*Björn (@gameboycameramaniac)* and *crizzlycruz (@23kpixels)* was also in the
+*herr_zatacke (@herr_gack)* and *Björn (@gameboycameramaniac)* and *crizzlycruz (@23kpixels)* was also in the
 chatroom contributing to the discussion of this effort.
 
 > Raphaël BOICHOT
