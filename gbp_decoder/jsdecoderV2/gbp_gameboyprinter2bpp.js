@@ -131,9 +131,9 @@ function render_gbp(rawBytes)
                     {
                         return 'INIT'
                     }
-                    else if (command.command === 'PRNT' && command.margin_lower === 3)
+                    else if (command.command === 'PRNT')
                     {
-                        return 'PRNTCUT'
+                        return command.margin_lower;
                     }
                 } catch (error)
                 {
@@ -148,16 +148,32 @@ function render_gbp(rawBytes)
 
             if ((tile_element === 'INIT' && currentImage))
             {
-                //
+                // ignore init if image has not finished 'printing'
             }
             else if ((tile_element === 'INIT' && !currentImage))
             {
                 currentImage = [];
             }
-            else if ((tile_element === 'PRNTCUT'))
+            else if ((typeof(tile_element) === 'number'))
             {
-                images.push(currentImage);
-                currentImage = [];
+                // handle margin value
+                var margin_lower = tile_element;
+
+                // if margin is 3 split into new image 'finish printing'
+                if (margin_lower === 3)
+                {
+                    images.push(currentImage);
+                    currentImage = [];
+                }
+                // otherwise feed blank lines using lower margin value
+                else
+                {
+                    var blank_tile = new Array(64).fill(0);
+                    // send 40 blank tiles per margin feed
+                    for (i=0;i<margin_lower*40;i++) {
+                        currentImage.push(blank_tile);
+                    }
+                }
             }
             else
             {
