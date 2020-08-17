@@ -325,7 +325,7 @@ function download(event)
             ctx.fillRect(0,0,w,h);
 
             // get save image data
-            var image = canvas.toDataURL('image/jpeg', 1).replace('image/jpeg', 'image/octet-stream');
+            image = canvas.toDataURL('image/jpeg', 1).replace('image/jpeg', 'image/octet-stream');
 
             // restore original canvas data
             ctx.clearRect (0,0,w,h);
