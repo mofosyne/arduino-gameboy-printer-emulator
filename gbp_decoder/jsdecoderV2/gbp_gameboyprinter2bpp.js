@@ -168,7 +168,7 @@ function render_gbp(rawBytes)
                 // otherwise feed blank lines using lower margin value
                 else
                 {
-                    var blank_tile = new Array(64).fill(0);
+                    var blank_tile = new Array(64).fill(4);
                     // send 40 blank tiles per margin feed
                     for (i=0;i<margin_lower*40;i++) {
                         currentImage.push(blank_tile);
@@ -225,34 +225,34 @@ function paint(canvas, pixels, pixel_width, pixel_height, tile_x_offset, tile_y_
     switch (palette)
     {
         case "grayscale":
-            colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
+            colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000", "#FFFFFF00");
             break;
         case "dmg":
-            colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F");
+            colors = new Array("#9BBC0F", "#77A112", "#306230", "#0F380F", "#FFFFFF00");
             break;
         case "gameboypocket":
-            colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f");
+            colors = new Array("#c4cfa1", "#8b956d", "#4d533c", "#1f1f1f", "#FFFFFF00");
             break;
         case "gameboycoloreuus":
-            colors = new Array("#ffffff", "#7bff30", "#0163c6", "#000000");
+            colors = new Array("#ffffff", "#7bff30", "#0163c6", "#000000", "#FFFFFF00");
             break;
         case "gameboycolorjp":
-            colors = new Array("#ffffff", "#ffad63", "#833100", "#000000");
+            colors = new Array("#ffffff", "#ffad63", "#833100", "#000000", "#FFFFFF00");
             break;
         case "bgb":
-            colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820");
+            colors = new Array("#e0f8d0", "#88c070", "#346856", "#081820", "#FFFFFF00");
             break;
         case "grafixkidgray":
-            colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26");
+            colors = new Array("#e0dbcd", "#a89f94", "#706b66", "#2b2b26", "#FFFFFF00");
             break;
         case "grafixkidgreen":
-            colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a");
+            colors = new Array("#dbf4b4", "#abc396", "#7b9278", "#4c625a", "#FFFFFF00");
             break;
         case "blackzero":
-            colors = new Array("#7e8416", "#577b46", "#385d49", "#2e463d");
+            colors = new Array("#7e8416", "#577b46", "#385d49", "#2e463d", "#FFFFFF00");
             break;
         default:
-            colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000");
+            colors = new Array("#ffffff", "#aaaaaa", "#555555", "#000000", "#FFFFFF00");
     }
     tile_offset = tile_x_offset * tile_y_offset;
     pixel_x_offset = TILE_PIXEL_WIDTH * tile_x_offset * pixel_width;
@@ -311,7 +311,26 @@ function download(event)
             image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
             break;
         case 'jpg':
+            // backup original canvas data
+            var ctx = canvas.getContext("2d")       
+            var w = canvas.width;
+            var h = canvas.height;
+            var data;
+            data = ctx.getImageData(0, 0, w, h);
+            var compositeOperation = ctx.globalCompositeOperation;
+            ctx.globalCompositeOperation = "destination-over";
+
+            // draw white background on entire canvas
+            ctx.fillStyle = '#FFFFFFFF';
+            ctx.fillRect(0,0,w,h);
+
+            // get save image data
             image = canvas.toDataURL('image/jpeg', 1).replace('image/jpeg', 'image/octet-stream');
+
+            // restore original canvas data
+            ctx.clearRect (0,0,w,h);
+            ctx.putImageData(data, 0,0);
+            ctx.globalCompositeOperation = compositeOperation;
             break;
         default:
             break;
