@@ -179,9 +179,17 @@ void setup(void)
   gbp_pkt_init(&gbp_pktState);
 #endif
 
+
   /* Welcome Message */
+#ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
+  Serial.print("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)\n");
+  Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
+  Serial.print("//       except for the last two bytes which is from the printer\n");
+#endif
+#ifdef GBP_FEATURE_PARSE_PACKET_MODE
   Serial.print("// GAMEBOY PRINTER Emulator V2.1 : Copyright (C) 2020 Brian Khuu\n");
   Serial.print("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html\n");
+#endif
   Serial.print("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---\n");
   Serial.print("// This program comes with ABSOLUTELY NO WARRANTY;\n");
   Serial.print("// This is free software, and you are welcome to redistribute it\n");
