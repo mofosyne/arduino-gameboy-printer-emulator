@@ -120,13 +120,14 @@ function render_gbp(rawBytes)
     tiles_rawBytes_array
         .map(function (raw_line, line_number)
         {
-            if ((raw_line.charAt(0) === '#')) return null;
+            if ((raw_line.charAt(0) === '#'))
+                return null;
 
-            if ((raw_line.charAt(0) === '!'))
+            if ((raw_line.charAt(0) === '{'))
             {
                 try
                 {
-                    var command = JSON.parse(raw_line.slice(1).trim());
+                    var command = JSON.parse(raw_line.slice(0).trim());
                     if (command.command === 'INIT')
                     {
                         return 'INIT'

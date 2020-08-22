@@ -25,15 +25,26 @@
  *
  */
 
+
+#if 0
+#define GBP_FEATURE_PACKET_CAPTURE_MODE
+#else
+#define GBP_FEATURE_PARSE_PACKET_MODE
+#define GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
+#endif
+
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 
 #include "gameboy_printer_protocol.h"
 #include "gbp_serial_io.h"
-#include "gbp_pkt.h"
 
-#define GBP_FEATURE_PACKET_CAPTURE_MODE
-#define GBP_FEATURE_PARSE_PACKET_MODE
+#ifdef GBP_FEATURE_PARSE_PACKET_MODE
+#include "gbp_pkt.h"
+#endif
+
+
+
 
 /* Gameboy Link Cable Mapping to Arduino Pin */
 // Note: Serial Clock Pin must be attached to an interrupt pin of the arduino
@@ -68,7 +79,12 @@
 *******************************************************************************/
 
 // Dev Note: Gamboy camera sends data payload of 640 bytes usually
-#define GBP_BUFFER_SIZE 10
+
+#ifdef GBP_FEATURE_PARSE_PACKET_MODE
+#define GBP_BUFFER_SIZE 400
+#else
+#define GBP_BUFFER_SIZE 650
+#endif
 
 /* Serial IO */
 // This circular buffer contains a stream of raw packets from the gameboy
@@ -80,6 +96,13 @@ gbp_pkt_t gbp_pktState = {GBP_REC_NONE, 0};
 uint8_t gbp_pktbuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE] = {0};
 uint8_t gbp_pktbuffSize = 0;
 gbp_pkt_tileAcc_t tileBuff = {0};
+#endif
+
+#ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
+inline void gbp_packet_capture_loop();
+#endif
+#ifdef GBP_FEATURE_PARSE_PACKET_MODE
+inline void gbp_parse_packet_loop();
 #endif
 
 /*******************************************************************************
@@ -157,30 +180,25 @@ void setup(void)
 #endif
 
   /* Welcome Message */
-  Serial.print("# GAMEBOY PRINTER Emulator V2 : Copyright (C) 2020 Brian Khuu\n");
-  Serial.print("# JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html\n");
-  Serial.print("# --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---\n");
-  Serial.print("# This program comes with ABSOLUTELY NO WARRANTY;\n");
-  Serial.print("# This is free software, and you are welcome to redistribute it\n");
-  Serial.print("# under certain conditions. Refer to LICENSE file for detail.\n");
-  Serial.print("# --- \n");
-
+  Serial.print("// GAMEBOY PRINTER Emulator V2.1 : Copyright (C) 2020 Brian Khuu\n");
+  Serial.print("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html\n");
+  Serial.print("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---\n");
+  Serial.print("// This program comes with ABSOLUTELY NO WARRANTY;\n");
+  Serial.print("// This is free software, and you are welcome to redistribute it\n");
+  Serial.print("// under certain conditions. Refer to LICENSE file for detail.\n");
+  Serial.print("// --- \n");
 } // setup()
 
 void loop()
 {
   static uint16_t sioWaterline = 0;
-  static bool packet_capture_mode_enabled = false;
-  static bool packet_capture_mode_cstyle = false;
 
-  if (packet_capture_mode_enabled)
-  {
-    gbp_packet_capture_loop(packet_capture_mode_cstyle);
-  }
-  else
-  {
-    gbp_parse_packet_loop();
-  }
+#ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
+  gbp_packet_capture_loop();
+#endif
+#ifdef GBP_FEATURE_PARSE_PACKET_MODE
+  gbp_parse_packet_loop();
+#endif
 
   // Trigger Timeout and reset the printer if byte stopped being received.
   static uint32_t last_millis = 0;
@@ -190,14 +208,13 @@ void loop()
     uint32_t elapsed_ms = curr_millis - last_millis;
     if (gbp_serial_io_timeout_handler(elapsed_ms))
     {
-      if (packet_capture_mode_cstyle)
-      {
-        Serial.println("\n\n/* Timed Out */\n\n");
-      }
-      else
-      {
-        Serial.println("\n\n# Timed Out\n\n");
-      }
+      Serial.println("\n\n// Timed Out ");
+      Serial.print("(Memory Waterline: ");
+      Serial.print(gbp_serial_io_dataBuff_waterline(false));
+      Serial.print("B out of ");
+      Serial.print(gbp_serial_io_dataBuff_max());
+      Serial.print("B)");
+      Serial.println("\n\n");
       digitalWrite(LED_STATUS_PIN, LOW);
     }
   }
@@ -208,34 +225,8 @@ void loop()
   {
     switch (Serial.read())
     {
-      case 'p':
-        Serial.print("# (P)arse Mode\n");
-        Serial.print("# GAMEBOY PRINTER Emulator V2 (Brian Khuu 2020)\n");
-        Serial.print("# To Decode This: https://mofosyne.github.io/arduino-gameboy-printer-emulator/jsdecoder/gameboy_printer_js_decoder.html\n");
-        packet_capture_mode_enabled = false;
-        packet_capture_mode_cstyle = false;
-        break;
-
-      case 'r':
-        Serial.print("// (R)aw Packet Capture Mode\n");
-        Serial.print("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)\n");
-        Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
-        Serial.print("//       except for the last two bytes which is from the printer\n");
-        packet_capture_mode_enabled = true;
-        packet_capture_mode_cstyle = false;
-        break;
-
-      case 'c':
-        Serial.print("/* (C)Style Packet Capture Mode */\n");
-        Serial.print("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)\n");
-        Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
-        Serial.print("//       except for the last two bytes which is from the printer\n");
-        packet_capture_mode_enabled = true;
-        packet_capture_mode_cstyle = true;
-        break;
-
       case '?':
-        Serial.print("p=packetMode, r=rawMode, c=cStyleCapture, d=debug, ?=help\n");
+        Serial.print("d=debug, ?=help\n");
         break;
 
       case 'd':
@@ -251,9 +242,9 @@ void loop()
 
 /******************************************************************************/
 
-void gbp_parse_packet_loop()
-{
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
+inline void gbp_parse_packet_loop(void)
+{
   const char nibbleToCharLUT[] = "0123456789ABCDEF";
   for (int i = 0 ; i < gbp_serial_io_dataBuff_getByteCount() ; i++)
   {
@@ -262,7 +253,6 @@ void gbp_parse_packet_loop()
       if (gbp_pktState.received == GBP_REC_GOT_PACKET)
       {
           digitalWrite(LED_STATUS_PIN, HIGH);
-          Serial.print((char)'!');
           Serial.print((char)'{');
           Serial.print("\"command\":\"");
           Serial.print(gbpCommand_toStr(gbp_pktState.command));
@@ -316,7 +306,7 @@ void gbp_parse_packet_loop()
       }
       else
       {
-#if 1
+#ifdef GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
         // Required for more complex games with compression support
         while (gbp_pkt_decompressor(&gbp_pktState, gbp_pktbuff, gbp_pktbuffSize, &tileBuff))
         {
@@ -337,10 +327,10 @@ void gbp_parse_packet_loop()
 #else
         // Simplified support for gameboy camera only application
         // Dev Note: Good for checking if everything above decompressor is working
-        if (gbp_pktbuffSize == GBP_TILE_SIZE_IN_BYTE)
+        if (gbp_pktbuffSize > 0)
         {
           // Got Tile
-          for (int i = 0 ; i < GBP_TILE_SIZE_IN_BYTE ; i++)
+          for (int i = 0 ; i < gbp_pktbuffSize ; i++)
           {
             const uint8_t data_8bit = gbp_pktbuff[i];
             Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
@@ -354,12 +344,12 @@ void gbp_parse_packet_loop()
       }
     }
   }
-#endif
 }
+#endif
 
-void gbp_packet_capture_loop(bool cStyle)
-{
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
+inline void gbp_packet_capture_loop()
+{
   /* tiles received */
   static uint32_t byteTotal = 0;
   static uint32_t pktTotalCount = 0;
@@ -389,14 +379,9 @@ void gbp_packet_capture_loop(bool cStyle)
       }
       // Print Hex Byte
       data_8bit = gbp_serial_io_dataBuff_getByte();
-      if (cStyle)
-      {
-        Serial.print((char)'0');
-        Serial.print((char)'x');
-      }
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
       Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-      Serial.print((char)(cStyle?',':' '));
+      Serial.print((char)' ');
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
@@ -407,14 +392,10 @@ void gbp_packet_capture_loop(bool cStyle)
       }
       else
       {
-        if (cStyle)
-        {
-          Serial.print(((pktByteIndex+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
-        }
         pktByteIndex++; // Byte hex split counter
         byteTotal++; // Byte total counter
       }
     }
   }
-#endif
 }
+#endif

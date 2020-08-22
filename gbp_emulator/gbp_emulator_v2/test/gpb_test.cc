@@ -15,8 +15,8 @@
 *******************************************************************************/
 const uint8_t testVector[] = {
   //#include "2020-08-02_GameboyPocketCameraJP.txt" // Single Image
-  #include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
-  //#include "2020-08-10_Pokemon_trading_card_gbp_dev.txt" // Compression
+  //#include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
+  #include "2020-08-10_Pokemon_trading_card_compressiontest.txt" // Compression
 };
 
 uint8_t testResponse[sizeof(testVector)+100] = {0};

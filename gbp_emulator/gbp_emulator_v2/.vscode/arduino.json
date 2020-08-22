@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:nano",
+    "configuration": "cpu=atmega328old",
+    "sketch": "gbp_emulator_v2.ino"
+}
