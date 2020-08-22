@@ -304,8 +304,12 @@ inline void gbp_parse_packet_loop(void)
           if (gbp_pktState.command == GBP_COMMAND_DATA)
           {
             //!{"command":"DATA", "compressed":0, "more":0}
+#ifdef GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
+            Serial.print(", \"compressed\":0"); // Already decompressed by us, so no need to do so
+#else
             Serial.print(", \"compressed\":");
             Serial.print(gbp_pktState.compression);
+#endif
             Serial.print(", \"more\":");
             Serial.print((gbp_pktState.dataLength != 0)?'1':'0');
           }
