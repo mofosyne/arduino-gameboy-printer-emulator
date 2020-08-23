@@ -26,7 +26,7 @@
  */
 
 #define GBP_OUTPUT_RAW_PACKETS false // by default, packets are parsed. if enabled, output will change to raw data packets for parsing and decompressing later
-#define GBP_USE_PARSE_DECOMPRESSOR true // embedded decompressor can be enabled for use with parse mode but it requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
+#define GBP_USE_PARSE_DECOMPRESSOR false // embedded decompressor can be enabled for use with parse mode but it requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
 
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
@@ -417,7 +417,7 @@ inline void gbp_packet_capture_loop()
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
         digitalWrite(LED_STATUS_PIN, LOW);
-        Serial.println((char)'');
+        Serial.println("");
         pktByteIndex = 0;
         pktTotalCount++;
       }
