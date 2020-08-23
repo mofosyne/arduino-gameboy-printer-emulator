@@ -123,6 +123,9 @@ function render_gbp(rawBytes)
             if ((raw_line.charAt(0) === '#'))
                 return null;
 
+            if ((raw_line.charAt(0) === '/'))
+                    return null;
+
             if ((raw_line.charAt(0) === '{'))
             {
                 try
@@ -313,7 +316,7 @@ function download(event)
             break;
         case 'jpg':
             // backup original canvas data
-            var ctx = canvas.getContext("2d")       
+            var ctx = canvas.getContext("2d")
             var w = canvas.width;
             var h = canvas.height;
             var data;
