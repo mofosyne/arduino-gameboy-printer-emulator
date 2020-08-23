@@ -186,19 +186,19 @@ void setup(void)
 
   /* Welcome Message */
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
-  Serial.print("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)\n");
-  Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
-  Serial.print("//       except for the last two bytes which is from the printer\n");
+  Serial.println("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)");
+  Serial.println("// Note: Each byte is from each GBP packet is from the gameboy");
+  Serial.println("//       except for the last two bytes which is from the printer");
 #endif
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
-  Serial.print("// GAMEBOY PRINTER Emulator V2.1 : Copyright (C) 2020 Brian Khuu\n");
-  Serial.print("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html\n");
+  Serial.println("// GAMEBOY PRINTER Emulator V2.1 : Copyright (C) 2020 Brian Khuu");
+  Serial.println("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html");
 #endif
-  Serial.print("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---\n");
-  Serial.print("// This program comes with ABSOLUTELY NO WARRANTY;\n");
-  Serial.print("// This is free software, and you are welcome to redistribute it\n");
-  Serial.print("// under certain conditions. Refer to LICENSE file for detail.\n");
-  Serial.print("// --- \n");
+  Serial.println("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---");
+  Serial.println("// This program comes with ABSOLUTELY NO WARRANTY;");
+  Serial.println("// This is free software, and you are welcome to redistribute it");
+  Serial.println("// under certain conditions. Refer to LICENSE file for detail.");
+  Serial.println("// ---");
 } // setup()
 
 void loop()
@@ -220,13 +220,13 @@ void loop()
     uint32_t elapsed_ms = curr_millis - last_millis;
     if (gbp_serial_io_timeout_handler(elapsed_ms))
     {
-      Serial.print("\n\n// Timed Out ");
+      Serial.println("");
+      Serial.print("// Timed Out ");
       Serial.print("(Memory Waterline: ");
       Serial.print(gbp_serial_io_dataBuff_waterline(false));
       Serial.print("B out of ");
       Serial.print(gbp_serial_io_dataBuff_max());
-      Serial.print("B)");
-      Serial.println("\n\n");
+      Serial.println("B)");
       digitalWrite(LED_STATUS_PIN, LOW);
     }
   }
@@ -238,7 +238,7 @@ void loop()
     switch (Serial.read())
     {
       case '?':
-        Serial.print("d=debug, ?=help\n");
+        Serial.println("d=debug, ?=help");
         break;
 
       case 'd':
@@ -246,7 +246,7 @@ void loop()
         Serial.print(gbp_serial_io_dataBuff_waterline(false));
         Serial.print("B out of ");
         Serial.print(gbp_serial_io_dataBuff_max());
-        Serial.print("B\n");
+        Serial.println("B");
         break;
     }
   };
@@ -317,8 +317,7 @@ inline void gbp_parse_packet_loop(void)
             Serial.print(", \"more\":");
             Serial.print((gbp_pktState.dataLength != 0)?'1':'0');
           }
-          Serial.print((char)'}');
-          Serial.print((char)'\n');
+          Serial.println((char)'}');
       }
       else
       {
@@ -392,11 +391,12 @@ inline void gbp_packet_capture_loop()
       {
         pktDataLength = gbp_serial_io_dataBuff_getByte_Peek(4);
         pktDataLength |= (gbp_serial_io_dataBuff_getByte_Peek(5)<<8)&0xFF00;
-        //Serial.print("// ");
-        //Serial.print(pktTotalCount);
-        //Serial.print(" : ");
-        //Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
-        //Serial.print("\n");
+#if 0
+        Serial.print("// ");
+        Serial.print(pktTotalCount);
+        Serial.print(" : ");
+        Serial.println(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
+#endif
         digitalWrite(LED_STATUS_PIN, HIGH);
       }
       // Print Hex Byte
@@ -408,7 +408,7 @@ inline void gbp_packet_capture_loop()
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
         digitalWrite(LED_STATUS_PIN, LOW);
-        Serial.print((char)'\n');
+        Serial.println((char)'');
         pktByteIndex = 0;
         pktTotalCount++;
       }
