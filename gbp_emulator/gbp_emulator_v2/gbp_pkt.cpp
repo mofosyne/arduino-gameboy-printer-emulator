@@ -32,6 +32,14 @@
 bool gbp_pkt_init(gbp_pkt_t *_pkt)
 {
   _pkt->pktByteIndex = 0;
+  _pkt->buffIndex = 0;
+  return true;
+}
+
+bool gbp_pkt_reset(gbp_pkt_t *_pkt)
+{
+  _pkt->pktByteIndex = 0;
+  _pkt->buffIndex = 0;
   return true;
 }
 

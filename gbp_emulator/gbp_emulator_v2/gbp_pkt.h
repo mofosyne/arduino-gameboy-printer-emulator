@@ -68,6 +68,7 @@ typedef struct
 
 
 bool gbp_pkt_init(gbp_pkt_t *_pkt);
+bool gbp_pkt_reset(gbp_pkt_t *_pkt);
 bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax);
 bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff);
 bool gbp_pkt_tileAccu_tileReadyCheck(gbp_pkt_tileAcc_t *tileBuff);

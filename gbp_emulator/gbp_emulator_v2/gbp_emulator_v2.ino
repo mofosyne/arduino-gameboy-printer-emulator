@@ -99,7 +99,9 @@ uint8_t gbp_serialIO_raw_buffer[GBP_BUFFER_SIZE] = {0};
 gbp_pkt_t gbp_pktState = {GBP_REC_NONE, 0};
 uint8_t gbp_pktbuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE] = {0};
 uint8_t gbp_pktbuffSize = 0;
+#ifdef GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
 gbp_pkt_tileAcc_t tileBuff = {0};
+#endif
 #endif
 
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
@@ -228,6 +230,13 @@ void loop()
       Serial.print(gbp_serial_io_dataBuff_max());
       Serial.println("B)");
       digitalWrite(LED_STATUS_PIN, LOW);
+
+#ifdef GBP_FEATURE_PARSE_PACKET_MODE
+      gbp_pkt_reset(&gbp_pktState);
+#ifdef GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
+      tileBuff.size = 0;
+#endif
+#endif
     }
   }
   last_millis = curr_millis;
