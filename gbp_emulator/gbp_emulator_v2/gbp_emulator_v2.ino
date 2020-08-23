@@ -25,19 +25,23 @@
  *
  */
 
-
-#if 0
-#define GBP_FEATURE_PACKET_CAPTURE_MODE
-#else
-#define GBP_FEATURE_PARSE_PACKET_MODE
-#define GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
-#endif
+#define GBP_OUTPUT_RAW_PACKETS false // by default, packets are parsed. if enabled, output will change to raw data packets for parsing and decompressing later
+#define GBP_USE_PARSE_DECOMPRESSOR false // embedded decompressor can be enabled for use with parse mode but it requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
 
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 
 #include "gameboy_printer_protocol.h"
 #include "gbp_serial_io.h"
+
+#if GBP_OUTPUT_RAW_PACKETS
+  #define GBP_FEATURE_PACKET_CAPTURE_MODE
+#else
+  #define GBP_FEATURE_PARSE_PACKET_MODE
+  #if GBP_USE_PARSE_DECOMPRESSOR
+    #define GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
+  #endif
+#endif
 
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
 #include "gbp_pkt.h"
@@ -328,12 +332,15 @@ inline void gbp_parse_packet_loop(void)
             for (int i = 0 ; i < GBP_TILE_SIZE_IN_BYTE ; i++)
             {
               const uint8_t data_8bit = tileBuff.tile[i];
-              Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
-              Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-              Serial.print((char)' ');
+              if(i == GBP_TILE_SIZE_IN_BYTE-1) {
+                Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
+                Serial.println((char)nibbleToCharLUT[(data_8bit>>0)&0xF]); // use println on last byte to reduce serial calls
+              } else {
+                Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
+                Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
+                Serial.print((char)' ');
+              }
             }
-            Serial.print((char)'\r');
-            Serial.print((char)'\n');
           }
         }
 #else
@@ -345,12 +352,15 @@ inline void gbp_parse_packet_loop(void)
           for (int i = 0 ; i < gbp_pktbuffSize ; i++)
           {
             const uint8_t data_8bit = gbp_pktbuff[i];
-            Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
-            Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-            Serial.print((char)' ');
+              if(i == gbp_pktbuffSize-1) {
+                Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
+                Serial.println((char)nibbleToCharLUT[(data_8bit>>0)&0xF]); // use println on last byte to reduce serial calls
+              } else {
+                Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
+                Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
+                Serial.print((char)' ');
+              }
           }
-          Serial.print((char)'\r');
-          Serial.print((char)'\n');
         }
 #endif
       }
