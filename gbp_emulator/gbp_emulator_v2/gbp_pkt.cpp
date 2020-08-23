@@ -51,7 +51,7 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
   _pkt->received = GBP_REC_NONE;
 
   // Parsing fixed packet header
-  if(_pkt->pktByteIndex <= 5)
+  if (_pkt->pktByteIndex <= 5)
   {
     if (_pkt->pktByteIndex == 1)
     {
@@ -69,8 +69,8 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
       case 1: _pkt->pktByteIndex = (_byte == 0x33) ? 2 : 0; break;
       case 2: _pkt->pktByteIndex++; _pkt->command = _byte; break;
       case 3: _pkt->pktByteIndex++; _pkt->compression = _byte; break;
-      case 4: _pkt->pktByteIndex++; _pkt->dataLength =  ((uint16_t)_byte<<0)&0x00FF; break;
-      case 5: _pkt->pktByteIndex++; _pkt->dataLength |= ((uint16_t)_byte<<8)&0xFF00; break;
+      case 4: _pkt->pktByteIndex++; _pkt->dataLength = ((uint16_t)_byte << 0) & 0x00FF; break;
+      case 5: _pkt->pktByteIndex++; _pkt->dataLength |= ((uint16_t)_byte << 8) & 0xFF00; break;
       default: break;
     }
 
@@ -94,12 +94,12 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
   }
 
   // Capture Bytes to buffer if needed
-  if ((6 <= _pkt->pktByteIndex) && (_pkt->pktByteIndex < (6+_pkt->dataLength)))
+  if ((6 <= _pkt->pktByteIndex) && (_pkt->pktByteIndex < (6 + _pkt->dataLength)))
   {
     // Byte is from payload... add to buffer
     const uint16_t payloadIndex = _pkt->pktByteIndex - 6;
     //const uint16_t offset       = (payloadIndex/bufferMax) * bufferMax;
-    const uint16_t bufferUsage  = payloadIndex%bufferMax + 1;
+    const uint16_t bufferUsage  = payloadIndex % bufferMax + 1;
     buffer[bufferUsage - 1] = _byte;
     *bufferSize = bufferUsage;
     if (bufferUsage == _pkt->dataLength)
@@ -110,17 +110,18 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
     {
       _pkt->received = GBP_REC_GOT_PAYLOAD_PARTAL;
     }
-  } else if (_pkt->pktByteIndex == (6+_pkt->dataLength))
+  }
+  else if (_pkt->pktByteIndex == (6 + _pkt->dataLength))
   {
-    *bufferSize = _pkt->dataLength%bufferMax;
+    *bufferSize = _pkt->dataLength % bufferMax;
   }
 
   // Increment
-  if (_pkt->pktByteIndex == (8+_pkt->dataLength))
+  if (_pkt->pktByteIndex == (8 + _pkt->dataLength))
   {
     _pkt->printerID = _byte;
   }
-  else if (_pkt->pktByteIndex == (8+_pkt->dataLength + 1))
+  else if (_pkt->pktByteIndex == (8 + _pkt->dataLength + 1))
   {
     // End of packet reached
     _pkt->status = _byte;

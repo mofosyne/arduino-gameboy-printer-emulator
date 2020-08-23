@@ -351,13 +351,13 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
   {
     // Serial Transaction Is Active
 #ifdef GBP_FEATURE_USING_RISING_CLOCK_ONLY_ISR
-      // Rising Edge Clock (Rx Bit)
-      gpb_sio.rx_buff |= GBP_SOUT ? (gpb_sio.bitMaskMap & 0xFFFF) : 0; ///< Clocking bits on rising edge
-      gpb_sio.bitMaskMap >>= 1; ///< One tx/rx bit cycle complete, next bit now
-      // Falling Edge Clock (Tx Bit) (Prep now for next rising edge)
-      gpb_sio.SINOutputPinState = (gpb_sio.bitMaskMap & gpb_sio.tx_buff) > 0;
-      if (gpb_sio.bitMaskMap > 0)
-        return gpb_sio.SINOutputPinState;
+    // Rising Edge Clock (Rx Bit)
+    gpb_sio.rx_buff |= GBP_SOUT ? (gpb_sio.bitMaskMap & 0xFFFF) : 0; ///< Clocking bits on rising edge
+    gpb_sio.bitMaskMap >>= 1; ///< One tx/rx bit cycle complete, next bit now
+    // Falling Edge Clock (Tx Bit) (Prep now for next rising edge)
+    gpb_sio.SINOutputPinState = (gpb_sio.bitMaskMap & gpb_sio.tx_buff) > 0;
+    if (gpb_sio.bitMaskMap > 0)
+      return gpb_sio.SINOutputPinState;
 #else
     if (GBP_SCLK)
     {
@@ -558,10 +558,10 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
       {
         // INIT --> DATA --> ENDDATA --> PRINT
         case GBP_COMMAND_INIT:
-            gpb_pktIO.dataPacketCountdown = 6;
-            gpb_pktIO.untransPacketCountdown = 0;
-            gpb_pktIO.busyPacketCountdown = 0;
-            gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
+          gpb_pktIO.dataPacketCountdown = 6;
+          gpb_pktIO.untransPacketCountdown = 0;
+          gpb_pktIO.busyPacketCountdown = 0;
+          gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
           break;
         case GBP_COMMAND_PRINT:
           gpb_pktIO.busyPacketCountdown = GBP_BUSY_PACKET_COUNT;
@@ -637,9 +637,9 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
         case GBP_COMMAND_BREAK:
           break;
         case GBP_COMMAND_INQUIRY:
-          if ((gpb_pktIO.untransPacketCountdown == 0)&&(gpb_pktIO.busyPacketCountdown == 0))
+          if ((gpb_pktIO.untransPacketCountdown == 0) && (gpb_pktIO.busyPacketCountdown == 0))
           {
-              gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
+            gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
           }
           break;
         default:
