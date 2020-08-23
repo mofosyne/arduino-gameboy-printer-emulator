@@ -220,7 +220,7 @@ void loop()
     uint32_t elapsed_ms = curr_millis - last_millis;
     if (gbp_serial_io_timeout_handler(elapsed_ms))
     {
-      Serial.println("\n\n// Timed Out ");
+      Serial.print("\n\n// Timed Out ");
       Serial.print("(Memory Waterline: ");
       Serial.print(gbp_serial_io_dataBuff_waterline(false));
       Serial.print("B out of ");
