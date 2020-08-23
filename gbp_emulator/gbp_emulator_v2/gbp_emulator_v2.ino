@@ -318,7 +318,7 @@ inline void gbp_parse_packet_loop(void)
             Serial.print((gbp_pktState.dataLength != 0)?'1':'0');
           }
           Serial.print((char)'}');
-          Serial.print("\r\n");
+          Serial.print((char)'\n');
       }
       else
       {
@@ -408,7 +408,7 @@ inline void gbp_packet_capture_loop()
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
         digitalWrite(LED_STATUS_PIN, LOW);
-        Serial.print("\n");
+        Serial.print((char)'\n');
         pktByteIndex = 0;
         pktTotalCount++;
       }
