@@ -392,11 +392,11 @@ inline void gbp_packet_capture_loop()
       {
         pktDataLength = gbp_serial_io_dataBuff_getByte_Peek(4);
         pktDataLength |= (gbp_serial_io_dataBuff_getByte_Peek(5)<<8)&0xFF00;
-        Serial.print("// ");
-        Serial.print(pktTotalCount);
-        Serial.print(" : ");
-        Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
-        Serial.print("\n");
+        //Serial.print("// ");
+        //Serial.print(pktTotalCount);
+        //Serial.print(" : ");
+        //Serial.print(gbpCommand_toStr(gbp_serial_io_dataBuff_getByte_Peek(2)));
+        //Serial.print("\n");
         digitalWrite(LED_STATUS_PIN, HIGH);
       }
       // Print Hex Byte
