@@ -11,7 +11,8 @@
                 "/Users/briankhuu/Library/Arduino15/packages/arduino/tools/**"
             ],
             "forcedInclude": [
-                "/Users/briankhuu/Library/Arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino/Arduino.h"
+                "/Users/briankhuu/Library/Arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino/Arduino.h",
+                "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h"
             ],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",

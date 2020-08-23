@@ -4,7 +4,8 @@
  *
  * Creation Date: 2017-4-6
  * PURPOSE: To capture gameboy printer images without a gameboy printer.
- *           This version is to investigate gameboy behaviour.
+ *           This version is to investigate gameboy behaviour by sitting
+ *            between a real gameboy and a real gameboy printer.
  * AUTHOR: Brian Khuu
  *
  */
@@ -12,10 +13,7 @@
 #include <stddef.h> // size_t
 #include <stdbool.h> // bool
 
-/*******************************************************************************
-*******************************************************************************/
-
-//#define CSTYLE_PRINT_MODE // C style verbose output for use as test vectors
+//#define FEATURE_DISPLAY_PACKET_STATUS
 
 /*******************************************************************************
 *******************************************************************************/
@@ -277,17 +275,15 @@ void setup(void)
   digitalWrite(LED_STATUS_PIN, LOW);
 
   /* Welcome Message */
-  Serial.print("/* GAMEBOY PRINTER EMULATION PROJECT (Packet Capture Mode) */\n");
-  Serial.print("/* By Brian Khuu (2020) */\n");
-  Serial.print("// Note: Every byte is from the gameboy except the last two byte of each packet \n");
-  Serial.print("//       which will be the response from the printer\n");
+  Serial.print("// GAMEBOY PRINTER Packet Sniffer V2 (Brian Khuu 2020)\n");
+  Serial.print("// Purpose: Sniff communcation from real gameboy printer\n");
+  Serial.print("// Note: Each byte is from each GBP packet is from the gameboy\n");
+  Serial.print("//       except for the last two bytes which is from the printer\n");
   Serial.print("//------------------------------------------------------------------------------\n");
-  Serial.print("// REAL GAMEBOY TO GAMEBOY PRINTER PACKET CAPTURE \n");
-  Serial.print("// GAME: <Game name> \n");
-  Serial.print("// DATE: <Date of capture in ISO 8601 format e.g. 2020-08-02 >\n");
-  Serial.print("// AUTHOR: <Your name and contact details if you want>\n");
-  Serial.print("// Please send your capture to the issue page below to assist in development \n");
-  Serial.print("// https://github.com/mofosyne/arduino-gameboy-printer-emulator/issues \n");
+  Serial.print("// GAME:\n");
+  Serial.print("// DATE: (e.g. 2020-08-02)\n");
+  Serial.print("// AUTHOR:\n");
+  Serial.print("// NOTE:\n");
 
   /* Setup */
   gpb_cbuff_Init(&gbp_snifferDataBuffer_Gameboy, sizeof(gbp_buffer_Gameboy), gbp_buffer_Gameboy);
@@ -355,10 +351,6 @@ void loop()
       // Print Hex Byte
       gpb_cbuff_Dequeue(&gbp_snifferDataBuffer_Gameboy, &rx_8bit);
       gpb_cbuff_Dequeue(&gbp_snifferDataBuffer_Printer, &tx_8bit);
-#ifdef CSTYLE_PRINT_MODE
-      Serial.print((char)'0');
-      Serial.print((char)'x');
-#endif
       if (pktByteIndex < (8+pktDataLength))
       {
         // Send bytes from gameboy to printer. This is the main packet
@@ -371,28 +363,22 @@ void loop()
         Serial.print((char)nibbleToCharLUT[(tx_8bit>>4)&0xF]);
         Serial.print((char)nibbleToCharLUT[(tx_8bit>>0)&0xF]);
       }
-#ifdef CSTYLE_PRINT_MODE
-      Serial.print((char)',');
-#endif
       Serial.print((char)' ');
-      if (pktByteIndex == (8+pktDataLength + 1))
+#ifdef FEATURE_DISPLAY_PACKET_STATUS
+      if ((pktByteIndex == (8+pktDataLength + 1)) && (tx_8bit))
       {
-#ifdef CSTYLE_PRINT_MODE
-        if (tx_8bit)
-        {
-          Serial.print(" /* Printer Status: ");
-          if (tx_8bit & GBP_STATUS_MASK_LOWBAT) { Serial.print("LOWBAT ");}
-          if (tx_8bit & GBP_STATUS_MASK_ER2   ) { Serial.print("ER2 ");}
-          if (tx_8bit & GBP_STATUS_MASK_ER1   ) { Serial.print("ER1 ");}
-          if (tx_8bit & GBP_STATUS_MASK_ER0   ) { Serial.print("ER0 ");}
-          if (tx_8bit & GBP_STATUS_MASK_UNTRAN) { Serial.print("UNTRAN ");}
-          if (tx_8bit & GBP_STATUS_MASK_FULL  ) { Serial.print("FULL ");}
-          if (tx_8bit & GBP_STATUS_MASK_BUSY  ) { Serial.print("BUSY ");}
-          if (tx_8bit & GBP_STATUS_MASK_SUM   ) { Serial.print("SUM ");}
-          Serial.print(" */");
-        }
-#endif
+        Serial.print(" /* Printer Status: ");
+        if (tx_8bit & GBP_STATUS_MASK_LOWBAT) { Serial.print("LOWBAT ");}
+        if (tx_8bit & GBP_STATUS_MASK_ER2   ) { Serial.print("ER2 ");}
+        if (tx_8bit & GBP_STATUS_MASK_ER1   ) { Serial.print("ER1 ");}
+        if (tx_8bit & GBP_STATUS_MASK_ER0   ) { Serial.print("ER0 ");}
+        if (tx_8bit & GBP_STATUS_MASK_UNTRAN) { Serial.print("UNTRAN ");}
+        if (tx_8bit & GBP_STATUS_MASK_FULL  ) { Serial.print("FULL ");}
+        if (tx_8bit & GBP_STATUS_MASK_BUSY  ) { Serial.print("BUSY ");}
+        if (tx_8bit & GBP_STATUS_MASK_SUM   ) { Serial.print("SUM ");}
+        Serial.print(" */");
       }
+#endif
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
@@ -403,9 +389,6 @@ void loop()
       }
       else
       {
-#ifdef CSTYLE_PRINT_MODE
-        Serial.print(((pktByteIndex+1)%16 == 0)?'\n':' '); ///< Insert Newline Periodically
-#endif
         pktByteIndex++; // Byte hex split counter
         byteTotal++; // Byte total counter
       }
