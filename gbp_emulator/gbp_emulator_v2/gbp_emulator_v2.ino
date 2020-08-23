@@ -25,19 +25,23 @@
  *
  */
 
-
-#if 0
-#define GBP_FEATURE_PACKET_CAPTURE_MODE
-#else
-#define GBP_FEATURE_PARSE_PACKET_MODE
-#define GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
-#endif
+#define GBP_RAW_PACKET_MODE false // output raw data packets for parsing and decompressing later
+#define GBP_USE_DECOMPRESSOR_MODE false // embedded decompressor requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
 
 #include <stdint.h> // uint8_t
 #include <stddef.h> // size_t
 
 #include "gameboy_printer_protocol.h"
 #include "gbp_serial_io.h"
+
+#if GBP_RAW_PACKET_MODE
+  #define GBP_FEATURE_PACKET_CAPTURE_MODE
+#else
+  #define GBP_FEATURE_PARSE_PACKET_MODE
+  #if GBP_USE_DECOMPRESSOR_MODE
+    #define GBP_FEATURE_PARSE_PACKET_USE_DECOMPRESSOR
+  #endif
+#endif
 
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
 #include "gbp_pkt.h"
