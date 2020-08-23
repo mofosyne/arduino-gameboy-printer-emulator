@@ -412,7 +412,6 @@ inline void gbp_packet_capture_loop()
       data_8bit = gbp_serial_io_dataBuff_getByte();
       Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
       Serial.print((char)nibbleToCharLUT[(data_8bit>>0)&0xF]);
-      Serial.print((char)' ');
       // Splitting packets for convenience
       if ((pktByteIndex>5)&&(pktByteIndex>=(9+pktDataLength)))
       {
@@ -423,6 +422,7 @@ inline void gbp_packet_capture_loop()
       }
       else
       {
+        Serial.print((char)' ');
         pktByteIndex++; // Byte hex split counter
         byteTotal++; // Byte total counter
       }
