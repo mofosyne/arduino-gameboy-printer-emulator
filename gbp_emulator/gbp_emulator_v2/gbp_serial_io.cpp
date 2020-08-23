@@ -220,11 +220,13 @@ size_t gbp_serial_io_dataBuff_getByteCount(void)
 uint8_t gbp_serial_io_dataBuff_getByte(void)
 {
   uint8_t b = 0;
-  gpb_cbuff_Dequeue(&gpb_pktIO.dataBuffer, &b);
-  if (gpb_cbuff_Count(&gpb_pktIO.dataBuffer) == 0)
-  {
-    gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
-  }
+
+  if (!gpb_cbuff_Dequeue(&gpb_pktIO.dataBuffer, &b))
+    return 0;
+
+  /* Packet Timeout Reset (Still Processing) */
+  gpb_pktIO.timeout_ms = GBP_PKT10_TIMEOUT_MS;
+
   return b;
 }
 
