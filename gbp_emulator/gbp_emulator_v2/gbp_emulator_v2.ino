@@ -348,7 +348,7 @@ inline void gbp_parse_packet_loop(void)
           for (int i = 0 ; i < gbp_pktbuffSize ; i++)
           {
             const uint8_t data_8bit = gbp_pktbuff[i];
-              if(i == GBP_TILE_SIZE_IN_BYTE-1) {
+              if(i == gbp_pktbuffSize-1) {
                 Serial.print((char)nibbleToCharLUT[(data_8bit>>4)&0xF]);
                 Serial.println((char)nibbleToCharLUT[(data_8bit>>0)&0xF]); // use println on last byte to reduce serial calls
               } else {
