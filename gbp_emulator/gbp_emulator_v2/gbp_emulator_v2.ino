@@ -115,7 +115,7 @@ inline void gbp_parse_packet_loop();
   Utility Functions
 *******************************************************************************/
 
-char *gbpCommand_toStr(int val)
+const char *gbpCommand_toStr(int val)
 {
   switch (val)
   {
