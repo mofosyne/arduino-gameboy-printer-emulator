@@ -21,7 +21,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[HerrZatacke : Web Decoder For Gameboy Camera Images With Custom Colour Pallet](https://herrzatacke.github.io/gb-printer-web)** : **[(Bjorn Writeup About This Project)](https://gameboymaniac.com/new-website-for-decoding-game-boy-photos/)**
 
-**[HerrZatacke : GameBoy printer direct serial to gif converter](https://github.com/HerrZatacke/direct-serial-to-gif-converter)**
+**[HerrZatacke : WiFi GBP Emulator, A GameBoy printer emulator which provides the received data over a WiFi connection](https://github.com/HerrZatacke/wifi-gbp-emulator)**
 
 **[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
 
@@ -32,6 +32,8 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 **[Lennartba : Python Script to speed up dumping of images](https://github.com/lennartba/gbpinter_dump2image_py)**
 
 **[Raphaël BOICHOT : Game boy printer emulator with e-paper feature (CrapPrinter) for Matlab and Octave](https://github.com/mofosyne/GameboyPrinterPaperSimulation)**
+
+**[HerrZatacke : A set of node js functions to decode the raw packet stream from a gameboy to gameboy printer](https://www.npmjs.com/package/gbp-decode)**
 
 ## About this project
 
