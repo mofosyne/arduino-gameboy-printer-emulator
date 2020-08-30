@@ -15,7 +15,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
 
-**[Was used by ekeler for a gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
+**[Ekeler : Was used by ekeler for a gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
 
 **[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
 
@@ -29,7 +29,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
 
-**[Transferring Game Boy PocketCamera photos to a PC (Youtube Channel Re.Enthused)](https://www.youtube.com/watch?v=KttoycleK8c)**
+**[Re.Enthused : Transferring Game Boy PocketCamera photos to a PC (Youtube)](https://www.youtube.com/watch?v=KttoycleK8c)**
 
 **[Lennartba : Python Script to speed up dumping of images](https://github.com/lennartba/gbpinter_dump2image_py)**
 
