@@ -23,7 +23,8 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[HerrZatacke : WiFi GBP Emulator, A GameBoy printer emulator which provides the received data over a WiFi connection](https://github.com/HerrZatacke/wifi-gbp-emulator)**
 
-**[Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
+**[xx0x : Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
+    - **[CristoferCruz : gbpxl (multi-tone) : Fork of gbpxl with multitone support (Here until merged into mainline)](https://github.com/cristofercruz/gbpxl)**
 
 **[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
 
