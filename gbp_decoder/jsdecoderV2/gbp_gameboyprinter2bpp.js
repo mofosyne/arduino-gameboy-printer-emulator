@@ -14,12 +14,9 @@ TILES_PER_LINE = 20; // Gameboy Printer Tile Constant
 
 document.addEventListener('DOMContentLoaded', function ()
 {
-
-    var canvas = document.getElementById("demo_canvas");
-
     var button = document.getElementById("submit_button");
 
-    button.addEventListener("click", function (evt)
+    button.addEventListener("click", function ()
     {
         refresh();
     }, false);
@@ -89,8 +86,6 @@ function renderImage(tiles)
     var square_width = canvas.width / (TILE_PIXEL_WIDTH * TILES_PER_LINE);
     var square_height = square_width;
 
-    var ctx = canvas.getContext("2d");
-
     // Resize height (Setting new canvas size will reset canvas)
     canvas.width = square_width * TILE_PIXEL_WIDTH * TILES_PER_LINE;
     canvas.height = square_height * TILE_PIXEL_HEIGHT * tile_height_count;
@@ -111,8 +106,6 @@ function render_gbp(rawBytes)
 
     // rawBytes is a string of hex where each line represents a gameboy tile
     var tiles_rawBytes_array = rawBytes.split(/\n/);
-
-    var tile_count = 0
 
     var images = [];
     var currentImage = null;

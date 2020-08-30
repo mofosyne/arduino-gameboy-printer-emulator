@@ -98,7 +98,6 @@ const parsePackets = (bytes) => {
         state = STATE_AWAIT_CHECKSUM;
         return;
 
-
       case STATE_AWAIT_CHECKSUM:
         if (packet.buffer.length === 0) {
           packet.buffer.push(byte);

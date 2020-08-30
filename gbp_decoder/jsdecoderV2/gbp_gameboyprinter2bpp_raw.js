@@ -14,7 +14,6 @@ TILES_PER_LINE = 20; // Gameboy Printer Tile Constant
 
 document.addEventListener('DOMContentLoaded', function ()
 {
-
     var button = document.getElementById("submit_button");
 
     button.addEventListener("click", function ()
