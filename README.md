@@ -1,6 +1,6 @@
-# Arduino Gameboy Printer Emulator
+# Arduino Gameboy Printer Emulator (Release V1)
 
-![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
+**This is copied from V3 Readme, but edited to focus on V1 steps**
 
 Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
@@ -10,32 +10,6 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 **[https://t.me/gameboycamera](https://t.me/gameboycamera)**
 
-
-## Media Coverage And Other Projects Spinoff
-
-**[Featured On Hack A Day Article](https://hackaday.com/2017/12/01/arduino-saves-gameboy-camera/)**
-
-**[Ekeler : Was used by ekeler for a gameboy camera canon EF mount](http://ekeler.com/game-boy-camera-canon-ef-mount/)**
-
-**[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
-
-**[HerrZatacke : Web Decoder For Gameboy Camera Images With Custom Colour Pallet](https://herrzatacke.github.io/gb-printer-web)** : **[(Bjorn Writeup About This Project)](https://gameboymaniac.com/new-website-for-decoding-game-boy-photos/)**
-
-**[HerrZatacke : WiFi GBP Emulator, A GameBoy printer emulator which provides the received data over a WiFi connection](https://github.com/HerrZatacke/wifi-gbp-emulator)**
-
-**[xx0x : Game Boy Printer XL : Code extended by xx0x to be used in ESC/POS compatible thermal printers](https://github.com/xx0x/gbpxl)**
-
-**[CristoferCruz : gbpxl (multi-tone) : Fork of gbpxl with multitone support (Here until merged into mainline)](https://github.com/cristofercruz/gbpxl)**
-
-**[Max Piantoni : A native Mac App for decoding and saving GameBoy Camera photos via this arduino gameboy printer emulator](https://www.maxpiantoni.com/projects/gbcamstudio/)**
-
-**[Re.Enthused : Transferring Game Boy PocketCamera photos to a PC (Youtube)](https://www.youtube.com/watch?v=KttoycleK8c)**
-
-**[Lennartba : Python Script to speed up dumping of images](https://github.com/lennartba/gbpinter_dump2image_py)**
-
-**[Raphaël BOICHOT : Game boy printer emulator with e-paper feature (CrapPrinter) for Matlab and Octave](https://github.com/mofosyne/GameboyPrinterPaperSimulation)**
-
-**[HerrZatacke : A set of node js functions to decode the raw packet stream from a gameboy to gameboy printer](https://www.npmjs.com/package/gbp-decode)**
 
 ## About this project
 
@@ -86,10 +60,10 @@ Gameboy Original/Color Link Cable Pinout
 
 ### Programming the emulator
 
-* Arduino Project File: `./gbp_emulator/gbp_emulator_v2/gpb_emulator_v2.ino`
+* Arduino Project File: `./gbp_emulator/gpb_emulator_v1.ino`
 * Baud 115200 baud
 
-Next download `./gbp_emulator/gbp_emulator_v2/gpb_emulator_v2.ino` to your arduino nano.
+Next download `./gbp_emulator/gpb_emulator_v1.ino` to your arduino nano.
 After that, open the serial console and set the baud rate to 115200 baud.
 
 * [All Version Release Notes](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_emulator/)
@@ -98,103 +72,12 @@ After that, open the serial console and set the baud rate to 115200 baud.
 
 Press the download button in your gameboy. The emulator will automatically start to download and dump the data as a string of hex in the console display.
 
-After the download has complete. Copy the content of the console to the javascript decoder in `./gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html`. Press click to render button.
+After the download has complete. Copy the content of the console to the javascript decoder in `./gbp_decoder/jsdecoderV1/gameboy_printer_js_decoder.html`. Press click to render button.
 
 One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
 
-A copy of the decoder is accessible here as well:
-* [V2 JS Decoder: Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
-* [All Version Release Notes](https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/)
-
 You are all done!
 
-## Project Makeup
-
-* Arduino sketch emulating a gameboy printer to a computer via a serial link.
-    - `./gbp_emulator<Version>/gpb_emulator_<Version>.ino` : Main source file
-    - `./gbp_emulator<Version>/gameboy_printer_protocol.h` : Reusable header containing information about the gameboy protocol
-    - The serial output is outputting a gameboy tile per line filled with hex. (Based on http://www.huderlem.com/demos/gameboy2bpp.html)
-    - A tile in the serial output is 16 hex char per line: e.g. `55 00 FB 00 5D 00 FF 00 55 00 FF 00 55 00 FF 00`
-
-* Javascript gameboy printer hex stream rendering to image in browser.
-    - [js decoder page](./gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html)
-    - `./gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html` :
-    - This is a convenient way to convert the hex payload into canvas image that can be downloaded.
-
-* Research folder.
-    - Contains some files that I found online to research this project
-    - Also a sniffer to listen to the communication between a real gameboy and a real printer.
-
-* Sample Images
-    - Some sample images along with the sample logs. There has been some changes to the serial output, but the hex format remains the same.
-
-
-## Technical Information
-
-### Sniffer / Real Gameboy Printer Captures
-
-Refer to https://github.com/mofosyne/GameboyPrinterSniffer for more information.
-
-### Protocol
-
-```
-  | BYTE POS :    |     0     |     1     |     2     |      3      |     4     |     5     |  6 + X    | 6 + X + 1 | 6 + X + 2 | 6 + X + 3 | 6 + X + 4 |
-  |---------------|-----------|-----------|-----------|-------------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
-  | SIZE          |        2 Bytes        |  1 Byte   |   1 Byte    |  1 Bytes  |  1 Bytes  | Variable  |        2 Bytes        |  1 Bytes  |  1 Bytes  |
-  | DESCRIPTION   |       SYNC_WORD       | COMMAND   | COMPRESSION |     DATA_LENGTH(X)    | Payload   |       CHECKSUM        |  DEVICEID |  STATUS   |
-  | GB TO PRINTER |    0x88   |    0x33   | See Below | See Below   | Low Byte  | High Byte | See Below |       See Below       |    0x00   |    0x00   |
-  | TO PRINTER    |    0x00   |    0x00   |    0x00   |   0x00      |    0x00   |    0x00   |    0x00   |    0x00   |    0x00   |    0x81   | See Below |
-```
-
-  * Header is the Command, Compression and Data Length
-  * Command field may be either Initialize (0x01), Data (0x04), Print (0x02), or Inquiry (0x0F).
-  * Compression field is a compression indicator. No compression (0x00), Yes Compression (0x01)
-  * Payload byte count size depends on the value of the `DATA_LENGTH` field.
-  * Checksum is 2 bytes of data representing the sum of the header + all data in the data portion of the packet
-  * Status byte is a bitfield byte indicating various status of the printer itself. (e.g. If it is still printing)
-
-### Gameboy Printer Timing
-
-Below measurements was obtained via the ANALOG DISCOVERY via digilent
-
-```
-                       1.153ms
-        <--------------------------------------->
-         0   1   2   3   4   5   6   7             0   1   2   3   4   5   6   7
-     __   _   _   _   _   _   _   _   ___________   _   _   _   _   _   _   _   _
-CLK:   |_| |_| |_| |_| |_| |_| |_| |_|           |_| |_| |_| |_| |_| |_| |_| |_|
-DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX_
-       <-->                           <---------->
-       127.63 us                         229.26 us
-
-```
-
-* Clock Frequency: 8kHz (127.63 us)
-* Transmission Speed: 867 baud (1.153ms per 8bit symbol)
-* Between Symbol Period: 229.26 us
-
-![](gameboy_to_ghost_printer.png)
-
-## Research/Dev log
-
-### 2020-08-30
-
-* V2 rewrite completed for more game support
-* Sniffer created https://github.com/mofosyne/GameboyPrinterSniffer
-
-### 2017-11-30
-
-* Time to wrap this up. I have pushed the arduino to it's maxium ability. The show stopper to futher dev is the puny ram.
-* Still cannot get CRC working. But don't really care anymore. Since its taking too much time to debug crc. Works good enough.
-* There is not enough time/ram to actually do much processing of the image in the arduino. Instead the image data has to be transferred raw to over serial at 115200baud via hex, and processed futher in the computer.
-
-
-### 2017-4-12
-
-* Checksum works for init, inqiry, but not data, and possibly inqury. Possibly messed up the summation somehow. But I found that this may not matter, as the gameboy camera doesn't seem to check for it.
-* While checksum worked for short messages, the checksum system didn't work for the normal data bytes. But... it seems that the gameboy printer doesn't actually pay attention to the checksum bit.
-* Investigation with http://www.huderlem.com/demos/gameboy2bpp.html shows that this is actually encoded as "16 byte standard gameboy tile format".
-* According to http://furrtek.free.fr/?a=gbprinter&i=2 the `The GameBoy Camera buffers tile data by blocs of 2 20 tiles wide lines.`.
 
 ## My Face In BW
 
