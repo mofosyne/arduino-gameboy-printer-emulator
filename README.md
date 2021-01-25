@@ -41,10 +41,9 @@ I hope there will be a project to collate these gameboy images somewhere.
 
 ## Official Releases
 
-**[Release Notes Located Here](./RELEASE_NOTES.md)**
+Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases)
 
-All production releases located in https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases
-
+[Release Notes Located Here](./RELEASE_NOTES.md)
 
 ## Quick Start
 
@@ -58,7 +57,7 @@ differen pinout reference. But the wiring should be similar.
 
 You should avoid cutting old genuine gameboy link cables, there is plenty new cables you can purchase online. Do note that you cannot trust the color code of these cables, you must always check the wire against the plug pins. Especially considering the RX/TX pair of the pins may be flipped.
 
-Else if you have a 3D printer, you can use Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition : https://www.thingiverse.com/thing:4685189
+Else if you have a 3D printer, you can use (Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition)[https://www.thingiverse.com/thing:4685189]
 
 
 ### Pinout Diagram

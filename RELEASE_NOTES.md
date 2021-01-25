@@ -1,6 +1,6 @@
 # Release Notes
 
-All releases are now located in https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases
+All downloadable releases are now located in [github release folder for arduino gameboy printer emulator archive](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases)
 
 
 -------------------------------------------------------------------------------
