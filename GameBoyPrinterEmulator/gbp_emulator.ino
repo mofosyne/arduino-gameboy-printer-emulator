@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * GAMEBOY PRINTER EMULATION PROJECT V2 (Arduino)
+ * GAMEBOY PRINTER EMULATION PROJECT V3 (Arduino)
  * Copyright (C) 2020 Brian Khuu
  *
  * PURPOSE: To capture gameboy printer images without a gameboy printer
@@ -25,7 +25,7 @@
  *
  */
 
-#define GBP_OUTPUT_RAW_PACKETS false // by default, packets are parsed. if enabled, output will change to raw data packets for parsing and decompressing later
+#define GBP_OUTPUT_RAW_PACKETS true // by default, packets are parsed. if enabled, output will change to raw data packets for parsing and decompressing later
 #define GBP_USE_PARSE_DECOMPRESSOR false // embedded decompressor can be enabled for use with parse mode but it requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
 
 #include <stdint.h> // uint8_t
@@ -188,13 +188,15 @@ void setup(void)
 
   /* Welcome Message */
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
-  Serial.println("// GAMEBOY PRINTER Packet Capture V2 (Brian Khuu 2020)");
+  Serial.println("// GAMEBOY PRINTER Packet Capture V3 (Brian Khuu 2020)");
   Serial.println("// Note: Each byte is from each GBP packet is from the gameboy");
   Serial.println("//       except for the last two bytes which is from the printer");
+  Serial.println("// JS Raw Packet Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html");
 #endif
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
-  Serial.println("// GAMEBOY PRINTER Emulator V2.1 : Copyright (C) 2020 Brian Khuu");
-  Serial.println("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/gbp_decoder/jsdecoderV2/gameboy_printer_js_decoder.html");
+  Serial.println("// GAMEBOY PRINTER Emulator V3 : Copyright (C) 2020 Brian Khuu");
+  Serial.println("// Note: Each hex encoded line is a gameboy tile");
+  Serial.println("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_decoder.html");
 #endif
   Serial.println("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---");
   Serial.println("// This program comes with ABSOLUTELY NO WARRANTY;");
