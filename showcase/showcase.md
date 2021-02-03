@@ -24,6 +24,9 @@
 
 **[HerrZatacke : A set of node js functions to decode the raw packet stream from a gameboy to gameboy printer](https://www.npmjs.com/package/gbp-decode)**
 
+**[Lukasklinger : Java based GameBoy Printer Receiver](https://github.com/lukasklinger/GameBoyPrinterReceiver)**
+
+**[Zoggins : Multi protocol retro receiver with support for gameboy printer reception](https://github.com/retrospy/RetroSpy)**
 
 --------
 
