@@ -212,6 +212,10 @@ main (int argc, char **argv)
     }
   }
 
+
+//  printf("\x1B[48;2;%d;%d;%dm\r\n 0 \r\n\x1B[0m", 0, 0, 0);
+//  printf("\x1B[48;2;%d;%d;%dm\r\n 255 \r\n\x1B[0m", 255, 255, 255);
+
   return 0;
 }
 

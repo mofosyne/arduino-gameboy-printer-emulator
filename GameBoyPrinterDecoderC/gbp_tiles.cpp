@@ -93,12 +93,11 @@ uint8_t gbp_tile_2bitPixelToTone(uint8_t pixel, uint8_t pallet)
 {
     // Parse Tone
     uint8_t tonePallet[GBP_TILE_MAX_TONES];
-    tonePallet[0] = ((pallet >> 6) & 0b11);
-    tonePallet[1] = ((pallet >> 4) & 0b11);
-    tonePallet[2] = ((pallet >> 2) & 0b11);
-    tonePallet[3] = ((pallet >> 0) & 0b11);
-
-    switch (tonePallet[pixel])
+    tonePallet[0] = ((pallet >> 0) & 0b11);
+    tonePallet[1] = ((pallet >> 2) & 0b11);
+    tonePallet[2] = ((pallet >> 4) & 0b11);
+    tonePallet[3] = ((pallet >> 6) & 0b11);
+    switch (tonePallet[pixel & 0b11])
     {
         default:
         case 3: return   0; break;
