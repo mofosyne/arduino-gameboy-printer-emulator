@@ -89,15 +89,22 @@ void gbp_tiles_print(gbp_tile_t *gbp_tiles)
     gbp_tiles->tileRowOffset  = 0;
 }
 
-uint8_t gbp_tile_2bitPixelToTone(uint8_t pixel)
+uint8_t gbp_tile_2bitPixelToTone(uint8_t pixel, uint8_t pallet)
 {
-    switch (pixel)
+    // Parse Tone
+    uint8_t tonePallet[GBP_TILE_MAX_TONES];
+    tonePallet[0] = ((pallet >> 6) & 0b11);
+    tonePallet[1] = ((pallet >> 4) & 0b11);
+    tonePallet[2] = ((pallet >> 2) & 0b11);
+    tonePallet[3] = ((pallet >> 0) & 0b11);
+
+    switch (tonePallet[pixel])
     {
         default:
-        case 0: return 0;
-        case 1: return 64;
-        case 2: return 130;
-        case 3: return 255;
+        case 3: return   0; break;
+        case 2: return  64; break;
+        case 1: return 130; break;
+        case 0: return 255; break;
     };
 }
 
@@ -116,17 +123,13 @@ void gbp_tiles_print(gbp_tile_t *gbp_tiles, uint8_t sheet, uint8_t linefeed, uin
         // Palette 0x00 has the same effect than palette 0xE4 (the mainly encountered palette in games)
         pallet = 0xE4;
     }
-    uint8_t tonePallet[GBP_TILE_MAX_TONES];
-    tonePallet[0] = (pallet >> 6) & 0b11;
-    tonePallet[1] = (pallet >> 4) & 0b11;
-    tonePallet[2] = (pallet >> 2) & 0b11;
-    tonePallet[3] = (pallet >> 0) & 0b11;
+
+    // Harmonise
     for (uint8_t j = 0; j < (GBP_TILE_PIXEL_HEIGHT*gbp_tiles->tileRowOffset); j++)
     {
         for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
         {
-            gbp_tiles->bmpLineBuffer[j][i] = tonePallet[gbp_tiles->bmpLineBuffer[j][i]];
-            gbp_tiles->bmpLineBuffer[j][i] = gbp_tile_2bitPixelToTone(gbp_tiles->bmpLineBuffer[j][i]);
+            gbp_tiles->bmpLineBuffer[j][i] = gbp_tile_2bitPixelToTone(gbp_tiles->bmpLineBuffer[j][i], pallet);
         }
     }
 }

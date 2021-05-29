@@ -39,7 +39,6 @@ typedef struct
     // This is the tile to bmp decoder
     uint8_t tileLineOffset;
     uint8_t tileRowOffset;
-    uint8_t tonePallet[GBP_TILE_MAX_TONES];
     uint8_t bmpLineBuffer[GBP_TILE_PIXEL_HEIGHT * GBP_TILES_PER_ROW][GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE];
 } gbp_tile_t;
 
