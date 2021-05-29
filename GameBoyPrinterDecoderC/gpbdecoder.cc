@@ -32,6 +32,7 @@ gbp_pkt_t gbp_pktBuff = {GBP_REC_NONE, 0};
 uint8_t gbp_pktbuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE] = {0};
 uint8_t gbp_pktbuffSize = 0;
 gbp_pkt_tileAcc_t tileBuff = {0};
+gbp_tile_t gbp_tiles = {0};
 //////
 
 /*******************************************************************************
@@ -222,7 +223,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
     if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
     {
       pktCounter++;
-#if 0
+#if 1
       printf("// %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d | ",
           gbpCommand_toStr(gbp_pktBuff.command),
           (unsigned) gbp_pktBuff.compression,
@@ -237,6 +238,29 @@ void gbpdecoder_gotByte(const uint8_t byte)
       }
       printf("\r\n");
 #endif
+      if (gbp_pktBuff.command == GBP_COMMAND_INIT)
+      {
+        gbp_tiles_print(&gbp_tiles);
+      }
+      else if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
+      {
+        gbp_tiles_print(&gbp_tiles,
+            gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS],
+            gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED],
+            gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE],
+            gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
+#if 1   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
+        for (uint8_t j = 0; j < (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset); j++)
+        {
+          for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
+          {
+            int pixel = gbp_tiles.bmpLineBuffer[j][i];
+            printf("\x1B[48;2;%d;%d;%dm \x1B[0m", pixel, pixel, pixel);
+          }
+          printf("\r\n");
+        }
+#endif
+      }
     }
     else
     {
@@ -254,24 +278,30 @@ void gbpdecoder_gotByte(const uint8_t byte)
           }
           printf("\r\n");
 #endif
-          static gbp_tile_t gbp_tiles = {0};
           if (gbp_tiles_line_decoder(&gbp_tiles, tileBuff.tile))
           {
+            // Line Obtained
+#if 0       // Per Line Decoded (Pre Pallet Harmonisation)
             for (uint8_t j = 0; j < GBP_TILE_PIXEL_HEIGHT; j++)
             {
               for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
               {
-                int pixel = gbp_tiles.bmpLineBuffer[j][i];
+                int pixel = gbp_tiles.bmpLineBuffer[j+(gbp_tiles.tileRowOffset-1)*8][i];
+
+                int b = 0;
                 switch (pixel)
                 {
-                  case 0: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(0,0,0) " " ECMA48_CSI_SGR(0)); break;
-                  case 1: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(64,64,64) " " ECMA48_CSI_SGR(0)); break;
-                  case 2: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(130,130,130) " " ECMA48_CSI_SGR(0)); break;
-                  case 3: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(255,255,255) " " ECMA48_CSI_SGR(0)); break;
+                  case 0: b = 0; break;
+                  case 1: b = 64; break;
+                  case 2: b = 130; break;
+                  case 3: b = 255; break;
                 }
+                printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
+
               }
               printf("\r\n");
             }
+#endif
           }
         }
       }

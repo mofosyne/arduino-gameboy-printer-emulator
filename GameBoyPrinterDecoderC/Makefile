@@ -28,8 +28,7 @@ clean:
 
 run:
 	@echo "Running..."
-	@cat ./test/2020-08-10_Pokemon_trading_card_compressiontest.txt | ./$(EXEC)
-	@cat ./test/2020-08-10_Pokemon_trading_card_compressiontest.txt | ./$(EXEC) >> output.txt
+	@cat ./test/test.txt | ./$(EXEC)
 
 other:
 	./$(EXEC)

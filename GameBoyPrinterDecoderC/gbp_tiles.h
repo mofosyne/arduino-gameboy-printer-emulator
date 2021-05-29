@@ -31,15 +31,19 @@
 #define GBP_TILE_PIXEL_WIDTH  8
 #define GBP_TILE_PIXEL_HEIGHT 8
 #define GBP_TILES_PER_LINE    20
-#define GBP_IMG_WIDTH         160 //= GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE
-#define GBP_IMG_HEIGHT        16
-#define GBP_BYTES_PER_LINE    GBP_IMG_WIDTH * GBP_IMG_HEIGHT / 8
+#define GBP_TILES_PER_ROW     100   // Number of lines between print commands
+#define GBP_TILE_MAX_TONES    4   // 2bits per pixel
 
 typedef struct
 {
     // This is the tile to bmp decoder
-    unsigned char tileOffset;
-    uint8_t bmpLineBuffer[GBP_TILE_PIXEL_HEIGHT][GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE] = {0};
+    uint8_t tileLineOffset;
+    uint8_t tileRowOffset;
+    uint8_t tonePallet[GBP_TILE_MAX_TONES];
+    uint8_t bmpLineBuffer[GBP_TILE_PIXEL_HEIGHT * GBP_TILES_PER_ROW][GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE];
 } gbp_tile_t;
 
 bool gbp_tiles_line_decoder(gbp_tile_t *gbp_tiles, const uint8_t tileBuff[GBP_TILE_SIZE_IN_BYTE]);
+
+void gbp_tiles_print(gbp_tile_t *gbp_tiles);
+void gbp_tiles_print(gbp_tile_t *gbp_tiles, uint8_t sheet, uint8_t linefeed, uint8_t pallet, uint8_t density);
