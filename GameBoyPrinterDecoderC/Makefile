@@ -4,7 +4,7 @@ CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno
 LDFLAGS =  -fsanitize=address
 
 SRC_CC = gpbdecoder.cc
-SRC_CPP = gbp_pkt.cpp
+SRC_CPP = gbp_pkt.cpp gbp_tiles.cpp
 OBJ = $(SRC_CC:.cc=.o) $(SRC_CPP:.cpp=.o)
 EXEC = gpbdecoder
 

@@ -8,6 +8,8 @@
 
 #include "gameboy_printer_protocol.h"
 #include "gbp_pkt.h"
+#include "gbp_tiles.h"
+#include "ecma48.h"
 
 
 /* The official name of this program (e.g., no 'g' prefix).  */
@@ -80,7 +82,6 @@ main (int argc, char **argv)
   (void) argc;
   (void) argv;
 
-#if 1
   int c;
   static struct option const long_options[] =
   {
@@ -132,8 +133,6 @@ main (int argc, char **argv)
       printf ("file output `%s' open\n", ofilename);
     }
   }
-#endif
-
 
   gbp_pkt_init(&gbp_pktBuff);
 
@@ -180,10 +179,10 @@ main (int argc, char **argv)
     if (lowNibFound)
     {
       // '0x' found. Ignore
-      if ((byte == 0) && (ch == 'x'))    
+      if ((byte == 0) && (ch == 'x'))
         lowNibFound = false;
       // Not a hex digit pair. Ignore
-      if (nib == -1) 
+      if (nib == -1)
         lowNibFound = false;
     }
     // Hex Byte Parsing
@@ -211,6 +210,7 @@ main (int argc, char **argv)
       gbpdecoder_gotByte(byte);
     }
   }
+
   return 0;
 }
 
@@ -222,6 +222,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
     if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
     {
       pktCounter++;
+#if 0
       printf("// %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d | ",
           gbpCommand_toStr(gbp_pktBuff.command),
           (unsigned) gbp_pktBuff.compression,
@@ -235,6 +236,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
         printf("%02X ", gbp_pktbuff[i]);
       }
       printf("\r\n");
+#endif
     }
     else
     {
@@ -244,11 +246,33 @@ void gbpdecoder_gotByte(const uint8_t byte)
         if (gbp_pkt_tileAccu_tileReadyCheck(&tileBuff))
         {
           // Got tile
+#if 0
+          // Output Tile As Hex For Debugging purpose
           for (int i = 0 ; i < GBP_TILE_SIZE_IN_BYTE ; i++)
           {
             printf("%02X ", tileBuff.tile[i]);
           }
           printf("\r\n");
+#endif
+          static gbp_tile_t gbp_tiles = {0};
+          if (gbp_tiles_line_decoder(&gbp_tiles, tileBuff.tile))
+          {
+            for (uint8_t j = 0; j < GBP_TILE_PIXEL_HEIGHT; j++)
+            {
+              for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
+              {
+                int pixel = gbp_tiles.bmpLineBuffer[j][i];
+                switch (pixel)
+                {
+                  case 0: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(0,0,0) " " ECMA48_CSI_SGR(0)); break;
+                  case 1: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(64,64,64) " " ECMA48_CSI_SGR(0)); break;
+                  case 2: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(130,130,130) " " ECMA48_CSI_SGR(0)); break;
+                  case 3: printf(ECMA48_SGR_BACKGROUND_COLOR_24BIT(255,255,255) " " ECMA48_CSI_SGR(0)); break;
+                }
+              }
+              printf("\r\n");
+            }
+          }
         }
       }
     }
