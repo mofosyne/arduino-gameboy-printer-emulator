@@ -9,7 +9,6 @@
 #include "gameboy_printer_protocol.h"
 #include "gbp_pkt.h"
 #include "gbp_tiles.h"
-#include "ecma48.h"
 
 
 /* The official name of this program (e.g., no 'g' prefix).  */
@@ -212,9 +211,25 @@ main (int argc, char **argv)
     }
   }
 
-
-//  printf("\x1B[48;2;%d;%d;%dm\r\n 0 \r\n\x1B[0m", 0, 0, 0);
-//  printf("\x1B[48;2;%d;%d;%dm\r\n 255 \r\n\x1B[0m", 255, 255, 255);
+#if 1   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
+      for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset); j++)
+      {
+        for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
+        {
+          const int pixel = gbp_tiles.bmpLineBuffer[j][i];
+          int b = 0;
+          switch (pixel)
+          {
+            case 3: b = 0; break;
+            case 2: b = 64; break;
+            case 1: b = 130; break;
+            case 0: b = 255; break;
+          }
+          printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
+        }
+        printf("\r\n");
+      }
+#endif
 
   return 0;
 }
@@ -244,7 +259,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
 #endif
       if (gbp_pktBuff.command == GBP_COMMAND_INIT)
       {
-        gbp_tiles_print(&gbp_tiles);
+        //gbp_tiles_reset(&gbp_tiles);
       }
       else if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
       {
@@ -253,13 +268,21 @@ void gbpdecoder_gotByte(const uint8_t byte)
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
-#if 1   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
-        for (uint8_t j = 0; j < (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset); j++)
+#if 0   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
+        for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT * gbp_tiles.tileRowOffset); j++)
         {
-          for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
+          for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
           {
-            int pixel = gbp_tiles.bmpLineBuffer[j][i];
-            printf("\x1B[48;2;%d;%d;%dm \x1B[0m", pixel, pixel, pixel);
+            const int pixel = gbp_tiles.bmpLineBuffer[j][i];
+            int b = 0;
+            switch (pixel)
+            {
+              case 3: b = 0; break;
+              case 2: b = 64; break;
+              case 1: b = 130; break;
+              case 0: b = 255; break;
+            }
+            printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
           }
           printf("\r\n");
         }
@@ -286,12 +309,11 @@ void gbpdecoder_gotByte(const uint8_t byte)
           {
             // Line Obtained
 #if 0       // Per Line Decoded (Pre Pallet Harmonisation)
-            for (uint8_t j = 0; j < GBP_TILE_PIXEL_HEIGHT; j++)
+            for (int j = 0; j < GBP_TILE_PIXEL_HEIGHT; j++)
             {
-              for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
+              for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
               {
                 int pixel = gbp_tiles.bmpLineBuffer[j+(gbp_tiles.tileRowOffset-1)*8][i];
-
                 int b = 0;
                 switch (pixel)
                 {
@@ -301,7 +323,6 @@ void gbpdecoder_gotByte(const uint8_t byte)
                   case 3: b = 255; break;
                 }
                 printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
-
               }
               printf("\r\n");
             }

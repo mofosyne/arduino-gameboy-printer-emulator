@@ -48,11 +48,11 @@ static void gbp_tiles_toBuff(
     const int rowHeightSize = lineWidthSize * GBP_TILE_PIXEL_HEIGHT;
 
     // Tile Decoder
-    for (uint8_t j = 0; j < GBP_TILE_PIXEL_HEIGHT; j++)
+    for (int j = 0; j < GBP_TILE_PIXEL_HEIGHT; j++)
     {
-        for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH; i++)
+        for (int i = 0; i < GBP_TILE_PIXEL_WIDTH; i++)
         {
-            const int offset    = tileLineOffset    * GBP_TILE_PIXEL_WIDTH;
+            const int offset    = tileLineOffset * GBP_TILE_PIXEL_WIDTH;
             const uint8_t hiBit = (uint8_t)((tileBuff[j*2 + 1] >> (7 - i)) & 1);
             const uint8_t loBit = (uint8_t)((tileBuff[j*2    ] >> (7 - i)) & 1);
             const uint8_t value = (uint8_t)((hiBit << 1) | loBit); // 0-3
@@ -83,28 +83,13 @@ bool gbp_tiles_line_decoder(gbp_tile_t *gbp_tiles, const uint8_t tileBuff[GBP_TI
     return false;
 }
 
-void gbp_tiles_print(gbp_tile_t *gbp_tiles)
+/*****************************************************************************/
+
+void gbp_tiles_reset(gbp_tile_t *gbp_tiles)
 {
+    (void)gbp_tiles;
     gbp_tiles->tileLineOffset = 0;
     gbp_tiles->tileRowOffset  = 0;
-}
-
-uint8_t gbp_tile_2bitPixelToTone(uint8_t pixel, uint8_t pallet)
-{
-    // Parse Tone
-    uint8_t tonePallet[GBP_TILE_MAX_TONES];
-    tonePallet[0] = ((pallet >> 0) & 0b11);
-    tonePallet[1] = ((pallet >> 2) & 0b11);
-    tonePallet[2] = ((pallet >> 4) & 0b11);
-    tonePallet[3] = ((pallet >> 6) & 0b11);
-    switch (tonePallet[pixel & 0b11])
-    {
-        default:
-        case 3: return   0; break;
-        case 2: return  64; break;
-        case 1: return 130; break;
-        case 0: return 255; break;
-    };
 }
 
 void gbp_tiles_print(gbp_tile_t *gbp_tiles, uint8_t sheet, uint8_t linefeed, uint8_t pallet, uint8_t density)
@@ -116,21 +101,29 @@ void gbp_tiles_print(gbp_tile_t *gbp_tiles, uint8_t sheet, uint8_t linefeed, uin
     (void)density;
 
     /* Harmonise Pallete */
-    if (pallet == 0x00)
-    {
-        // Ref: https://github.com/Raphael-Boichot/The-Arduino-SD-Game-Boy-Printer#some-technical-facts
-        // Palette 0x00 has the same effect than palette 0xE4 (the mainly encountered palette in games)
-        pallet = 0xE4;
-    }
+    // Ref: https://github.com/Raphael-Boichot/The-Arduino-SD-Game-Boy-Printer#some-technical-facts
+    // Palette 0x00 has the same effect than palette 0xE4 (the mainly encountered palette in games)
+    uint8_t tonePallet[GBP_TILE_MAX_TONES] = {0};
+    pallet = (pallet == 0x00) ? 0xE4 : pallet;
+    tonePallet[0] = ((pallet >> 0) & 0b11);
+    tonePallet[1] = ((pallet >> 2) & 0b11);
+    tonePallet[2] = ((pallet >> 4) & 0b11);
+    tonePallet[3] = ((pallet >> 6) & 0b11);
+    const int startH = GBP_TILE_PIXEL_HEIGHT * gbp_tiles->tileRowOffsetHarmonised;
+    const int endH   = GBP_TILE_PIXEL_HEIGHT * gbp_tiles->tileRowOffset;
 
-    // Harmonise
-    for (uint8_t j = 0; j < (GBP_TILE_PIXEL_HEIGHT*gbp_tiles->tileRowOffset); j++)
+    if (startH > endH)
+        return;
+
+    for (int j = startH; j < endH; j++)
     {
-        for (uint8_t i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
+        for (int i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
         {
-            gbp_tiles->bmpLineBuffer[j][i] = gbp_tile_2bitPixelToTone(gbp_tiles->bmpLineBuffer[j][i], pallet);
+            const int pixel = gbp_tiles->bmpLineBuffer[j][i];
+            gbp_tiles->bmpLineBuffer[j][i] = tonePallet[pixel & 0b11];
         }
     }
+    gbp_tiles->tileRowOffsetHarmonised = gbp_tiles->tileRowOffset;
 }
 
 

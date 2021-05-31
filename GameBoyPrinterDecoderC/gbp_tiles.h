@@ -31,18 +31,20 @@
 #define GBP_TILE_PIXEL_WIDTH  8
 #define GBP_TILE_PIXEL_HEIGHT 8
 #define GBP_TILES_PER_LINE    20
-#define GBP_TILES_PER_ROW     100   // Number of lines between print commands
+#define GBP_TILES_PER_ROW     200   // Number of supported lines between print commands (You may need to lower this in embedded systems)
 #define GBP_TILE_MAX_TONES    4   // 2bits per pixel
 
 typedef struct
 {
     // This is the tile to bmp decoder
-    uint8_t tileLineOffset;
-    uint8_t tileRowOffset;
+    uint16_t tileLineOffset;
+    uint16_t tileRowOffset;
+    uint16_t tileRowOffsetHarmonised;
+
+    // Each array entry represents a decoded 2bit pixel
     uint8_t bmpLineBuffer[GBP_TILE_PIXEL_HEIGHT * GBP_TILES_PER_ROW][GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE];
 } gbp_tile_t;
 
 bool gbp_tiles_line_decoder(gbp_tile_t *gbp_tiles, const uint8_t tileBuff[GBP_TILE_SIZE_IN_BYTE]);
-
-void gbp_tiles_print(gbp_tile_t *gbp_tiles);
+void gbp_tiles_reset(gbp_tile_t *gbp_tiles);
 void gbp_tiles_print(gbp_tile_t *gbp_tiles, uint8_t sheet, uint8_t linefeed, uint8_t pallet, uint8_t density);

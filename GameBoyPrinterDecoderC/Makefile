@@ -1,6 +1,6 @@
 CXX = g++
 #CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -I.
-CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -Wno-error=unused-variable -I.
+CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -Wno-error=unused-variable -I. -g
 LDFLAGS =  -fsanitize=address
 
 SRC_CC = gpbdecoder.cc
@@ -29,6 +29,9 @@ clean:
 run:
 	@echo "Running..."
 	@cat ./test/test.txt | ./$(EXEC)
+
+debug:
+	gdb ./$(EXEC)
 
 other:
 	./$(EXEC)
