@@ -240,8 +240,9 @@ void gbpdecoder_gotByte(const uint8_t byte)
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
 
-        if (gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED] != 0)
+        if ((gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]&0xF) != 0)
         {
+          // if lower margin is zero, then new pic
           gbp_bmp_render(&gbp_bmp,
             (char *) ofilename,
             (uint8_t *) &gbp_tiles.bmpLineBuffer,
