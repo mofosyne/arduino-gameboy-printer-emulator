@@ -9,6 +9,7 @@
 #include "gameboy_printer_protocol.h"
 #include "gbp_pkt.h"
 #include "gbp_tiles.h"
+#include "gbp_bmp.h"
 
 
 /* The official name of this program (e.g., no 'g' prefix).  */
@@ -16,11 +17,9 @@
 
 //static bool verbose_flag = false;
 
-char * ifilename = NULL;
-char * ofilename = NULL;
+const char * ifilename = NULL;
+const char * ofilename = NULL;
 FILE * ifilePtr = NULL;
-FILE * ofilePtr = NULL;
-
 
 void gbpdecoder_gotByte(const uint8_t byte);
 
@@ -32,6 +31,7 @@ uint8_t gbp_pktbuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE] = {0};
 uint8_t gbp_pktbuffSize = 0;
 gbp_pkt_tileAcc_t tileBuff = {0};
 gbp_tile_t gbp_tiles = {0};
+gbp_bmp_t  gbp_bmp = {0};
 //////
 
 /*******************************************************************************
@@ -42,7 +42,6 @@ const uint8_t testVector[] = {
   //#include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
   #include "./test/2020-08-10_Pokemon_trading_card_compressiontest.txt" // Compression
 };
-
 
 
 /*******************************************************************************
@@ -61,16 +60,6 @@ const char *gbpCommand_toStr(int val)
     default: return "?";
   }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 /*******************************************************************************
@@ -119,20 +108,16 @@ main (int argc, char **argv)
       printf ("file input `%s' open\n", ifilename);
     }
   }
+
   if (ifilePtr == NULL)
   {
     ifilePtr = stdin;
     printf ("file input stdin\n");
   }
 
-  if (ofilename)
-  {
-    ofilePtr = fopen(ofilename, "w+");
-    if (ofilePtr)
-    {
-      printf ("file output `%s' open\n", ofilename);
-    }
-  }
+  if (!ofilename)
+    ofilename = "gbpOut";
+  printf ("file requested output `%s'\n", ofilename);
 
   gbp_pkt_init(&gbp_pktBuff);
 
@@ -211,24 +196,10 @@ main (int argc, char **argv)
     }
   }
 
-#if 1   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
-      for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset); j++)
-      {
-        for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
-        {
-          const int pixel = gbp_tiles.bmpLineBuffer[j][i];
-          int b = 0;
-          switch (pixel)
-          {
-            case 3: b = 0; break;
-            case 2: b = 64; break;
-            case 1: b = 130; break;
-            case 0: b = 255; break;
-          }
-          printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
-        }
-        printf("\r\n");
-      }
+#if 0
+  gbp_bmp_rendertest(&gbp_bmp,
+    (uint16_t)(GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
+    (uint16_t)(GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset));
 #endif
 
   return 0;
@@ -268,6 +239,17 @@ void gbpdecoder_gotByte(const uint8_t byte)
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
+
+        if (gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED] != 0)
+        {
+          gbp_bmp_render(&gbp_bmp,
+            (char *) ofilename,
+            (uint8_t *) &gbp_tiles.bmpLineBuffer,
+            (uint16_t)(GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
+            (uint16_t)(GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset));
+          gbp_tiles_reset(&gbp_tiles);
+        }
+
 #if 0   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
         for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT * gbp_tiles.tileRowOffset); j++)
         {
@@ -297,8 +279,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
         if (gbp_pkt_tileAccu_tileReadyCheck(&tileBuff))
         {
           // Got tile
-#if 0
-          // Output Tile As Hex For Debugging purpose
+#if 0     // Output Tile As Hex For Debugging purpose
           for (int i = 0 ; i < GBP_TILE_SIZE_IN_BYTE ; i++)
           {
             printf("%02X ", tileBuff.tile[i]);

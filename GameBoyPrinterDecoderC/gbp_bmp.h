@@ -12,7 +12,12 @@
 
 typedef struct
 {
-    unsigned int bmpSizeWidth;  // x
-    unsigned int bmpSizeHeight; // y
+    int fileCounter;
+    uint16_t bmpSizeWidth;  // x
+    uint16_t bmpSizeHeight; // y
     char bmpBuffer[BMP_SIZE(GBP_BMP_WIDTH, GBP_BMP_HEIGHT)];
 } gbp_bmp_t;
+
+void gbp_bmp_render(gbp_bmp_t * gbp_bmp, const char *outputFilename, uint8_t * bmpLineBuffer, uint16_t sizex, uint16_t sizey);
+
+void gbp_bmp_rendertest(gbp_bmp_t * gbp_bmp, uint16_t sizex, uint16_t sizey);

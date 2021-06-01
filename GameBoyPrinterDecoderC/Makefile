@@ -1,10 +1,10 @@
 CXX = g++
 #CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -I.
-CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -Wno-error=unused-variable -I. -g
+CXXFLAGS = -Wall -Werror -Wextra -pedantic -std=c++17 -g -fsanitize=address -Wno-missing-field-initializers -Wno-unused-function -Wno-error=unused-variable -Wno-format-truncation  -I. -g
 LDFLAGS =  -fsanitize=address
 
 SRC_CC = gpbdecoder.cc
-SRC_CPP = gbp_pkt.cpp gbp_tiles.cpp
+SRC_CPP = gbp_pkt.cpp gbp_tiles.cpp gbp_bmp.cpp
 OBJ = $(SRC_CC:.cc=.o) $(SRC_CPP:.cpp=.o)
 EXEC = gpbdecoder
 
