@@ -17,9 +17,18 @@
 
 //static bool verbose_flag = false;
 
+// Input/Output file
 const char * ifilename = NULL;
 const char * ofilename = NULL;
 FILE * ifilePtr = NULL;
+char ofilenameBuf[255] = {0};
+char ofilenameExt[50]  = {0};
+
+// Pallet
+const char * palletParameter = NULL;
+uint32_t palletColor[4] = {0};
+
+
 
 void gbpdecoder_gotByte(const uint8_t byte);
 
@@ -61,6 +70,108 @@ const char *gbpCommand_toStr(int val)
   }
 }
 
+static void filenameExtractPathAndExtention(const char *fname,
+                        char *pathBuff, int pathSize,
+                        char *extBuff, int extSize)
+{
+    // Minimal Filename Extraction Of Path And Extention
+    // Brian Khuu 2021
+    int i = 0;
+    int end = 0;
+    int exti = 0;
+    for (end = 0; fname[end] != '\0' ; end++)
+    {
+        if ((fname[end] == '/')||(fname[end] == '\\'))
+          exti = 0;
+        else if (fname[end] == '.')
+          exti = end;
+    }
+    if (exti == 0)
+        exti = end;
+
+    // Copy PathName
+    if (pathBuff)
+    {
+      for (i = 0; i < (pathSize-1) ; i++)
+      {
+          if (!(i < exti))
+              break;
+          pathBuff[i] = fname[i];
+      }
+      pathBuff[i] = '\0';
+    }
+
+    // Copy Extention
+    if (extBuff)
+    {
+      for (i = 0; i < (extSize-1) ; i++)
+      {
+          if (!(i < (end-exti-1)))
+            break;
+          extBuff[i] = fname[exti + i + 1];
+      }
+      extBuff[i] = '\0';
+    }
+}
+
+int palletColorParse(uint32_t *palletColor, const int palletColorSize, const char * parameterStr)
+{
+  // Parse web color hexes for pallet (e.g. `0xFFAD63, ...`) (e.g. `#FFAD63, ...`)
+  // This was created for the cdecoder in https://github.com/mofosyne/arduino-gameboy-printer-emulator
+  // https://gist.github.com/mofosyne/b1fc240b64c520c0bf3541a029e3dcc3
+  // Brian Khuu 2021
+  if (!parameterStr)
+    return 0;
+  int palletCounter = 0;
+  int nibIndex = 0;
+  uint32_t pallet = 0;
+  char prevChar = 0;
+  for ( ; (*(parameterStr)) != '\0' ; parameterStr++)
+  {
+    const char ch = *parameterStr;
+    // Search for start of #XXXXXX, we are looking for 4 pallets
+    if (nibIndex == 0)
+    {
+      if ((ch == '#') || ((prevChar == '0')&&(ch == 'x')))
+      {
+        pallet = 0;
+        nibIndex = 3*2; // [R, G, B]
+        prevChar = 0;
+        continue;
+      }
+      prevChar = ch;
+      continue;
+    }
+    nibIndex--;
+    // Parse Nibble
+    char nib = -1;
+    if (('0' <= ch) && (ch <= '9'))
+      nib = ch - '0';
+    else if (('a' <= ch) && (ch <= 'f'))
+      nib = ch - 'a' + 10;
+    else if (('A' <= ch) && (ch <= 'F'))
+      nib = ch - 'A' + 10;
+    else
+    {
+      nibIndex = 0;
+      palletColor[palletCounter] = pallet;
+      palletCounter++;
+      if (palletCounter >= palletColorSize)
+        break;
+      continue;
+    }
+    // Pallet
+    pallet |= nib << (nibIndex*4);
+    if (nibIndex == 0)
+    {
+      palletColor[palletCounter] = pallet;
+      palletCounter++;
+      if (palletCounter >= palletColorSize)
+        break;
+    }
+  }
+  return palletCounter;
+}
 
 /*******************************************************************************
  * Main Test Routine
@@ -85,7 +196,7 @@ main (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "o:i:", long_options, NULL))
+  while ((c = getopt_long (argc, argv, "o:i:p:", long_options, NULL))
          != -1)
   {
     switch (c)
@@ -97,28 +208,60 @@ main (int argc, char **argv)
         case 'o':
           ofilename = optarg;
           break;
+
+        case 'p':
+          palletParameter = optarg;
+          break;
     }
   }
 
+  /* Input File */
   if (ifilename)
   {
     ifilePtr = fopen(ifilename, "r+");
-    if (ifilePtr)
+    if (ifilePtr == NULL)
     {
-      printf ("file input `%s' open\n", ifilename);
+      printf ("file not found\n");
+      return 0;
     }
+    printf ("file input `%s' open\n", ifilename);
   }
-
-  if (ifilePtr == NULL)
+  else
   {
+    // Input file not found, use stdin
     ifilePtr = stdin;
     printf ("file input stdin\n");
   }
 
+  /* Ouput File */
   if (!ofilename)
-    ofilename = "gbpOut";
-  printf ("file requested output `%s'\n", ofilename);
+  {
+    // Default output filename if not defined
+    if (ifilename)
+    {
+      // Use input filename (We will strip out any extention and add our own anyway)
+      ofilename = ifilename;
+    }
+    else
+    {
+      ofilename = "gbpOut.bmp";
+    }
+  }
+  filenameExtractPathAndExtention(ofilename, ofilenameBuf, sizeof(ofilenameBuf), ofilenameExt, sizeof(ofilenameExt));
+  printf("file requested output `%s' (%s)\n", ofilenameBuf, ofilenameExt);
 
+  /* Custom Pallet */
+  if (palletColorParse(palletColor, sizeof(palletColor)/sizeof(palletColor[0]), palletParameter) == 0)
+  {
+    palletColor[0] = 0xFFFFFF;
+    palletColor[1] = 0xAAAAAA;
+    palletColor[2] = 0x555555;
+    palletColor[3] = 0x000000;
+  }
+
+  printf("0x%06X, 0x%06X, 0x%06X, 0x%06X | %s\n", palletColor[0], palletColor[1], palletColor[2], palletColor[3], palletParameter);
+
+  /////////////////////////////////////////////////////////
   gbp_pkt_init(&gbp_pktBuff);
 
   char ch = 0;
@@ -131,32 +274,26 @@ main (int argc, char **argv)
     // Skip Comments
     if (ch == '/')
     {
+      // Might be `//` or `/*`
       skipLine = true;
       continue;
     }
     else if (skipLine)
     {
+      // Discarding line
       if (ch == '\n')
-      {
         skipLine = false;
-      }
       continue;
     }
 
-    // Parse Nib
+    // Parse Nibble
     char nib = -1;
     if (('0' <= ch) && (ch <= '9'))
-    {
       nib = ch - '0';
-    }
     else if (('a' <= ch) && (ch <= 'f'))
-    {
       nib = ch - 'a' + 10;
-    }
     else if (('A' <= ch) && (ch <= 'F'))
-    {
       nib = ch - 'A' + 10;
-    }
 
     /* Parse As Byte */
     bool byteFound = false;
@@ -186,12 +323,10 @@ main (int argc, char **argv)
       }
     }
 
-    // Byte Was Found
+    // Byte Was Found, decoding...
     if (byteFound)
     {
       bytec++;
-      //printf("0x%02X %s", byte, ((bytec%16) == 0) ? "\r\n" : "");
-      // Decode
       gbpdecoder_gotByte(byte);
     }
   }
@@ -228,11 +363,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
       }
       printf("\r\n");
 #endif
-      if (gbp_pktBuff.command == GBP_COMMAND_INIT)
-      {
-        //gbp_tiles_reset(&gbp_tiles);
-      }
-      else if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
+      if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
       {
         gbp_tiles_print(&gbp_tiles,
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS],
@@ -244,10 +375,11 @@ void gbpdecoder_gotByte(const uint8_t byte)
         {
           // if lower margin is zero, then new pic
           gbp_bmp_render(&gbp_bmp,
-            (char *) ofilename,
+            (char *)    ofilenameBuf,
             (uint8_t *) &gbp_tiles.bmpLineBuffer,
-            (uint16_t)(GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
-            (uint16_t)(GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset));
+            (uint16_t)  (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
+            (uint16_t)  (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset),
+            (uint32_t*) palletColor);
           gbp_tiles_reset(&gbp_tiles);
         }
 

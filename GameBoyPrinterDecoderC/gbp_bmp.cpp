@@ -17,61 +17,14 @@ void gbp_bmp_reset(gbp_bmp_t * gbp_bmp)
 }
 #endif
 
-static void filenameExtractPathAndExtention(const char *fname,
-                        char *pathBuff, int pathSize,
-                        char *extBuff, int extSize)
-{
-    // Minimal Filename Extraction Of Path And Extention
-    // Brian Khuu 2021
-    int i = 0;
-    int end = 0;
-    int exti = 0;
-    for (end = 0; fname[end] != '\0' ; end++)
-    {
-        if ((fname[end] == '/')||(fname[end] == '\\'))
-          exti = 0;
-        else if (fname[end] == '.')
-          exti = end;
-    }
-    if (exti == 0)
-        exti = end;
-
-    // Copy PathName
-    if (pathBuff)
-    {
-      for (i = 0; i < (pathSize-1) ; i++)
-      {
-          if (!(i < exti))
-              break;
-          pathBuff[i] = fname[i];
-      }
-      pathBuff[i] = '\0';
-    }
-
-    // Copy Extention
-    if (extBuff)
-    {
-      for (i = 0; i < (extSize-1) ; i++)
-      {
-          if (!(i < (end-exti-1)))
-            break;
-          extBuff[i] = fname[exti + i + 1];
-      }
-      extBuff[i] = '\0';
-    }
-}
-
-void gbp_bmp_render(gbp_bmp_t * gbp_bmp, const char *outputFilename,  uint8_t * bmpLineBuffer, uint16_t sizex, uint16_t sizey)
+void gbp_bmp_render(gbp_bmp_t * gbp_bmp, const char *outputFilename,  uint8_t * bmpLineBuffer, uint16_t sizex, uint16_t sizey, uint32_t palletColor[4])
 {
     char filenameBuff[400] = {0};
-    char filenamePath[200] = {0};
     FILE *f;
     gbp_bmp->bmpSizeWidth  = sizex;
     gbp_bmp->bmpSizeHeight = sizey;
 
-    printf("--> %s\r\n", outputFilename);
-    filenameExtractPathAndExtention(outputFilename, filenamePath, sizeof(filenamePath), NULL, 0);
-    snprintf(filenameBuff, sizeof(filenameBuff), "%s%X.bmp", filenamePath, gbp_bmp->fileCounter%200);
+    snprintf(filenameBuff, sizeof(filenameBuff), "%s%X.bmp", outputFilename, gbp_bmp->fileCounter%200);
     gbp_bmp->fileCounter++;
 
     bmp_init(gbp_bmp->bmpBuffer, gbp_bmp->bmpSizeWidth, gbp_bmp->bmpSizeHeight);
@@ -80,6 +33,7 @@ void gbp_bmp_render(gbp_bmp_t * gbp_bmp, const char *outputFilename,  uint8_t * 
         for (uint16_t x = 0; x < sizex; x++)
         {
             const int pixel = bmpLineBuffer[y*sizex + x];
+#if 0
             int b = 0;
             switch (pixel)
             {
@@ -89,6 +43,9 @@ void gbp_bmp_render(gbp_bmp_t * gbp_bmp, const char *outputFilename,  uint8_t * 
                 case 0: b = 255; break;
             }
             bmp_set(gbp_bmp->bmpBuffer, x, y, b | b << 8 | b << 16);
+#else
+            bmp_set(gbp_bmp->bmpBuffer, x, y, palletColor[pixel & 0b11]);
+#endif
         }
     }
 

@@ -10,7 +10,7 @@ EXEC = gpbdecoder
 
 ODIR=obj
 
-all: $(EXEC) run
+all: $(EXEC)
 
 %.o: %.cc
 	$(CXX) $ -c -o $@ $< $(CXXFLAGS)
@@ -26,11 +26,12 @@ clean:
 	@echo "Cleaning..."
 	rm -rf $(OBJ) $(EXEC)
 
-run:
-	@echo "Running..."
-	@cat ./test/test.txt | ./$(EXEC)
+test: $(EXEC)
+	@echo "Test..."
+	@cat ./test/test.txt | ./$(EXEC) -p "#ffffff#ffad63#833100#000000" -o ./test/test.bmp
+	./$(EXEC) -p "#dbf4b4#abc396#7b9278#4c625a#FFFFFF00" -i ./test/2020-08-10_Pokemon_trading_card_compressiontest.txt
 
-debug:
+debug: $(EXEC)
 	gdb ./$(EXEC)
 
 other:
