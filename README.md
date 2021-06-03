@@ -116,7 +116,7 @@ You are all done!
 
 For advance users, in the `GameBoyPrinterDecoderC` folder there is a PC based commandline program that when compiled would allow for decoding raw packet captures into bitmap.
 
-[Gameboy Printer Decoder C Readme](https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderC/README.html)
+[Gameboy Printer Decoder C Readme](https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderC/)
 
 
 ## Project Makeup
