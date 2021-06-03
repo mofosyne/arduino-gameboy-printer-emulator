@@ -1,3 +1,27 @@
+/*************************************************************************
+ *
+ * Gameboy Printer C Decoder
+ * Part of GAMEBOY PRINTER EMULATION PROJECT V2 (Arduino)
+ * Copyright (C) 2020 Brian Khuu
+ *
+ * PURPOSE: This program allows for decoding raw hex packets into bmp
+ * LICENCE:
+ *   This file is part of Arduino Gameboy Printer Emulator.
+ *
+ *   Arduino Gameboy Printer Emulator is free software:
+ *   you can redistribute it and/or modify it under the terms of the
+ *   GNU General Public License as published by the Free Software Foundation,
+ *   either version 3 of the License, or (at your option) any later version.
+ *
+ *   Arduino Gameboy Printer Emulator is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Arduino Gameboy Printer Emulator.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,7 +39,12 @@
 /* The official name of this program (e.g., no 'g' prefix).  */
 #define PROGRAM_NAME "gpbdecoder"
 
-//static bool verbose_flag = false;
+/******************************************************************************/
+
+static bool verbose_flag = false;
+static bool display_flag = false;
+
+/******************************************************************************/
 
 // Input/Output file
 const char * ifilename = NULL;
@@ -24,34 +53,26 @@ FILE * ifilePtr = NULL;
 char ofilenameBuf[255] = {0};
 char ofilenameExt[50]  = {0};
 
+/******************************************************************************/
+
 // Pallet
 const char * palletParameter = NULL;
 uint32_t palletColor[4] = {0};
 
+/******************************************************************************/
 
-
-void gbpdecoder_gotByte(const uint8_t byte);
-
-
+// Other Variables
 uint8_t pktCounter = 0; // Dev Varible
-//////
 gbp_pkt_t gbp_pktBuff = {GBP_REC_NONE, 0};
 uint8_t gbp_pktbuff[GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE] = {0};
 uint8_t gbp_pktbuffSize = 0;
 gbp_pkt_tileAcc_t tileBuff = {0};
 gbp_tile_t gbp_tiles = {0};
 gbp_bmp_t  gbp_bmp = {0};
-//////
 
-/*******************************************************************************
- * Test Vectors Variables
-*******************************************************************************/
-const uint8_t testVector[] = {
-  //#include "2020-08-02_GameboyPocketCameraJP.txt" // Single Image
-  //#include "2020-08-02_PokemonSpeciallPicachuEdition.txt" // Mult-page Image
-  #include "./test/2020-08-10_Pokemon_trading_card_compressiontest.txt" // Compression
-};
+/******************************************************************************/
 
+static void gbpdecoder_gotByte(const uint8_t byte);
 
 /*******************************************************************************
  * Utilites
@@ -176,6 +197,27 @@ int palletColorParse(uint32_t *palletColor, const int palletColorSize, const cha
 /*******************************************************************************
  * Main Test Routine
 *******************************************************************************/
+void gpbdecoder_help(void)
+{
+  printf (
+      "Usage: gpbdecoder [OPTION]...\n"
+      "This program allows for decoding raw hex packets into bmp\n"
+      "\n"
+      "With no FILE, read standard input.\n"
+      "\n"
+      "-i, --input=FILE     input hexfile in ascii format\n"
+      "-o, --output=OUTFILE output bmp filename\n"
+      "-p, --pallet=PALLET  pallet color in web color format\n"
+      "-h, --help           display this help and exit\n"
+      "-d, --display        preview image via vt100 output\n"
+      "-v, --verbose        verbose print\n"
+      "\n"
+      "Examples:\n"
+      "  cat ./test/test.txt | gpbdecoder -p \"#ffffff#ffad63#833100#000000\" -o ./test/test.bmp    stdin based input, with a defined output filename\n"
+      "-p \"#dbf4b4#abc396#7b9278#4c625a#FFFFFF00\" -i ./test/test.txt                              input file used. Output file has similar name to input file\n"
+    );
+}
+
 int
 main (int argc, char **argv)
 {
@@ -186,17 +228,20 @@ main (int argc, char **argv)
   static struct option const long_options[] =
   {
     /* These options set a flag. */
-    //{"verbose", no_argument, &verbose_flag, 1},
-    //{"brief",   no_argument, &verbose_flag, 0},
+    {"display", no_argument,       (int*)&display_flag, 1},
+    {"verbose", no_argument,       (int*)&verbose_flag, 1},
+    {"brief",   no_argument,       (int*)&verbose_flag, 0},
     /* These options don’t set a flag.
         We distinguish them by their indices. */
-    {"input", required_argument, NULL, 'i'},
-    {"output", required_argument, NULL, 'o'},
-    {"verbose", no_argument, NULL, 'v'},
+    {"input",   required_argument, NULL, 'i'},
+    {"output",  required_argument, NULL, 'o'},
+    {"pallet",  required_argument, NULL, 'p'},
+    {"verbose", no_argument,       NULL, 'v'},
+    {"help",    no_argument,       NULL, 'h'},
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "o:i:p:", long_options, NULL))
+  while ((c = getopt_long (argc, argv, "o:i:p:vd", long_options, NULL))
          != -1)
   {
     switch (c)
@@ -212,6 +257,19 @@ main (int argc, char **argv)
         case 'p':
           palletParameter = optarg;
           break;
+
+        case 'v':
+          verbose_flag = true;
+          break;
+
+        case 'd':
+          display_flag = true;
+          break;
+
+        case 'h':
+          gpbdecoder_help();
+          return 0;
+          break;
     }
   }
 
@@ -221,19 +279,20 @@ main (int argc, char **argv)
     ifilePtr = fopen(ifilename, "r+");
     if (ifilePtr == NULL)
     {
-      printf ("file not found\n");
+      printf("file not found\n");
+      gpbdecoder_help();
       return 0;
     }
-    printf ("file input `%s' open\n", ifilename);
+    printf("file input `%s' open\n", ifilename);
   }
   else
   {
     // Input file not found, use stdin
     ifilePtr = stdin;
-    printf ("file input stdin\n");
+    printf("file input stdin\n");
   }
 
-  /* Ouput File */
+  /* Output File */
   if (!ofilename)
   {
     // Default output filename if not defined
@@ -258,10 +317,9 @@ main (int argc, char **argv)
     palletColor[2] = 0x555555;
     palletColor[3] = 0x000000;
   }
+  printf("Pallet: 0x%06X, 0x%06X, 0x%06X, 0x%06X\n", palletColor[0], palletColor[1], palletColor[2], palletColor[3]);
 
-  printf("0x%06X, 0x%06X, 0x%06X, 0x%06X | %s\n", palletColor[0], palletColor[1], palletColor[2], palletColor[3], palletParameter);
-
-  /////////////////////////////////////////////////////////
+  /****************************************************************************/
   gbp_pkt_init(&gbp_pktBuff);
 
   char ch = 0;
@@ -348,21 +406,22 @@ void gbpdecoder_gotByte(const uint8_t byte)
     if (gbp_pktBuff.received == GBP_REC_GOT_PACKET)
     {
       pktCounter++;
-#if 1
-      printf("// %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d | ",
-          gbpCommand_toStr(gbp_pktBuff.command),
-          (unsigned) gbp_pktBuff.compression,
-          (unsigned) gbp_pktBuff.dataLength,
-          (unsigned) gbp_pktBuff.printerID,
-          (unsigned) gbp_pktBuff.status,
-          (unsigned) pktCounter
-        );
-      for (int i = 0 ; i < gbp_pktbuffSize ; i++)
+      if (verbose_flag)
       {
-        printf("%02X ", gbp_pktbuff[i]);
+        printf("// %s | compression: %1u, dlength: %3u, printerID: 0x%02X, status: %u | %d | ",
+            gbpCommand_toStr(gbp_pktBuff.command),
+            (unsigned) gbp_pktBuff.compression,
+            (unsigned) gbp_pktBuff.dataLength,
+            (unsigned) gbp_pktBuff.printerID,
+            (unsigned) gbp_pktBuff.status,
+            (unsigned) pktCounter
+          );
+        for (int i = 0 ; i < gbp_pktbuffSize ; i++)
+        {
+          printf("%02X ", gbp_pktbuff[i]);
+        }
+        printf("\r\n");
       }
-      printf("\r\n");
-#endif
       if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
       {
         gbp_tiles_print(&gbp_tiles,
@@ -370,38 +429,44 @@ void gbpdecoder_gotByte(const uint8_t byte)
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
-
         if ((gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]&0xF) != 0)
         {
           // if lower margin is zero, then new pic
-          gbp_bmp_render(&gbp_bmp,
-            (char *)    ofilenameBuf,
-            (uint8_t *) &gbp_tiles.bmpLineBuffer,
-            (uint16_t)  (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
-            (uint16_t)  (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset),
-            (uint32_t*) palletColor);
+          // per Print Buffer Decoded (Post-Pallet-Harmonisation)
+          if (display_flag)
+          {
+            // Display Preview
+            for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT * gbp_tiles.tileRowOffset); j++)
+            {
+              for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
+              {
+                const int pixel = gbp_tiles.bmpLineBuffer[j][i];
+                int b = 0;
+                switch (pixel)
+                {
+                  default:
+                  case 3: b = 0; break;
+                  case 2: b = 64; break;
+                  case 1: b = 130; break;
+                  case 0: b = 255; break;
+                }
+                printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
+              }
+              printf("\r\n");
+            }
+          }
+          else
+          {
+            // Bitmap Render
+            gbp_bmp_render(&gbp_bmp,
+              (char *)    ofilenameBuf,
+              (uint8_t *) &gbp_tiles.bmpLineBuffer,
+              (uint16_t)  (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
+              (uint16_t)  (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset),
+              (uint32_t*) palletColor);
+          }
           gbp_tiles_reset(&gbp_tiles);
         }
-
-#if 0   // per Print Buffer Decoded (Post-Pallet-Harmonisation)
-        for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT * gbp_tiles.tileRowOffset); j++)
-        {
-          for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
-          {
-            const int pixel = gbp_tiles.bmpLineBuffer[j][i];
-            int b = 0;
-            switch (pixel)
-            {
-              case 3: b = 0; break;
-              case 2: b = 64; break;
-              case 1: b = 130; break;
-              case 0: b = 255; break;
-            }
-            printf("\x1B[48;2;%d;%d;%dm \x1B[0m", b, b, b);
-          }
-          printf("\r\n");
-        }
-#endif
       }
     }
     else

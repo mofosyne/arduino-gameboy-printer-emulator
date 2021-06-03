@@ -94,7 +94,7 @@ Next download `./GameBoyPrinterEmulator/gpb_emulator.ino` to your arduino nano.
 After that, open the serial console and set the baud rate to 115200 baud.
 
 
-### Download the image
+### Download the image (Javascript)
 
 Press the download button in your gameboy. The emulator will automatically start to download and dump the data as a string of hex in the console display.
 
@@ -110,6 +110,14 @@ Need example raw packet captures to test out the raw js decoder without the game
 You are all done!
 
 **Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
+
+
+### Download the image (C) (Advance User)
+
+For advance users, in the `GameBoyPrinterDecoderC` folder there is a PC based commandline program that when compiled would allow for decoding raw packet captures into bitmap.
+
+[Gameboy Printer Decoder C Readme]((https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderC/README.html)
+
 
 ## Project Makeup
 
