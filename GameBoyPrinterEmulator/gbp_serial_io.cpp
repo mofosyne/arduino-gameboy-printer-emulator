@@ -36,7 +36,7 @@
 
 /******************************************************************************/
 
-#define GBP_PKT10_TIMEOUT_MS 500
+#define GBP_PKT10_TIMEOUT_MS 650
 
 // Testing
 //#define TEST_CHECKSUM_FORCE_FAIL
@@ -45,7 +45,7 @@
 // Feature
 //#define FEATURE_CHECKSUM_SUPPORTED ///< WIP
 
-#define GBP_BUSY_PACKET_COUNT 3 // 68 Inquiry packets is generally approximately how long it takes for a real printer to print. This is not a real printer so can be shorter
+#define GBP_BUSY_PACKET_COUNT 15 // 68 Inquiry packets is generally approximately how long it takes for a real printer to print. This is not a real printer so can be shorter
 
 
 /******************************************************************************/
@@ -627,18 +627,21 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
             gpb_pktIO.dataPacketCountdown--;
             if (gpb_pktIO.dataPacketCountdown == 0)
             {
-              gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
+              gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
             }
           }
-          gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, true);
+          gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
+          gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
           if (gpb_pktIO.data_length == 0)
           {
             gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
+            gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
           }
           break;
         case GBP_COMMAND_BREAK:
           break;
         case GBP_COMMAND_INQUIRY:
+            gpb_status_bit_update_unprocessed_data(gpb_pktIO.statusBuffer, false);
           if ((gpb_pktIO.untransPacketCountdown == 0) && (gpb_pktIO.busyPacketCountdown == 0))
           {
             gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, false);
