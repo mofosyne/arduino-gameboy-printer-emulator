@@ -7,76 +7,64 @@
 
 #include "gbp_tiles.h"
 #include "gbp_bmp.h"
-#include "./image/bmp.h"
+#include "./image/bmp_FixedWidthStream.h"
 
-#if 0
-void gbp_bmp_reset(gbp_bmp_t * gbp_bmp)
+bool gbp_bmp_isopen(gbp_bmp_t * gbp_bmp)
 {
-    gbp_bmp->bmpSizeWidth  = GBP_BMP_WIDTH; // Fixed
-    gbp_bmp->bmpSizeHeight = 0;
+    return (gbp_bmp->f != 0) ? true : false;
 }
-#endif
 
-void gbp_bmp_render(gbp_bmp_t * gbp_bmp, const char *outputFilename,  uint8_t * bmpLineBuffer, uint16_t sizex, uint16_t sizey, uint32_t palletColor[4])
+void gbp_bmp_open(gbp_bmp_t * gbp_bmp, const char *outputFilename, const uint16_t fixed_width_size)
 {
+    if (gbp_bmp->f != 0)
+    {
+        fclose(gbp_bmp->f);
+        gbp_bmp->f = 0;
+    }
+
+    // Open file
     char filenameBuff[400] = {0};
-    FILE *f;
-    gbp_bmp->bmpSizeWidth  = sizex;
-    gbp_bmp->bmpSizeHeight = sizey;
+    snprintf(filenameBuff, sizeof(filenameBuff), "%s%X.bmp", outputFilename, gbp_bmp->fileCounter);
+    gbp_bmp->f = fopen(filenameBuff, "wb");
 
-    snprintf(filenameBuff, sizeof(filenameBuff), "%s%X.bmp", outputFilename, gbp_bmp->fileCounter%200);
+    // Skip over bmp header...
+    fseek(gbp_bmp->f, BMP_PIXEL_START_OFFSET, SEEK_SET);
+
+    // Update
+    gbp_bmp->bmpSizeWidth  = fixed_width_size;
+    gbp_bmp->bmpSizeHeight = 0;
     gbp_bmp->fileCounter++;
+}
 
-    bmp_init(gbp_bmp->bmpBuffer, gbp_bmp->bmpSizeWidth, gbp_bmp->bmpSizeHeight);
+void gbp_bmp_add(gbp_bmp_t * gbp_bmp, const uint8_t * bmpLineBuffer, const uint16_t sizex, const uint16_t sizey, const uint32_t palletColor[4])
+{
+    // Fixed width
+    if (sizex != gbp_bmp->bmpSizeWidth)
+        return;
+
     for (uint16_t y = 0; y < sizey; y++)
     {
         for (uint16_t x = 0; x < sizex; x++)
         {
-            const int pixel = bmpLineBuffer[y*sizex + x];
-#if 0
-            int b = 0;
-            switch (pixel)
-            {
-                case 3: b = 0; break;
-                case 2: b = 64; break;
-                case 1: b = 130; break;
-                case 0: b = 255; break;
-            }
-            bmp_set(gbp_bmp->bmpBuffer, x, y, b | b << 8 | b << 16);
-#else
-            bmp_set(gbp_bmp->bmpBuffer, x, y, palletColor[pixel & 0b11]);
-#endif
+            const int pixel = bmpLineBuffer[(y * sizex) + x];
+            const unsigned long encodedColor = palletColor[pixel & 0b11];
+            //printf("bmp_set %d, %d\r\n", x, y);
+            bmp_set(gbp_bmp->bmpBuffer, sizex, x, y, encodedColor);
         }
     }
 
-    f = fopen(filenameBuff, "wb");
-    fwrite(gbp_bmp->bmpBuffer, BMP_SIZE(gbp_bmp->bmpSizeWidth, gbp_bmp->bmpSizeHeight), 1, f);
-    fclose(f);
+    fwrite(gbp_bmp->bmpBuffer, BMP_PIXEL_BUFF_SIZE(sizex, sizey), 1, gbp_bmp->f);
+    gbp_bmp->bmpSizeHeight += sizey;
 }
 
-#if 0
-void gbp_bmp_rendertest(gbp_bmp_t * gbp_bmp, uint16_t sizex, uint16_t sizey)
+void gbp_bmp_render(gbp_bmp_t * gbp_bmp)
 {
-    FILE *f;
+    // Rewind and write header with the now known image size
+    fseek(gbp_bmp->f, 0, SEEK_SET);
+    bmp_header(gbp_bmp->bmpBuffer, gbp_bmp->bmpSizeWidth, gbp_bmp->bmpSizeHeight);
+    fwrite(gbp_bmp->bmpBuffer, BMP_PIXEL_START_OFFSET, 1, gbp_bmp->f);
 
-    gbp_bmp->bmpSizeWidth  = sizex;
-    gbp_bmp->bmpSizeHeight = sizey;
-
-    bmp_init(gbp_bmp->bmpBuffer, gbp_bmp->bmpSizeWidth, gbp_bmp->bmpSizeHeight);
-
-    for (uint16_t y = 0; y < gbp_bmp->bmpSizeHeight; y++)
-    {
-        for (uint16_t x = 0; x < gbp_bmp->bmpSizeWidth; x++)
-        {
-            float r = y / (float)gbp_bmp->bmpSizeHeight;
-            float g = x / (float)gbp_bmp->bmpSizeWidth;
-            float b = 1.0f;
-            bmp_set(gbp_bmp->bmpBuffer, x, y, bmp_encode(r, g, b));
-        }
-    }
-
-    f = fopen("test2.bmp", "wb");
-    fwrite(gbp_bmp->bmpBuffer, BMP_SIZE(gbp_bmp->bmpSizeWidth, gbp_bmp->bmpSizeHeight), 1, f);
-    fclose(f);
+    // Close File
+    fclose(gbp_bmp->f);
+    gbp_bmp->f = 0;
 }
-#endif

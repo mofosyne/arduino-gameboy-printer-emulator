@@ -389,12 +389,6 @@ main (int argc, char **argv)
     }
   }
 
-#if 0
-  gbp_bmp_rendertest(&gbp_bmp,
-    (uint16_t)(GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
-    (uint16_t)(GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset));
-#endif
-
   return 0;
 }
 
@@ -424,16 +418,16 @@ void gbpdecoder_gotByte(const uint8_t byte)
       }
       if (gbp_pktBuff.command == GBP_COMMAND_PRINT)
       {
+        const bool cutPaper = ((gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]&0xF) != 0) ? true : false;  ///< if lower margin is zero, then new pic
         gbp_tiles_print(&gbp_tiles,
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE],
             gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
-        if ((gbp_pktbuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_LINEFEED]&0xF) != 0)
+
+        if (display_flag)
         {
-          // if lower margin is zero, then new pic
-          // per Print Buffer Decoded (Post-Pallet-Harmonisation)
-          if (display_flag)
+          if (cutPaper)
           {
             // Display Preview
             for (int j = 0; j < (GBP_TILE_PIXEL_HEIGHT * gbp_tiles.tileRowOffset); j++)
@@ -454,18 +448,33 @@ void gbpdecoder_gotByte(const uint8_t byte)
               }
               printf("\r\n");
             }
+            gbp_tiles_reset(&gbp_tiles);
           }
-          else
+        }
+        else
+        {
+          // Streaming BMP Writer
+          // Dev Note: Done this way to allow for streaming writes to file without a large buffer
+
+          // Open New File
+          if (!gbp_bmp_isopen(&gbp_bmp))
           {
-            // Bitmap Render
-            gbp_bmp_render(&gbp_bmp,
-              (char *)    ofilenameBuf,
-              (uint8_t *) &gbp_tiles.bmpLineBuffer,
-              (uint16_t)  (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE),
-              (uint16_t)  (GBP_TILE_PIXEL_HEIGHT*gbp_tiles.tileRowOffset),
-              (uint32_t*) palletColor);
+            gbp_bmp_open(&gbp_bmp, ofilenameBuf, GBP_TILE_PIXEL_WIDTH*GBP_TILES_PER_LINE);
           }
-          gbp_tiles_reset(&gbp_tiles);
+
+          // Write Decode Data Buffer Into BMP
+          for (int j = 0; j < gbp_tiles.tileRowOffset; j++)
+          {
+            const long int tileHeightIncrement = GBP_TILE_PIXEL_HEIGHT*GBP_BMP_MAX_TILE_HEIGHT;
+            gbp_bmp_add(&gbp_bmp, (const uint8_t *) &gbp_tiles.bmpLineBuffer[tileHeightIncrement*j][0], (GBP_TILE_PIXEL_WIDTH*GBP_TILES_PER_LINE), tileHeightIncrement, palletColor);
+          }
+          gbp_tiles_reset(&gbp_tiles); ///< Written to file, clear decoded tile line buffer
+
+          // Print finished and cut requested
+          if (cutPaper)
+          {
+            gbp_bmp_render(&gbp_bmp);
+          }
         }
       }
     }
