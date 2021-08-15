@@ -50,6 +50,12 @@
 #define GBP_TILES_PER_ROW     26  // Number of supported lines between print commands (26 tile row height is based on the 8KiB of a real gbp printer)
 #define GBP_TILE_MAX_TONES    4   // 2bits per pixel
 
+// 2B per pixel packing
+#define GBP_TILE_2BIT_LINEPACK_INDEX(x) (x/4)
+#define GBP_TILE_2BIT_LINEPACK_BITOFFSET(x) (2*(x%4))
+#define GBP_TILE_2BIT_LINEPACK_IN_BYTE_COUNT (4) ///< 4 2bit pixel in 8bit byte
+#define GBP_TILE_2BIT_LINEPACK_ROWSIZE_B(byteCount) (byteCount/4) ///< Row sized when 2bit packed is reduced by factor of 4
+
 typedef struct
 {
     // This is the tile to bmp decoder
@@ -58,7 +64,7 @@ typedef struct
     uint16_t tileRowOffsetHarmonised;
 
     // Each array entry represents a decoded 2bit pixel
-    uint8_t bmpLineBuffer[GBP_TILE_PIXEL_HEIGHT * GBP_TILES_PER_ROW][GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE];
+    uint8_t bmpLineBuffer[GBP_TILE_PIXEL_HEIGHT * GBP_TILES_PER_ROW][GBP_TILE_2BIT_LINEPACK_ROWSIZE_B(GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE)];
 } gbp_tile_t;
 
 bool gbp_tiles_line_decoder(gbp_tile_t *gbp_tiles, const uint8_t tileBuff[GBP_TILE_SIZE_IN_BYTE]);

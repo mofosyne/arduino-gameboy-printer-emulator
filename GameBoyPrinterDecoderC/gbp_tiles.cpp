@@ -41,10 +41,10 @@ static void gbp_tiles_toBuff(
     // And each area is written to by x tile offset
 
     // Guard
-    if (buffSize < (buffTileCount * GBP_TILE_PIXEL_HEIGHT * GBP_TILE_PIXEL_WIDTH))
+    if (buffSize < (buffTileCount * GBP_TILE_PIXEL_HEIGHT * GBP_TILE_2BIT_LINEPACK_ROWSIZE_B(GBP_TILE_PIXEL_WIDTH)))
         return;
 
-    const int lineWidthSize = buffTileCount * GBP_TILE_PIXEL_WIDTH;
+    const int lineWidthSize = GBP_TILE_2BIT_LINEPACK_ROWSIZE_B(buffTileCount * GBP_TILE_PIXEL_WIDTH);
     const int rowHeightSize = lineWidthSize * GBP_TILE_PIXEL_HEIGHT;
 
     // Tile Decoder
@@ -52,11 +52,13 @@ static void gbp_tiles_toBuff(
     {
         for (int i = 0; i < GBP_TILE_PIXEL_WIDTH; i++)
         {
-            const int offset    = tileLineOffset * GBP_TILE_PIXEL_WIDTH;
+            const int offset    = tileLineOffset * GBP_TILE_2BIT_LINEPACK_ROWSIZE_B(GBP_TILE_PIXEL_WIDTH);
             const uint8_t hiBit = (uint8_t)((tileBuff[j*2 + 1] >> (7 - i)) & 1);
             const uint8_t loBit = (uint8_t)((tileBuff[j*2    ] >> (7 - i)) & 1);
             const uint8_t value = (uint8_t)((hiBit << 1) | loBit); // 0-3
-            buff[(tileRowOffset * rowHeightSize) + (j * lineWidthSize) + offset + i] = value;
+            const unsigned int indx = (tileRowOffset * rowHeightSize) + (j * lineWidthSize) + offset + GBP_TILE_2BIT_LINEPACK_INDEX(i);
+            buff[indx] &= ~(0b11 << GBP_TILE_2BIT_LINEPACK_BITOFFSET(i));
+            buff[indx] |= value << GBP_TILE_2BIT_LINEPACK_BITOFFSET(i);
         }
     }
 }
@@ -119,8 +121,10 @@ void gbp_tiles_print(gbp_tile_t *gbp_tiles, uint8_t sheet, uint8_t linefeed, uin
     {
         for (int i = 0; i < GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE; i++)
         {
-            const int pixel = gbp_tiles->bmpLineBuffer[j][i];
-            gbp_tiles->bmpLineBuffer[j][i] = tonePallet[pixel & 0b11];
+            const uint8_t pixel = 0b11 & (gbp_tiles->bmpLineBuffer[j][GBP_TILE_2BIT_LINEPACK_INDEX(i)] >> GBP_TILE_2BIT_LINEPACK_BITOFFSET(i));
+            const uint8_t harmonised = tonePallet[pixel & 0b11];
+            gbp_tiles->bmpLineBuffer[j][GBP_TILE_2BIT_LINEPACK_INDEX(i)] &= ~(0b11 << GBP_TILE_2BIT_LINEPACK_BITOFFSET(i));
+            gbp_tiles->bmpLineBuffer[j][GBP_TILE_2BIT_LINEPACK_INDEX(i)] |= (harmonised << GBP_TILE_2BIT_LINEPACK_BITOFFSET(i));
         }
     }
     gbp_tiles->tileRowOffsetHarmonised = gbp_tiles->tileRowOffset;

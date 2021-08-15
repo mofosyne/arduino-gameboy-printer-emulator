@@ -434,7 +434,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
             {
               for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
               {
-                const int pixel = gbp_tiles.bmpLineBuffer[j][i];
+                const int pixel = 0b11 & (gbp_tiles.bmpLineBuffer[j][GBP_TILE_2BIT_LINEPACK_INDEX(i)] >> GBP_TILE_2BIT_LINEPACK_BITOFFSET(i));
                 int b = 0;
                 switch (pixel)
                 {
@@ -501,7 +501,7 @@ void gbpdecoder_gotByte(const uint8_t byte)
             {
               for (int i = 0; i < (GBP_TILE_PIXEL_WIDTH * GBP_TILES_PER_LINE); i++)
               {
-                int pixel = gbp_tiles.bmpLineBuffer[j+(gbp_tiles.tileRowOffset-1)*8][i];
+                int pixel = 0b11 & (gbp_tiles.bmpLineBuffer[j+(gbp_tiles.tileRowOffset-1)*8][GBP_TILE_2BIT_LINEPACK_INDEX(i)] >> GBP_TILE_2BIT_LINEPACK_BITOFFSET(i));;
                 int b = 0;
                 switch (pixel)
                 {

@@ -46,7 +46,7 @@ void gbp_bmp_add(gbp_bmp_t * gbp_bmp, const uint8_t * bmpLineBuffer, const uint1
     {
         for (uint16_t x = 0; x < sizex; x++)
         {
-            const int pixel = bmpLineBuffer[(y * sizex) + x];
+            const int pixel = 0b11 & (bmpLineBuffer[(y * GBP_TILE_2BIT_LINEPACK_ROWSIZE_B(sizex)) + GBP_TILE_2BIT_LINEPACK_INDEX(x)] >> GBP_TILE_2BIT_LINEPACK_BITOFFSET(x));
             const unsigned long encodedColor = palletColor[pixel & 0b11];
             //printf("bmp_set %d, %d\r\n", x, y);
             bmp_set(gbp_bmp->bmpBuffer, sizex, x, y, encodedColor);
