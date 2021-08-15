@@ -27,11 +27,27 @@
 #include <stdbool.h> // bool
 #include "gameboy_printer_protocol.h"
 
+/*
+    Dev Note: From https://gbdev.io/pandocs/Gameboy_Printer.html
+    GBP has about 8 KiB of RAM to buffer incoming graphics data.
+    Those 8 KiB allow a maximum bitmap area of 160*200 (8192/160*4) pixels between prints.
+
+    ```
+    buffSize = 8*1024;
+    bitsPerPixel = 2;
+    linePixelCount = 8*20;
+    linebitcount = bitsPerPixel * linePixelCount;
+    bytesPerLine = linebitcount / 8;
+    maxRows = buffSize / (bytesPerLine * 8)
+        maxRows = 25.6
+    ```
+*/
+
 // IMAGE DEFINITION
 #define GBP_TILE_PIXEL_WIDTH  8
 #define GBP_TILE_PIXEL_HEIGHT 8
 #define GBP_TILES_PER_LINE    20
-#define GBP_TILES_PER_ROW     200   // Number of supported lines between print commands (You may need to lower this in embedded systems)
+#define GBP_TILES_PER_ROW     26  // Number of supported lines between print commands (26 tile row height is based on the 8KiB of a real gbp printer)
 #define GBP_TILE_MAX_TONES    4   // 2bits per pixel
 
 typedef struct
