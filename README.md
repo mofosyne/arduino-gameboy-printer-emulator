@@ -19,11 +19,7 @@ There is more examples located in our **[showcase page](./showcase/showcase.md)*
 
 **[WestM's Arduino Gameboy Printer Emulator Tutorial](https://westm.co.uk/arduino-game-boy-printer-emulator/)**
 
-**[CristoferCruz : gbpxl (multi-tone) : Fork of gbpxl with multitone support (Here until merged into mainline)](https://github.com/cristofercruz/gbpxl)**
-
-**[Raphaël BOICHOT : Game boy printer emulator with e-paper feature (CrapPrinter) for Matlab and Octave](https://github.com/mofosyne/GameboyPrinterPaperSimulation)**
-
-**[HerrZatacke : A set of node js functions to decode the raw packet stream from a gameboy to gameboy printer](https://www.npmjs.com/package/gbp-decode)**
+**[Rafael Zenaro: NeoGB Printer](https://github.com/zenaro147/Yet-Another-GBP-Emulator)**
 
 **[Click For More Examples In Our Showcase Page](./showcase/showcase.md)**
 
