@@ -4,7 +4,7 @@
 
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
-* [https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU](Games Supported List) (Google Spreadsheet)
+* [Games Supported List(Google Spreadsheet)](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU)
 
 ## Telegram Gameboy Camera Chatroom
 
