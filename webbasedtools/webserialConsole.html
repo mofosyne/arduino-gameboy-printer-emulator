@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>WebSerial Arduino Nano Flasher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- <script src="https://github.com/dbuezas/arduino-web-uploader/releases/download/v1.1.2/main.js"></script> -->
+  <script src="../arduino-web-uploader.v1.1.2.js"></script>
+</head>
+
+<body>
+  <h1> WebSerial Arduino Serial Console</h1>
+  This webserial console can be used to check that the device has successfully been flashed.
+  <br>
+  As well as a quick way to get image data off the device if you don't have a serial console emulator.
+  <br>
+  The gameboy printer emulator is by default set to communicate in 115200 baud.
+  <br>
+  This default is already set, so you just need to plug in the device and press connect.
+  <br>
+  <div id="WebSerialStatus">Javascript Must Be Enabled To Use WebSerial</div>
+  <div id="WebSerialControls">
+    Serial port speed:
+    <select id="SerialSpeed" name="speed">
+      <option value="1200">1200</option>
+      <option value="2400">2400</option>
+      <option value="4800">4800</option>
+      <option value="9600">9600</option>
+      <option value="19200">19200</option>
+      <option value="38400">38400</option>
+      <option value="57600">57600</option>
+      <option value="115200" selected>115200</option>
+    </select>
+    <button id="SerialConnectButton" type="button" disabled>⚡Connect</button>
+    <button id="SerialResetButton" type="button" disabled>Reset & Clear</button>
+  </div>
+  <br>
+  <textarea id="data_text" name="data" cols="110" rows="20" readonly></textarea>
+
+</body>
+
+<script>
+  /*
+  * Web Serial API (Google Chrome)
+  *
+  * Useful information used to this implementation:
+  * https://github.com/svendahlstrand/web-serial-api/
+  * https://dev.to/unjavascripter/the-amazing-powers-of-the-web-web-serial-api-3ilc
+  *
+  */
+
+  var webSerialControlElement = document.getElementById("WebSerialControls");
+  var consoleDisplayElement = document.getElementById("data_text");
+  var serialStatusElement = document.getElementById("WebSerialStatus");
+  var resetButtonElement = document.getElementById('SerialResetButton');
+  var connectButtonElement = document.getElementById('SerialConnectButton');
+  var serialSelectElement = document.getElementById('SerialSpeed');
+  let port;
+
+  if ('serial' in navigator) {
+    serialStatusElement.innerText = 'Web USB Is Available. Press connect to Start.';
+    // Enable
+    connectButtonElement.disabled = false;
+    // Connect Button Handling
+    connectButtonElement.addEventListener('click',
+      function () {
+        if (port) {
+          // Disconnect
+          closeReader('Disconnected from Serial Port\n');
+        }
+        else {
+          // Connect
+          openReader();
+        }
+      });
+    // Reset Button Handling (Pulse DTR and RTS signal, which would usually reset an arduino)
+    let sendResetSignal_Func = function () {
+      port.setSignals({ dataTerminalReady: false, requestToSend: false })
+        .then(function () { return port.setSignals({ dataTerminalReady: true, requestToSend: true }); })
+        .then(function () { consoleDisplayElement.textContent = ""; });
+    }
+    resetButtonElement.addEventListener('click', sendResetSignal_Func);
+  }
+  else {
+    webSerialControlElement.hidden = true;
+    serialStatusElement.innerText = 'Serial Web API Not Available. Please enable it using chrome://flags/ and enable Experimental Web Platform features';
+  }
+
+  async function openReader() {
+    port = await navigator.serial.requestPort({});
+    let strSpd = serialSelectElement.options[serialSelectElement.selectedIndex].value;
+    let speed = parseInt(strSpd);
+    await port.open({ baudRate: [speed] });
+    serialSelectElement.disabled = true;
+
+    serialStatusElement.innerText = 'Connected using Web Serial API !\n';
+
+    const appendStream = new WritableStream({
+      write(chunk, controller) {
+        console.log(chunk);
+        consoleDisplayElement.textContent += chunk;
+      },
+      abort(reason) {
+        closeReader("serial console : " + reason + "\n");
+      }
+    });
+
+    port.readable.pipeThrough(new TextDecoderStream()).pipeTo(appendStream);
+    resetButtonElement.disabled = false;
+
+    // Clear received text window
+    consoleDisplayElement.textContent = "";
+
+    if (1) {
+      // WORKAROUND: Disable connection button until we can figure how to properly disconnect...
+      connectButtonElement.disabled = true;
+      connectButtonElement.innerText = '⚡Connected';
+    }
+    else {
+      // TODO: Figure out why port.readable stream is still locked when calling port.close()
+      connectButtonElement.innerText = '🔌 Disconnect';
+    }
+  }
+
+  async function closeReader(reasonMsg) {
+    connectButtonElement.innerText = '⚡ Connect';
+    serialStatusElement.innerText = reasonMsg;
+    connectButtonElement.disabled = false;
+    serialSelectElement.disabled = false;
+    resetButtonElement.disabled = true;
+    port.close();
+    port = undefined;
+  }
+</script>
+
+</html>

@@ -91,6 +91,15 @@ Gameboy Original/Color Link Cable Pinout
 Next download `./GameBoyPrinterEmulator/gpb_emulator.ino` to your arduino nano.
 After that, open the serial console and set the baud rate to 115200 baud.
 
+#### Alternative option of uploading precompiled arduino nano image via WebUSB
+
+If your browser supports webusb, you have the option of uploading directly to the arduino nano the firmware using WebUSB (e.g. via google chrome)
+
+* [Arduino Nano](./webbasedtools/arduino_nano/index.html)
+
+Afterwards, you can check if it's working via the webusb serial console below as well
+
+* [WebSerial Serial Console](./webbasedtools/webserialConsole.html)
 
 ### Download the image (Javascript)
 
