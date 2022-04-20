@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * GAMEBOY PRINTER EMULATION PROJECT V3 (Arduino)
+ * GAMEBOY PRINTER EMULATION PROJECT V3.2.1 (Arduino)
  * Copyright (C) 2022 Brian Khuu
  *
  * PURPOSE: To capture gameboy printer images without a gameboy printer
@@ -195,7 +195,7 @@ void setup(void)
   gbp_pkt_init(&gbp_pktState);
 #endif
 
-#define VERSION_STRING "V3.2 (Copyright (C) 2022 Brian Khuu)"
+#define VERSION_STRING "V3.2.1 (Copyright (C) 2022 Brian Khuu)"
 
   /* Welcome Message */
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
@@ -238,7 +238,7 @@ void loop()
     if (gbp_serial_io_timeout_handler(elapsed_ms))
     {
       Serial.println("");
-      Serial.print("// Timed Out ");
+      Serial.print("// Completed ");
       Serial.print("(Memory Waterline: ");
       Serial.print(gbp_serial_io_dataBuff_waterline(false));
       Serial.print("B out of ");

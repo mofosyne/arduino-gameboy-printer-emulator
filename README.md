@@ -6,12 +6,15 @@
 
 * [Games Supported List (Google Spreadsheet)](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU)
 
+--------------------------------------------------------------------------------
+
 ## Telegram Gameboy Camera Chatroom
 
 Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
 
 **[https://t.me/gameboycamera](https://t.me/gameboycamera)**
 
+--------------------------------------------------------------------------------
 
 ## Media Coverage And Other Projects Spinoff
 
@@ -24,6 +27,8 @@ There is more examples located in our **[showcase page](./showcase/showcase.md)*
 **[Rafael Zenaro: NeoGB Printer](https://github.com/zenaro147/Yet-Another-GBP-Emulator)**
 
 **[Click For More Examples In Our Showcase Page](./showcase/showcase.md)**
+
+--------------------------------------------------------------------------------
 
 ## About this project
 
@@ -43,6 +48,8 @@ Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/ard
 
 [Release Notes Located Here](./RELEASE_NOTES.md)
 
+--------------------------------------------------------------------------------
+
 ## Quick Start
 
 ### Construct the Arduino Gameboy Printer Emulator
@@ -56,7 +63,6 @@ differen pinout reference. But the wiring should be similar.
 You should avoid cutting old genuine gameboy link cables, there is plenty new cables you can purchase online. Do note that you cannot trust the color code of these cables, you must always check the wire against the plug pins. Especially considering the RX/TX pair of the pins may be flipped.
 
 Else if you have a 3D printer, you can use (Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition)[https://www.thingiverse.com/thing:4685189]
-
 
 ### Pinout Diagram
 
@@ -82,7 +88,6 @@ Gameboy Original/Color Link Cable Pinout
 |  D2         | Pin 5 : Serial Clock (Interrupt) |
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
-
 ### Programming the emulator
 
 * Arduino Project File: `./GameBoyPrinterEmulator/gpb_emulator.ino`
@@ -95,11 +100,12 @@ After that, open the serial console and set the baud rate to 115200 baud.
 
 If your browser supports webusb, you have the option of uploading directly to the arduino nano the firmware using WebUSB (e.g. via google chrome)
 
-* [Arduino Nano](./webbasedtools/arduino_nano/index.html)
+* [Arduino Nano WebSerial Firmware Flasher](./webbasedtools/arduino_nano/index.html)
 
 Afterwards, you can check if it's working via the webusb serial console below as well
 
-* [WebSerial Serial Console](./webbasedtools/webserialConsole.html)
+* [Arduino Nano WebSerial Serial Console](./webbasedtools/webserialConsole.html)
+
 
 ### Download the image (Javascript)
 
@@ -118,6 +124,14 @@ You are all done!
 
 **Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
 
+### Download via Game Boy Printer Web (External Project)
+
+For those who want to take the next step and take more photos regularly you may
+want to look at a partner project by Herrzatcke. Herrzatcke created a photo manager
+dedicated for gameboy cameras and have already integrated support for this project
+so you can easily upload photos via WebUSB or by copying and pasting raw packet data.
+
+[Enter Game Boy Printer Web](https://herrzatacke.github.io/gb-printer-web/#/)
 
 ### Download the image (C) (Advance User)
 
@@ -125,6 +139,8 @@ For advance users, in the `GameBoyPrinterDecoderC` folder there is a PC based co
 
 [Gameboy Printer Decoder C Readme](https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderC/)
 
+
+--------------------------------------------------------------------------------
 
 ## Project Makeup
 
@@ -155,6 +171,7 @@ For advance users, in the `GameBoyPrinterDecoderC` folder there is a PC based co
 * showcase
     - Example of what other people has used this project for.
 
+--------------------------------------------------------------------------------
 
 ## Technical Information
 
@@ -202,7 +219,14 @@ DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ![](gameboy_to_ghost_printer.png)
 
+--------------------------------------------------------------------------------
+
 ## Research/Dev log
+
+### 2022-04-20
+
+* V3.2.1 includes WebUSB firmware flasher for ease of loading into an arduino nano
+* Also adjusted firmware messaging to reduce confusion regarding timeout
 
 ### 2021-01-26
 
@@ -219,7 +243,6 @@ DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 * Time to wrap this up. I have pushed the arduino to it's maxium ability. The show stopper to futher dev is the puny ram.
 * Still cannot get CRC working. But don't really care anymore. Since its taking too much time to debug crc. Works good enough.
 * There is not enough time/ram to actually do much processing of the image in the arduino. Instead the image data has to be transferred raw to over serial at 115200baud via hex, and processed futher in the computer.
-
 
 ### 2017-4-12
 
