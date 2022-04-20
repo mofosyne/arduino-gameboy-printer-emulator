@@ -1,7 +1,7 @@
 /*************************************************************************
  *
  * GAMEBOY PRINTER EMULATION PROJECT V3 (Arduino)
- * Copyright (C) 2020 Brian Khuu
+ * Copyright (C) 2022 Brian Khuu
  *
  * PURPOSE: To capture gameboy printer images without a gameboy printer
  *          via the arduino platform. (Tested on the arduino nano)
@@ -195,16 +195,17 @@ void setup(void)
   gbp_pkt_init(&gbp_pktState);
 #endif
 
+#define VERSION_STRING "V3.2 (Copyright (C) 2022 Brian Khuu)"
 
   /* Welcome Message */
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
-  Serial.println("// GAMEBOY PRINTER Packet Capture V3 (Brian Khuu 2020)");
+  Serial.println("// GAMEBOY PRINTER Packet Capture " VERSION_STRING);
   Serial.println("// Note: Each byte is from each GBP packet is from the gameboy");
   Serial.println("//       except for the last two bytes which is from the printer");
   Serial.println("// JS Raw Packet Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html");
 #endif
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
-  Serial.println("// GAMEBOY PRINTER Emulator V3 : Copyright (C) 2020 Brian Khuu");
+  Serial.println("// GAMEBOY PRINTER Emulator " VERSION_STRING);
   Serial.println("// Note: Each hex encoded line is a gameboy tile");
   Serial.println("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_decoder.html");
 #endif
