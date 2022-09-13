@@ -30,9 +30,15 @@ There is more examples located in our **[showcase page](./showcase/showcase.md)*
 
 --------------------------------------------------------------------------------
 
+## What is a Gameboy Camera?
+
+[The Game Boy Camera (GBC), released as Pocket Camera[a] in Japan, is a Nintendo accessory for the handheld Game Boy game console](https://en.wikipedia.org/wiki/Game_Boy_Camera)
+
+[Game Boy Camera commercial, 1998](https://twitter.com/historyinmemes/status/1569165178704633856)
+
 ## About this project
 
-Code to emulate a gameboy printer via the gameboy link cable and an arduino module
+Code to emulate a gameboy printer via the gameboy link cable and an arduino module.
 
 ![](./sample_image/gameboy_printer_emulator.png)
 
