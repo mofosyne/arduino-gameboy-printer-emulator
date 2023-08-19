@@ -139,6 +139,12 @@ so you can easily upload photos via WebUSB or by copying and pasting raw packet 
 
 [Enter Game Boy Printer Web](https://herrzatacke.github.io/gb-printer-web/#/)
 
+### Download via Android app (External Project)
+
+For those who want to use an Android to download photos in the field, you may want to consider this partner project by Mraulio. Mraulio created an Android app to manage a Game Boy Camera gallery and communicate via usb serial with Arduino Printer Emulator and GBxCart to get images.
+
+[Enter GBCamera Android Manager](https://github.com/Mraulio/GBCamera-Android-Manager)
+
 ### Download the image (C) (Advance User)
 
 For advance users, in the `GameBoyPrinterDecoderC` folder there is a PC based commandline program that when compiled would allow for decoding raw packet captures into bitmap.
