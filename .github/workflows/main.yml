@@ -42,7 +42,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Test compile for Arduino
-      uses: ArminJo/arduino-test-compile@v2.2.0
+      uses: ArminJo/arduino-test-compile@master
       with:
           arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
           platform-url: ${{ matrix.platform-url }}
