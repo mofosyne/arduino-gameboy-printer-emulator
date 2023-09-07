@@ -199,21 +199,21 @@ void setup(void)
 
   /* Welcome Message */
 #ifdef GBP_FEATURE_PACKET_CAPTURE_MODE
-  Serial.println("// GAMEBOY PRINTER Packet Capture " VERSION_STRING);
-  Serial.println("// Note: Each byte is from each GBP packet is from the gameboy");
-  Serial.println("//       except for the last two bytes which is from the printer");
-  Serial.println("// JS Raw Packet Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html");
+  Serial.println(F("// GAMEBOY PRINTER Packet Capture " VERSION_STRING));
+  Serial.println(F("// Note: Each byte is from each GBP packet is from the gameboy"));
+  Serial.println(F("//       except for the last two bytes which is from the printer"));
+  Serial.println(F("// JS Raw Packet Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html"));
 #endif
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
-  Serial.println("// GAMEBOY PRINTER Emulator " VERSION_STRING);
-  Serial.println("// Note: Each hex encoded line is a gameboy tile");
-  Serial.println("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_decoder.html");
+  Serial.println(F("// GAMEBOY PRINTER Emulator " VERSION_STRING));
+  Serial.println(F("// Note: Each hex encoded line is a gameboy tile"));
+  Serial.println(F("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_decoder.html"));
 #endif
-  Serial.println("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---");
-  Serial.println("// This program comes with ABSOLUTELY NO WARRANTY;");
-  Serial.println("// This is free software, and you are welcome to redistribute it");
-  Serial.println("// under certain conditions. Refer to LICENSE file for detail.");
-  Serial.println("// ---");
+  Serial.println(F("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---"));
+  Serial.println(F("// This program comes with ABSOLUTELY NO WARRANTY;"));
+  Serial.println(F("// This is free software, and you are welcome to redistribute it"));
+  Serial.println(F("// under certain conditions. Refer to LICENSE file for detail."));
+  Serial.println(F("// ---"));
 
   Serial.flush();
 } // setup()
