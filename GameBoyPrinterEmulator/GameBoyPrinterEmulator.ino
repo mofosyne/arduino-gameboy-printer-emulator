@@ -79,7 +79,7 @@ WebUSB WebUSBSerial(1, "herrzatacke.github.io/gb-printer-web/#/webusb");
 // Pin Setup for Arduinos
 //                  | Arduino Pin | Gameboy Link Pin  |
 #define GBP_VCC_PIN        // Pin 1            : 5.0V (Unused)
-#define GBP_SO_PIN 4       // Pin 2            : Serial OUTPUT
+#define GBP_SO_PIN 5       // Pin 2            : Serial OUTPUT
 #define GBP_SI_PIN 3       // Pin 3            : Serial INPUT
 #define GBP_SD_PIN         // Pin 4            : Serial Data  (Unused)
 #define GBP_SC_PIN 2       // Pin 5            : Serial Clock (Interrupt)
@@ -170,11 +170,12 @@ void setup(void) {
   pinMode(GBP_SC_PIN, INPUT);
   if (!digitalRead(GBP_SC_PIN)) {
     pinMode(GBP_SC_PIN, OUTPUT);
+    pinMode(LED_STATUS_PIN, OUTPUT);
     pinMode(GBP_SO_PIN, INPUT_PULLUP);
     pinMode(GBP_SI_PIN, OUTPUT);
     digitalWrite(GBP_SC_PIN, HIGH);
     digitalWrite(GBP_SI_PIN, LOW);
-    Serial.println(F("Printer interface Mode By Raphaël BOICHOT, september 2023"));
+    Serial.println(F("Printer interface Mode By Raphaël BOICHOT, 2023"));
     Serial.println(F("Booting in printer mode, no state on CLOCK pin detected"));
     Serial.println(F("Plug the serial cable (Game Boy ON) to boot in Printer emulator mode"));
     delay(100);
@@ -452,6 +453,7 @@ char printing(char byte_sent) {  // this function prints bytes to the serial
     bit_sent = bitRead(byte_sent, 7 - i);
     digitalWrite(GBP_SC_PIN, LOW);
     digitalWrite(GBP_SI_PIN, bit_sent);  //GBP_SI_PIN is SOUT for the printer
+    digitalWrite(LED_STATUS_PIN, bit_sent);
     delayMicroseconds(30);               //double speed mode
     digitalWrite(GBP_SC_PIN, HIGH);
     bit_read = (digitalRead(GBP_SO_PIN));  //GBP_SO_PIN is SIN for the printer
