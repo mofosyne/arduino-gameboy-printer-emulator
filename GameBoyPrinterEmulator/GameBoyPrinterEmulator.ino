@@ -174,7 +174,7 @@ void setup(void) {
     pinMode(GBP_SI_PIN, OUTPUT);
     digitalWrite(GBP_SC_PIN, HIGH);
     digitalWrite(GBP_SI_PIN, LOW);
-    Serial.println(F("Printer interface Mode By Raphaël BOICHOT"));
+    Serial.println(F("Printer interface Mode By Raphaël BOICHOT, september 2023"));
     Serial.println(F("Booting in printer mode, no state on CLOCK pin detected"));
     Serial.println(F("Plug the serial cable (Game Boy ON) to boot in Printer emulator mode"));
     delay(100);
