@@ -79,7 +79,7 @@ WebUSB WebUSBSerial(1, "herrzatacke.github.io/gb-printer-web/#/webusb");
 // Pin Setup for Arduinos
 //                  | Arduino Pin | Gameboy Link Pin  |
 #define GBP_VCC_PIN        // Pin 1            : 5.0V (Unused)
-#define GBP_SO_PIN 5       // Pin 2            : Serial OUTPUT
+#define GBP_SO_PIN 4       // Pin 2            : Serial OUTPUT
 #define GBP_SI_PIN 3       // Pin 3            : Serial INPUT
 #define GBP_SD_PIN         // Pin 4            : Serial Data  (Unused)
 #define GBP_SC_PIN 2       // Pin 5            : Serial Clock (Interrupt)
