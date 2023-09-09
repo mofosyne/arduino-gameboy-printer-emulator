@@ -184,7 +184,7 @@ void setup(void) {
     Serial.begin(9600);
     while (!Serial) { ; }
     //Serial.flush();
-    for (;;) {
+    while (true) {
       if (Serial.available() > 0) {
         Serial.write(printing(Serial.read()));
       }
