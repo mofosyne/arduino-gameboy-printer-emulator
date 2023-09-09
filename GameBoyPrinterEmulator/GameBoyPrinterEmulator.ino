@@ -32,7 +32,7 @@ WebUSB WebUSBSerial(1, "herrzatacke.github.io/gb-printer-web/#/webusb");
 #define Serial WebUSBSerial
 #endif
 
-#define GAME_BOY_PRINTER_MODE true        //allow using the direct printing mode
+#define GAME_BOY_PRINTER_MODE true        // to use with https://github.com/Mraulio/GBCamera-Android-Manager and https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface
 #define GBP_OUTPUT_RAW_PACKETS true       // by default, packets are parsed. if enabled, output will change to raw data packets for parsing and decompressing later
 #define GBP_USE_PARSE_DECOMPRESSOR false  // embedded decompressor can be enabled for use with parse mode but it requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
 
@@ -175,9 +175,11 @@ void setup(void) {
     pinMode(GBP_SI_PIN, OUTPUT);
     digitalWrite(GBP_SC_PIN, HIGH);
     digitalWrite(GBP_SI_PIN, LOW);
-    Serial.println(F("Printer interface Mode By Raphaël BOICHOT, 2023"));
-    Serial.println(F("Booting in printer mode, no state on CLOCK pin detected"));
-    Serial.println(F("Plug the serial cable (Game Boy ON) to boot in Printer emulator mode"));
+    Serial.println(F("// GAME BOY PRINTER I/O INTERFACE Made By Raphaël BOICHOT, 2023"));
+    Serial.println(F("// Plug the serial cable (Game Boy ON) and reset to boot in GAMEBOY PRINTER Emulator mode"));
+    Serial.println(F("// Use with the GBCamera-Android-Manager: https://github.com/Mraulio/GBCamera-Android-Manager"));
+    Serial.println(F("// Also compatible with the PC-to-Game-Boy-Printer-interface: https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface"));
+    Serial.println(F("// If no printing on GB Printer, inverse pin SOUT and SIN"));
     delay(100);
     Serial.begin(9600);
     while (!Serial) { ; }
@@ -229,6 +231,7 @@ void setup(void) {
 #ifdef GBP_FEATURE_PARSE_PACKET_MODE
   Serial.println(F("// GAMEBOY PRINTER Emulator " VERSION_STRING));
   Serial.println(F("// Note: Each hex encoded line is a gameboy tile"));
+  Serial.println(F("// IMPORTANT: If error#2 at first use, try inversing pin SOUT and SIN"));
   Serial.println(F("// JS Decoder: https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_decoder.html"));
 #endif
   Serial.println(F("// --- GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 ---"));
