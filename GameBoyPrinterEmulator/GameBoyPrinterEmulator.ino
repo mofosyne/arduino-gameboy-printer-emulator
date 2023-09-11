@@ -183,6 +183,10 @@ void setup(void) {
     delay(100);
     Serial.begin(9600);
     while (!Serial) { ; }
+    while (Serial.available() > 0) {//flush the buffer from any remaining data
+      Serial.read();
+    }
+    digitalWrite(LED_STATUS_PIN, HIGH);
     //Serial.flush();
     while (true) {
       if (Serial.available() > 0) {
@@ -457,7 +461,7 @@ char printing(char byte_sent) {  // this function prints bytes to the serial
     digitalWrite(GBP_SC_PIN, LOW);
     digitalWrite(GBP_SI_PIN, bit_sent);  //GBP_SI_PIN is SOUT for the printer
     digitalWrite(LED_STATUS_PIN, bit_sent);
-    delayMicroseconds(30);               //double speed mode
+    delayMicroseconds(30);  //double speed mode
     digitalWrite(GBP_SC_PIN, HIGH);
     bit_read = (digitalRead(GBP_SO_PIN));  //GBP_SO_PIN is SIN for the printer
     bitWrite(byte_read, 7 - i, bit_read);
