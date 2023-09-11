@@ -187,7 +187,6 @@ void setup(void) {
       Serial.read();
     }
     digitalWrite(LED_STATUS_PIN, HIGH);
-    //Serial.flush();
     while (true) {
       if (Serial.available() > 0) {
         Serial.write(printing(Serial.read()));
