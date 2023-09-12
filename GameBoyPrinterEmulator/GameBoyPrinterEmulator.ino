@@ -169,37 +169,7 @@ void setup(void)
   // Wait for Serial to be ready
   while (!Serial) {;}
 
-  #if GAME_BOY_PRINTER_MODE          //Printer mode
-  pinMode(GBP_SC_PIN, INPUT);        //Set CLOCK as input
-  if (!digitalRead(GBP_SC_PIN))      //if nothing connected, boots in PRINTER INTERFACE mode
-  {  
-    pinMode(GBP_SC_PIN, OUTPUT);     //Reverse the CLOCK function as output
-    pinMode(LED_STATUS_PIN, OUTPUT);
-    pinMode(GBP_SO_PIN, INPUT_PULLUP);
-    pinMode(GBP_SI_PIN, OUTPUT);
-    digitalWrite(GBP_SC_PIN, HIGH);  //acts like a real Game Boy
-    digitalWrite(GBP_SI_PIN, LOW);   //acts like a real Game Boy
-    Serial.println(F("// GAME BOY PRINTER I/O INTERFACE Made By Raphaël BOICHOT, 2023"));
-    Serial.println(F("// Plug the serial cable (Game Boy ON) and reset to boot in GAMEBOY PRINTER Emulator mode"));
-    Serial.println(F("// Use with the GBCamera-Android-Manager: https://github.com/Mraulio/GBCamera-Android-Manager"));
-    Serial.println(F("// Also compatible with the PC-to-Game-Boy-Printer-interface: https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface"));
-    Serial.println(F("// If no printing on GB Printer, inverse pin SOUT and SIN"));
-    delay(100);
-    Serial.begin(9600);
-    while (!Serial) { ; }
-    while (Serial.available() > 0) 
-    {  //flush the buffer from any remaining data
-      Serial.read();
-    }
-    digitalWrite(LED_STATUS_PIN, HIGH);  //LED ON = PRINTER INTERFACE mode
-    while (true) {
-      if (Serial.available() > 0) 
-      {
-        Serial.write(printing(Serial.read()));
-      }
-    }
-  }
-  #endif
+  Connect_to_printer();  //makes an attempt to switch in printer mode
   
   /* Pins from gameboy link cable */
   pinMode(GBP_SC_PIN, INPUT);
@@ -483,6 +453,49 @@ inline void gbp_packet_capture_loop()
   }
 }
 #endif
+
+void Connect_to_printer() 
+{
+#if GAME_BOY_PRINTER_MODE  //Printer mode
+  pinMode(GBP_SC_PIN, OUTPUT);
+  pinMode(GBP_SO_PIN, INPUT_PULLUP);
+  pinMode(GBP_SI_PIN, OUTPUT);
+  pinMode(LED_STATUS_PIN, OUTPUT);
+  const char INIT[] = { 0x88, 0x33, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };  //INIT command
+  uint8_t junk, status;
+  for (uint8_t i = 0; i < 10; i++) 
+  {
+    junk = (printing(INIT[i]));
+    if (i == 8) 
+    {
+      status = junk;
+    }
+  }
+  if (status == 0X81)  //Printer connected !
+  {
+    digitalWrite(GBP_SC_PIN, HIGH);  //acts like a real Game Boy
+    digitalWrite(GBP_SI_PIN, LOW);   //acts like a real Game Boy
+    Serial.println(F("// A printer is connected to the serial cable !!!"));
+    Serial.println(F("// GAME BOY PRINTER I/O INTERFACE Made By Raphaël BOICHOT, 2023"));
+    Serial.println(F("// Use with the GBCamera-Android-Manager: https://github.com/Mraulio/GBCamera-Android-Manager"));
+    Serial.println(F("// Or with the PC-to-Game-Boy-Printer-interface: https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface"));
+    delay(100);
+    Serial.begin(9600);
+    while (!Serial) { ; }
+    while (Serial.available() > 0) 
+    {  //flush the buffer from any remaining data
+      Serial.read();
+    }
+    digitalWrite(LED_STATUS_PIN, HIGH);  //LED ON = PRINTER INTERFACE mode
+    while (true) {
+      if (Serial.available() > 0) 
+      {
+        Serial.write(printing(Serial.read()));
+      }
+    }
+  }
+#endif
+}
 
 #if GAME_BOY_PRINTER_MODE     //Printer mode
 char printing(char byte_sent) // this function prints bytes to the serial
