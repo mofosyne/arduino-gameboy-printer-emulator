@@ -32,6 +32,7 @@ WebUSB WebUSBSerial(1, "herrzatacke.github.io/gb-printer-web/#/webusb");
 #define Serial WebUSBSerial
 #endif
 
+#define GAME_BOY_PRINTER_MODE false   // to use with https://github.com/Mraulio/GBCamera-Android-Manager and https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface
 #define GBP_OUTPUT_RAW_PACKETS true // by default, packets are parsed. if enabled, output will change to raw data packets for parsing and decompressing later
 #define GBP_USE_PARSE_DECOMPRESSOR false // embedded decompressor can be enabled for use with parse mode but it requires fast hardware (SAMD21, SAMD51, ESP8266, ESP32)
 
@@ -168,6 +169,38 @@ void setup(void)
   // Wait for Serial to be ready
   while (!Serial) {;}
 
+  #if GAME_BOY_PRINTER_MODE          //Printer mode
+  pinMode(GBP_SC_PIN, INPUT);        //Set CLOCK as input
+  if (!digitalRead(GBP_SC_PIN))      //if nothing connected, boots in PRINTER INTERFACE mode
+  {  
+    pinMode(GBP_SC_PIN, OUTPUT);     //Reverse the CLOCK function as output
+    pinMode(LED_STATUS_PIN, OUTPUT);
+    pinMode(GBP_SO_PIN, INPUT_PULLUP);
+    pinMode(GBP_SI_PIN, OUTPUT);
+    digitalWrite(GBP_SC_PIN, HIGH);  //acts like a real Game Boy
+    digitalWrite(GBP_SI_PIN, LOW);   //acts like a real Game Boy
+    Serial.println(F("// GAME BOY PRINTER I/O INTERFACE Made By Raphaël BOICHOT, 2023"));
+    Serial.println(F("// Plug the serial cable (Game Boy ON) and reset to boot in GAMEBOY PRINTER Emulator mode"));
+    Serial.println(F("// Use with the GBCamera-Android-Manager: https://github.com/Mraulio/GBCamera-Android-Manager"));
+    Serial.println(F("// Also compatible with the PC-to-Game-Boy-Printer-interface: https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface"));
+    Serial.println(F("// If no printing on GB Printer, inverse pin SOUT and SIN"));
+    delay(100);
+    Serial.begin(9600);
+    while (!Serial) { ; }
+    while (Serial.available() > 0) 
+    {  //flush the buffer from any remaining data
+      Serial.read();
+    }
+    digitalWrite(LED_STATUS_PIN, HIGH);  //LED ON = PRINTER INTERFACE mode
+    while (true) {
+      if (Serial.available() > 0) 
+      {
+        Serial.write(printing(Serial.read()));
+      }
+    }
+  }
+  #endif
+  
   /* Pins from gameboy link cable */
   pinMode(GBP_SC_PIN, INPUT);
   pinMode(GBP_SO_PIN, INPUT);
@@ -448,5 +481,29 @@ inline void gbp_packet_capture_loop()
     }
     Serial.flush();
   }
+}
+#endif
+
+#if GAME_BOY_PRINTER_MODE     //Printer mode
+char printing(char byte_sent) // this function prints bytes to the serial
+{  
+  bool bit_sent, bit_read;
+  char byte_read;
+  for (int i = 0; i <= 7; i++) 
+  {
+    bit_sent = bitRead(byte_sent, 7 - i);
+    digitalWrite(GBP_SC_PIN, LOW);
+    digitalWrite(GBP_SI_PIN, bit_sent);  //GBP_SI_PIN is SOUT for the printer
+    digitalWrite(LED_STATUS_PIN, bit_sent);
+    delayMicroseconds(30);  //double speed mode
+    digitalWrite(GBP_SC_PIN, HIGH);
+    bit_read = (digitalRead(GBP_SO_PIN));  //GBP_SO_PIN is SIN for the printer
+    bitWrite(byte_read, 7 - i, bit_read);
+    delayMicroseconds(30);  //double speed mode
+  }
+  delayMicroseconds(0);  //optionnal delay between bytes, may be less than 1490 µs
+  //  Serial.println(byte_sent, HEX);
+  //  Serial.println(byte_read, HEX);
+  return byte_read;
 }
 #endif
