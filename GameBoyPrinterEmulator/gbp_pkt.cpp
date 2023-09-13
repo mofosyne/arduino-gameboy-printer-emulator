@@ -32,19 +32,19 @@
 bool gbp_pkt_init(gbp_pkt_t *_pkt)
 {
   _pkt->pktByteIndex = 0;
-  _pkt->buffIndex = 0;
+  _pkt->buffIndex    = 0;
   return true;
 }
 
 bool gbp_pkt_reset(gbp_pkt_t *_pkt)
 {
   _pkt->pktByteIndex = 0;
-  _pkt->buffIndex = 0;
+  _pkt->buffIndex    = 0;
   return true;
 }
 
 // returns true if packet is received
-bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax)
+bool gbp_pkt_processByte(gbp_pkt_t *_pkt, const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax)
 {
   /*
     [ 00 ][ 01 ][ 02 ][ 03 ][ 04 ][ 05 ][ 5+X ][5+X+1][5+X+2][5+X+3][5+X+4]
@@ -68,17 +68,29 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
       _pkt->dataLength  = 0;
       _pkt->printerID   = 0;
       _pkt->status      = 0;
-      *bufferSize = 0;
+      *bufferSize       = 0;
     }
 
     switch (_pkt->pktByteIndex)
     {
       case 0: _pkt->pktByteIndex = (_byte == 0x88) ? 1 : 0; break;
       case 1: _pkt->pktByteIndex = (_byte == 0x33) ? 2 : 0; break;
-      case 2: _pkt->pktByteIndex++; _pkt->command = _byte; break;
-      case 3: _pkt->pktByteIndex++; _pkt->compression = _byte; break;
-      case 4: _pkt->pktByteIndex++; _pkt->dataLength = ((uint16_t)_byte << 0) & 0x00FF; break;
-      case 5: _pkt->pktByteIndex++; _pkt->dataLength |= ((uint16_t)_byte << 8) & 0xFF00; break;
+      case 2:
+        _pkt->pktByteIndex++;
+        _pkt->command = _byte;
+        break;
+      case 3:
+        _pkt->pktByteIndex++;
+        _pkt->compression = _byte;
+        break;
+      case 4:
+        _pkt->pktByteIndex++;
+        _pkt->dataLength = ((uint16_t)_byte << 0) & 0x00FF;
+        break;
+      case 5:
+        _pkt->pktByteIndex++;
+        _pkt->dataLength |= ((uint16_t)_byte << 8) & 0xFF00;
+        break;
       default: break;
     }
 
@@ -107,9 +119,9 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
     // Byte is from payload... add to buffer
     const uint16_t payloadIndex = _pkt->pktByteIndex - 6;
     //const uint16_t offset       = (payloadIndex/bufferMax) * bufferMax;
-    const uint16_t bufferUsage  = payloadIndex % bufferMax + 1;
-    buffer[bufferUsage - 1] = _byte;
-    *bufferSize = bufferUsage;
+    const uint16_t bufferUsage = payloadIndex % bufferMax + 1;
+    buffer[bufferUsage - 1]    = _byte;
+    *bufferSize                = bufferUsage;
     if (bufferUsage == _pkt->dataLength)
     {
       // Fits fully in buffer
@@ -132,7 +144,7 @@ bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[]
   else if (_pkt->pktByteIndex == (8 + _pkt->dataLength + 1))
   {
     // End of packet reached
-    _pkt->status = _byte;
+    _pkt->status       = _byte;
     _pkt->pktByteIndex = 0;
     // Indicate received packet
     if (bufferMax > _pkt->dataLength)
@@ -193,12 +205,12 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
       {
         if (gbp_pkt_tileAccu_insertByte(tileBuff, buff[_pkt->buffIndex++]))
         {
-          return true; // Got tile
+          return true;  // Got tile
         }
       }
       else
       {
-        _pkt->buffIndex = 0; // Reset for next buffer
+        _pkt->buffIndex = 0;  // Reset for next buffer
         return false;
       }
     }
@@ -234,8 +246,8 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
         else if (_pkt->repeatByteGet)
         {
           // Grab loop byte
-          uint8_t b = buff[_pkt->buffIndex++];
-          _pkt->repeatByte = b;
+          uint8_t b           = buff[_pkt->buffIndex++];
+          _pkt->repeatByte    = b;
           _pkt->repeatByteGet = false;
         }
         else
@@ -244,13 +256,13 @@ bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t bu
           _pkt->loopRunLength--;
           if (gbp_pkt_tileAccu_insertByte(tileBuff, b))
           {
-            return true; // Got tile
+            return true;  // Got tile
           }
         }
       }
       else
       {
-        _pkt->buffIndex = 0; // Reset for next buffer
+        _pkt->buffIndex = 0;  // Reset for next buffer
         return false;
       }
     }
