@@ -22,9 +22,9 @@
  *   along with Arduino Gameboy Printer Emulator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h> // uint8_t
-#include <stddef.h> // size_t
-#include <stdbool.h> // bool
+#include <stdint.h>   // uint8_t
+#include <stddef.h>   // size_t
+#include <stdbool.h>  // bool
 #include "gameboy_printer_protocol.h"
 
 #define GBP_PKT_PAYLOAD_BUFF_SIZE_IN_BYTE GBP_TILE_SIZE_IN_BYTE
@@ -69,7 +69,7 @@ typedef struct
 
 bool gbp_pkt_init(gbp_pkt_t *_pkt);
 bool gbp_pkt_reset(gbp_pkt_t *_pkt);
-bool gbp_pkt_processByte(gbp_pkt_t *_pkt,  const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax);
+bool gbp_pkt_processByte(gbp_pkt_t *_pkt, const uint8_t _byte, uint8_t buffer[], uint8_t *bufferSize, const size_t bufferMax);
 bool gbp_pkt_decompressor(gbp_pkt_t *_pkt, const uint8_t buff[], const size_t buffSize, gbp_pkt_tileAcc_t *tileBuff);
 bool gbp_pkt_tileAccu_tileReadyCheck(gbp_pkt_tileAcc_t *tileBuff);
 
@@ -79,7 +79,7 @@ bool gbp_pkt_tileAccu_tileReadyCheck(gbp_pkt_tileAcc_t *tileBuff);
 
 static inline int gbp_pkt_printInstruction_num_of_sheets(uint8_t payloadBuff[GBP_PRINT_INSTRUCT_PAYLOAD_SIZE])
 {
-  return (payloadBuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS  ]);
+  return (payloadBuff[GBP_PRINT_INSTRUCT_INDEX_NUM_OF_SHEETS]);
 }
 
 static inline int gbp_pkt_printInstruction_num_of_linefeed_before_print(uint8_t payloadBuff[GBP_PRINT_INSTRUCT_PAYLOAD_SIZE])
@@ -94,10 +94,10 @@ static inline int gbp_pkt_printInstruction_num_of_linefeed_after_print(uint8_t p
 
 static inline int gbp_pkt_printInstruction_palette_value(uint8_t payloadBuff[GBP_PRINT_INSTRUCT_PAYLOAD_SIZE])
 {
-  return (payloadBuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE  ]);
+  return (payloadBuff[GBP_PRINT_INSTRUCT_INDEX_PALETTE_VALUE]);
 }
 
 static inline int gbp_pkt_printInstruction_print_density(uint8_t payloadBuff[GBP_PRINT_INSTRUCT_PAYLOAD_SIZE])
 {
-  return (payloadBuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY  ]);
+  return (payloadBuff[GBP_PRINT_INSTRUCT_INDEX_PRINT_DENSITY]);
 }
