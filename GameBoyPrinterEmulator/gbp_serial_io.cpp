@@ -585,6 +585,7 @@ bool gpb_serial_io_OnChange_ISR(const bool GBP_SCLK, const bool GBP_SOUT)
             gpb_status_bit_update_print_buffer_full(gpb_pktIO.statusBuffer, true);
             gpb_status_bit_update_printer_busy(gpb_pktIO.statusBuffer, true);
             gpb_status_bit_update_checksum_error(gpb_pktIO.statusBuffer, false);
+            break;
           case GBP_COMMAND_INQUIRY:
             if (gpb_pktIO.untransPacketCountdown > 0)
             {
