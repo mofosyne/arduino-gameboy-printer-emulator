@@ -280,13 +280,13 @@ DAT: ___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX____________XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     - However was not able to run this sketch, and his python did not run. So there may have been some code rot.
     - Nevertheless I was able to get some ideas on using an ISR to capture the bits fast enough.
     - I liked how he outputs in .bmp format
-* [http://gbdev.gg8.se/wiki/articles/Gameboy_Printer](http://gbdev.gg8.se/wiki/articles/Gameboy_Printer) - Main gb documentation on gb protocol, great for the inital investigation.
+* [https://gbdev.io/pandocs/Gameboy_Printer.html](https://gbdev.io/pandocs/Gameboy_Printer.html) - Main gb documentation on gb protocol, great for the inital investigation.
 * [http://furrtek.free.fr/?a=gbprinter&i=2](http://furrtek.free.fr/?a=gbprinter&i=2) - Previous guy who was able to print to a gameboy printer
 * [http://playground.arduino.cc/Main/Printf](http://playground.arduino.cc/Main/Printf) - printf in arduino
 * [https://www.mikrocontroller.net/attachment/34801/gb-printer.txt](https://www.mikrocontroller.net/attachment/34801/gb-printer.txt)
     - Backup if above link is dead [here](./ext_doc/gb-printer.txt)
     - Most detailed writeup on the protocol I found online.
-* [http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable)](http://gbdev.gg8.se/wiki/articles/Serial_Data_Transfer_(Link_Cable))
+* [https://gbdev.io/pandocs/Serial_Data_Transfer_(Link_Cable).html](https://gbdev.io/pandocs/Serial_Data_Transfer_(Link_Cable).html)
 * [https://github.com/avivace/awesome-gbdev](https://github.com/avivace/awesome-gbdev) Collections of gameboy development resources
 * [https://shonumi.github.io/articles/art2.html](https://shonumi.github.io/articles/art2.html) An in-depth technical document about the printer hardware, the communication protocol and the usual routine that games used for implementing the print feature.
 
