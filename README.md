@@ -305,3 +305,5 @@ For adding color palette dropdown https://github.com/mofosyne/arduino-gameboy-pr
 * @crizzlycruz (@23kpixels) : For adding support to js decoder for zero margin multi prints
 
 * @markostamcar : For contributing a 3D printed plug so users can construct a cable without sacrifing a gameboy link cable.
+
+* @tikonen: For contributing python decoder.
