@@ -28,7 +28,7 @@ def decodeHexDumpToPackets(hexdata, verbose=False):
 
     # Image data consists of DATA packets and a PRINT packet
 
-    rawBytes = gbpparser.to_byte_array(hexdata)
+    rawBytes = gbpparser.to_bytes(hexdata)
     if verbose:
         print(f'{len(hexdata)} data bytes')
 

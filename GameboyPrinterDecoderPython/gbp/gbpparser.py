@@ -47,7 +47,7 @@ def command_to_str(t: int):
 
 
 # Convert hexadecimal array to bytes ignoring comment lines.
-def to_byte_array(data: str):
+def to_bytes(data: str):
     p = re.compile(r',| ')
     return [int(cc, 16) for line in data.split('\n') if not (line.startswith('//') or line.startswith('#')) for cc in p.split(line.strip()) if cc]
 
@@ -127,6 +127,8 @@ def parse_packet_with_state(parser: ParserState, bytes: list):
                 # discard processed packet bytes
                 parser.buffer = parser.buffer[idx+1:]
                 return packet
+    # No packet found, reset to start state
+    parser.state = STATE_AWAIT_MAGIC_BYTES
     return None
 
 
