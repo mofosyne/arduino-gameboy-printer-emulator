@@ -10,6 +10,7 @@
   .error {border: 2px solid red;}
   #errormessage {display: none; background: #ffdddd;}
   .error ~ #errormessage {display: block;}
+  #webserial {border: 1px solid #222; padding: 0 10px; background: #f7f7f7;}
 </style>
 </head>
 <body>
@@ -31,7 +32,22 @@
     Below shows a sample data. Each line that is not a comment, but is encoded as 16 hex digits are a single gameboy tile. A stream of these 16 hex digits will build up a photo.
   </p>
 
+  <div id="webserial">
+    <p>
+        <strong>Web Serial</strong>
+    </p>
+
+    <p>
+        As an alternative to copying the console data from the Arduino IDE, images can be created directly using the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API">Web Serial API</a>. Click "Request serial" to list available serial devices, select your GBP Printer Emulator and print direct to the browser.
+    </p>
+
+    <p>
+        <button id="selectSerial">Request serial</button>
+    </p>
+  </div>
+
 <br>
+
 
 <textarea id="data_text" name="data" cols="110" rows="20">
 // GAMEBOY PRINTER EMULATION PROJECT (Packet Capture Mode)
@@ -160,5 +176,6 @@
 
 </div>
 <a id="download"></a>
+<script type="text/javascript" src="./webserial.js"></script>
 </body>
 </html>
