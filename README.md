@@ -98,7 +98,7 @@ Gameboy Original/Color Link Cable Pinout
 
 As crossing Serial OUTPUT and Serial INPUT is the main cause of issues with the project, [dedicated PCBs were made](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) to fit with the Arduino Nano and Uno, using a GBA/GBC socket. This also allows not cutting a cable. The Uno version comes with pins dedicated for an SD shield that you can just left empty for this project.
 
-![](sample_image/PCB_for_Nano.png)
+![](/sample_image/Nano_shield.jpg)
 
 ### Programming the emulator
 
@@ -121,9 +121,7 @@ Afterwards, you can check if it's working via the webusb serial console below as
 
 ### Download the image (Javascript)
 
-Press the download button in your gameboy. The emulator will automatically start to download and dump the data as a string of hex in the console display.
-
-After the download has complete. Copy the content of the console to the raw packet javascript decoder in `./GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html`. Press click to render button.
+The Arduino IDE 2.XX does not allow to batch copy/paste the serial output anymore. You have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to configure PuTTy or another serial datalogger. Once connected to your Arduino serial with PuTTY, print from your gameboy, then close the serial monitor and copy/paste data from the log file to the raw packet javascript decoder in `./GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html`. Press click to render button.
 
 One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
 
