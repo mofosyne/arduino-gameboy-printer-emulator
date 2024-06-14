@@ -55,8 +55,6 @@ Gameboy Original/Color Link Cable Pinout
  \_5__3__1_/   (view at cable)
 ```
 
-**SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them if the device does not work at first try.** Wire color is not a relevant indicator.
-
 | Arduino Pin | Gameboy Link Pin                 |
 |-------------|----------------------------------|
 |  unused     | Pin 1 : 5.0V                     |
@@ -66,7 +64,9 @@ Gameboy Original/Color Link Cable Pinout
 |  D2         | Pin 5 : Serial Clock (Interrupt) |
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
-Beware: Third generation link cables (purple ones or AGB-005) have a different pinout from pure GB/GBC cables, avoid using them. 
+Beware: 
+- **SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them if the device does not work at first try.** Wire color is not a relevant indicator.
+- Third generation link cables (purple ones or AGB-005) have a different pinout from pure GB/GBC cables, avoid using them. 
 
 ## Building the Arduino Gameboy Printer Emulator with a dedicated PCB
 
