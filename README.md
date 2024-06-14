@@ -5,7 +5,7 @@ This project is a Game Boy Printer emulator for Arduino boards compatible and te
 
 This emulator have been tested with Game Boy DMG (the brick), Game Boy Pocket, Game Boy Color, Game boy Advance (regular and SP) and the Kong Feng GB Boy Colour. All work.
 
-The emulator code is also compatible with ESP8266, ESP32 and Raspberry Pi Pico derived boards with very minor adjustments (considering that the relevant library, [**ESP8266 Arduino**](https://github.com/esp8266/Arduino), [**ESP32 by Espressif System**](https://github.com/espressif/arduino-esp32) or the [**Arduino-Pico**](https://github.com/earlephilhower/arduino-pico) is installed on Arduino IDE).
+Despite using Arduino as main target, the emulator code is also compatible with ESP8266, ESP32 and Raspberry Pi Pico derived boards with very minor adjustments (considering that the relevant library, [**ESP8266 Arduino**](https://github.com/esp8266/Arduino), [**ESP32 by Espressif System**](https://github.com/espressif/arduino-esp32) or the [**Arduino-Pico**](https://github.com/earlephilhower/arduino-pico) is installed on Arduino IDE). No support is provided for these boards.
 
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
