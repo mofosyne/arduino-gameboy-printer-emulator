@@ -40,7 +40,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 ## Building the Arduino Gameboy Printer Emulator from scratch
 
-Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online. **SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them if the device does not work at first try.** Wire color is not a relevant indicator.
+Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online.
 
 Else if you have a 3D printer, you can use a [Game Boy DMG-01 Link Port plug for dupont jumper wire](https://www.thingiverse.com/thing:4685189) by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition.
 
@@ -54,6 +54,8 @@ Gameboy Original/Color Link Cable Pinout
 |  6  4  2  |
  \_5__3__1_/   (view at cable)
 ```
+
+**SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them if the device does not work at first try.** Wire color is not a relevant indicator.
 
 | Arduino Pin | Gameboy Link Pin                 |
 |-------------|----------------------------------|
