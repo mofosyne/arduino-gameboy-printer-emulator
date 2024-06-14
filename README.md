@@ -41,7 +41,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 - Flash the project to you board (Sketch->Upload);
 - The Serial monitor will open, set the baudrate to 115200. You should see a welcome message, your board is ready !
 - The Arduino IDE does not allow to directly copy-paste the emulator output, you have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to get data under text form;
-- You text file can be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), and a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
+- Your text file can be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), and a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
 - You can also directly read and convert the serial data from [Android](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino and do not require using PuTTY.
 
 ## Building the Arduino Gameboy Printer Emulator
