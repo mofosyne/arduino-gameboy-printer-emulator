@@ -4,7 +4,6 @@
 This project is a Game Boy Printer emulator for Arduino boards compatible and tested with the [110 games using the Game Boy Printer](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU). Goal is also to provide an easy way for people to quickly setup and download the images from their Game Boy.
 
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
-* [Blog Post](http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html)
 
 ![](./sample_image/gameboy_printer_emulator.png)
 
