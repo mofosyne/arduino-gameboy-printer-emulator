@@ -37,7 +37,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 ## Building the Arduino Gameboy Printer Emulator
 
-Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Pure GBA cables (purple ones) have a different pinout from GB/GBC, avoid using them. In general, do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online. Do note that you cannot trust the color code of these cables, you must always check the wire against the plug pins. Especially considering the RX/TX pair of the pins may be flipped. 
+Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Pure GBA cables (purple ones) have a different pinout from GB/GBC cables, avoid using them. Also do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online
 
 Else if you have a 3D printer, you can use (Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition)[https://www.thingiverse.com/thing:4685189]
 
