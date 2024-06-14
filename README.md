@@ -35,7 +35,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 - Connect your board and choose the board type (Tools->Board) and the serial port (Tools->Port);
 - Flash the project to you board (Sketch->Upload);
 - The Serial monitor will open, set the baudrate to 115200. You should see a welcome message, your board is ready !
-- The Arduino IDE (from version 2) does not allow to easily copy-paste the serial output anymore, you have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to get printer data under text form with PuTTy (as log file). If you're on Linux, you can directly feed a log file with the serial output (to adapt):
+- The Arduino IDE (from version 2) does not allow to easily copy-paste the serial output anymore, you have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to get printer data under text form with PuTTy (as log file). If you're on Linux, you can also directly feed a log file with the serial output (to adapt):
 ```console
 #!/bin/bash
 #'Ctrl+a', then 'k' to kill the screen
