@@ -302,7 +302,7 @@ For adding color palette dropdown https://github.com/mofosyne/arduino-gameboy-pr
 
 * @imwestm : West McGowan for submitting a handy picture of how to wire this project up as well as feedback to improve the instructions in this readme.
 
-* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games. Also contributed a matlab/octave decoder implementation.
+* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games. Also contributed a [matlab/octave decoder implementation](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation).
 
 * @crizzlycruz (@23kpixels) : For adding support to js decoder for zero margin multi prints
 
