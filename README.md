@@ -1,13 +1,11 @@
 # Arduino Gameboy Printer Emulator (V3)
 ![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
 
-This project is a Game Boy Printer emulator for Arduino boards compatible and tested with the [110 games using the Game Boy Printer](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU). Goal is also to provide an easy way for people to quickly setup and download the images from their Game Boy.
+This project is a Game Boy Printer emulator for Arduino boards compatible and tested with the [110 games using the Game Boy Printer](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU). Goal is also to provide an easy way for people to quickly setup and download the images from their Game Boy. 100% game compatibility has been reached by reverse-engineering [Real Packet Capture Example](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture).
 
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
 ![](./sample_image/gameboy_printer_emulator.png)
-
-Need example raw packet captures to test out the raw js decoder without the gameboy printer emulator hardware ? You can check a few out in the [Real Packet Capture Example](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture) folder of the gameboy printer sniffer project.
 
 **Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
 
