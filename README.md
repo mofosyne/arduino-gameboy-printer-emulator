@@ -61,6 +61,8 @@ Gameboy Original/Color Link Cable Pinout
 |  D2         | Pin 5 : Serial Clock (Interrupt) |
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
+## Get a dedicated PCB
+
 As crossing Serial OUTPUT and Serial INPUT is the main cause of issues with the project, [dedicated PCBs were made](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) to fit with the Arduino Nano and Uno, using a GBA/GBC socket. This also allows not cutting a cable. The Uno version comes with pins dedicated for an SD shield that you can just left empty for this project.
 
 ![](/sample_image/Nano_shield.jpg)
