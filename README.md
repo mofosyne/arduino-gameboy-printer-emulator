@@ -67,7 +67,7 @@ You have some basic skill in soldering and want a clean finish ? you can order [
 
 ![](/sample_image/Nano_shield.jpg)
 
-The whole project shipped to your door must cost about 10€ if you order components and PCB from China.
+The whole project shipped to your door must cost about 10€ if you order components and PCB from China (shipping included).
 
 --------------------------------------------------------------------------------
 
