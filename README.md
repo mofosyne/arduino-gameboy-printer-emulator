@@ -1,8 +1,7 @@
 # Arduino Gameboy Printer Emulator (V3)
+![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
 
 This project is a Game Boy Printer emulator for Arduino boards compatible with the 110 games using the Game Boy Printer. Goal is also to provide an easy way for people to quickly setup and download the images from their Game Boy.
-
-![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
 
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
