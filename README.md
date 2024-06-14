@@ -65,7 +65,7 @@ Gameboy Original/Color Link Cable Pinout
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
 Two important things to note: 
-- **SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them if the device does not work at first try.** Wire color is not a relevant indicator.
+- **SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them (physically or in software by switching D3/D4) if the device does not work at first try.** Wire color is not a relevant indicator.
 - Third generation link cables (purple ones or AGB-005) have a completely different pinout from pure GB/GBC cables, avoid using them as retrieving which pin is which is a mess. Or do this at your own risk.
 
 ## Building the Arduino Gameboy Printer Emulator with a dedicated PCB
