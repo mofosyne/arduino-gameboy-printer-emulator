@@ -11,9 +11,7 @@ This project is a Game Boy Printer emulator for Arduino boards compatible and te
 
 ## Official Releases
 
-Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases)
-
-[Release Notes Located Here](./RELEASE_NOTES.md)
+Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases) / [Release Notes Located Here](./RELEASE_NOTES.md)
 
 --------------------------------------------------------------------------------
 
