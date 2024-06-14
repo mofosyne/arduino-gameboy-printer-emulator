@@ -34,7 +34,6 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 ## Quick installation/user guide for beginners
 
-- (See next section for building instructions)
 - Install the [Arduino IDE](https://www.arduino.cc/en/software);
 - Download the whole project from Github (Code->Download ZIP) and unzip it on some local folder of your own;
 - Open /GameBoyPrinterEmulator/GameBoyPrinterEmulator.ino with the Arduino IDE;
