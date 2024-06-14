@@ -12,6 +12,10 @@ This project is a Game Boy Printer emulator for Arduino boards compatible with t
 
 * [Blog Post](http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html)
 
+Need example raw packet captures to test out the raw js decoder without the gameboy printer emulator hardware ? You can check a few out in the [Real Packet Capture Example](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture) folder of the gameboy printer sniffer project.
+
+**Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
+
 ## Official Releases
 
 Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases)
@@ -41,7 +45,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 - You text file can be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), and a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
 - You can also directly read and convert the serial data from [Android](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino and do not require using PuTTY.
 
-### Building the Arduino Gameboy Printer Emulator
+## Building the Arduino Gameboy Printer Emulator
 
 Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Pure GBA cables (purple ones) have a different pinout from GB/GBC, avoid using them. In general, do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online. Do note that you cannot trust the color code of these cables, you must always check the wire against the plug pins. Especially considering the RX/TX pair of the pins may be flipped. 
 
@@ -52,10 +56,10 @@ Thanks to West McGowan (twitter: @imwestm) who was able to replicate this projec
 ![](GBP_Emu_Micro_pinout_West_McGowan.webp.png)
 
 ```
-[Gameboy Original/Color Link Cable Pinout](https://web.archive.org/web/20230220025605/https://www.hardwarebook.info/Game_Boy_Link)
+Gameboy Original/Color Link Cable Pinout
  ___________
 |  6  4  2  |
- \_5__3__1_/   (at cable)
+ \_5__3__1_/   (view at cable)
 ```
 
 | Arduino Pin | Gameboy Link Pin                 |
@@ -71,6 +75,8 @@ As crossing Serial OUTPUT and Serial INPUT is the main cause of issues with the 
 
 ![](/sample_image/Nano_shield.jpg)
 
+--------------------------------------------------------------------------------
+
 ## Media Coverage And Other Projects Spinoff
 
 There is more examples located in our **[showcase page](./showcase/showcase.md)** page, but below is a few actively used cases:
@@ -85,7 +91,7 @@ There is more examples located in our **[showcase page](./showcase/showcase.md)*
 
 --------------------------------------------------------------------------------
 
-#### Alternative option of uploading precompiled arduino nano image via WebUSB
+### Alternative option of uploading precompiled arduino nano image via WebUSB
 
 If your browser supports webusb, you have the option of uploading directly to the arduino nano the firmware using WebUSB (e.g. via google chrome)
 
@@ -94,22 +100,6 @@ If your browser supports webusb, you have the option of uploading directly to th
 Afterwards, you can check if it's working via the webusb serial console below as well
 
 * [Arduino Nano WebSerial Serial Console](./webbasedtools/webserialConsole.html)
-
-
-### Download the image (Javascript)
-
-The Arduino IDE 2.XX does not allow to batch copy/paste the serial output anymore. You have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to configure PuTTy or another serial datalogger. Once connected to your Arduino serial with PuTTY, print from your gameboy, then close the serial monitor and copy/paste data from the log file to the raw packet javascript decoder in `./GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html`. Press click to render button.
-
-One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
-
-A copy of the raw decoder is accessible here as well:
-* [V3 Raw JS Decoder: Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html)
-
-Need example raw packet captures to test out the raw js decoder without the gameboy printer emulator hardware? You can check a few out in the [Real Packet Capture Example](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture) folder of the gameboy printer sniffer project.
-
-You are all done!
-
-**Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
 
 ### Download via Game Boy Printer Web (External Project)
 
