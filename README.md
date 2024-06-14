@@ -35,7 +35,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 - Your text file can be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), and a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
 - You can also directly read and convert the serial data from [Android](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino and do not require using PuTTY.
 
-## Building the Arduino Gameboy Printer Emulator
+## Building the Arduino Gameboy Printer Emulator from scratch
 
 Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Pure GBA cables (purple ones) have a different pinout from GB/GBC cables, avoid using them. Also do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online.
 
@@ -61,7 +61,7 @@ Gameboy Original/Color Link Cable Pinout
 |  D2         | Pin 5 : Serial Clock (Interrupt) |
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
-## Get a dedicated PCB
+## Building the Arduino Gameboy Printer Emulator with a dedicated PCB
 
 You have some basic skill in soldering and want a clean finish ? you can order [dedicated PCBs](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) to fit with the Arduino Nano and Uno, using a GBA/GBC socket. This also allows not cutting a cable. The Uno version comes with pins dedicated for an SD shield that you can just left empty for this project.
 
