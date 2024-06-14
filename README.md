@@ -66,7 +66,7 @@ Gameboy Original/Color Link Cable Pinout
 
 Beware: 
 - **SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them if the device does not work at first try.** Wire color is not a relevant indicator.
-- Third generation link cables (purple ones or AGB-005) have a different pinout from pure GB/GBC cables, avoid using them. 
+- Third generation link cables (purple ones or AGB-005) have a completely different pinout from pure GB/GBC cables, avoid using them as retrieving which pin is which is a mess. Or do this at your own risk.
 
 ## Building the Arduino Gameboy Printer Emulator with a dedicated PCB
 
