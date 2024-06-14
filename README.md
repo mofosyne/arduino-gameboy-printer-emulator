@@ -42,7 +42,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online.
 
-Else if you have a 3D printer, you can use (Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition)[https://www.thingiverse.com/thing:4685189]
+Else if you have a 3D printer, you can use a [Game Boy DMG-01 Link Port plug for dupont jumper wire](https://www.thingiverse.com/thing:4685189) by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition.
 
 Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project on his Arduino Nano plus Gameboy Color and helpfully submitted a handy picture of how to wire this project up. You can find his tutorial in [here](https://westm.co.uk/arduino-game-boy-printer-emulator/)
 
