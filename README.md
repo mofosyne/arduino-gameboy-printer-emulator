@@ -37,7 +37,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 
 ## Building the Arduino Gameboy Printer Emulator
 
-Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Pure GBA cables (purple ones) have a different pinout from GB/GBC cables, avoid using them. Also do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online
+Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Pure GBA cables (purple ones) have a different pinout from GB/GBC cables, avoid using them. Also do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online.
 
 Else if you have a 3D printer, you can use (Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition)[https://www.thingiverse.com/thing:4685189]
 
@@ -63,7 +63,7 @@ Gameboy Original/Color Link Cable Pinout
 
 ## Get a dedicated PCB
 
-As crossing Serial OUTPUT and Serial INPUT is the main cause of issues with the project, [dedicated PCBs were made](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) to fit with the Arduino Nano and Uno, using a GBA/GBC socket. This also allows not cutting a cable. The Uno version comes with pins dedicated for an SD shield that you can just left empty for this project.
+You have some basic skill in soldering and want a clean finish ? you can order [dedicated PCBs](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) to fit with the Arduino Nano and Uno, using a GBA/GBC socket. This also allows not cutting a cable. The Uno version comes with pins dedicated for an SD shield that you can just left empty for this project.
 
 ![](/sample_image/Nano_shield.jpg)
 
