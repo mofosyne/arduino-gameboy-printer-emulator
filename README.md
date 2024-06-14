@@ -3,6 +3,8 @@
 
 This project is a Game Boy Printer emulator for Arduino boards compatible and tested with the [110 games using the Game Boy Printer](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU). Goal is to provide an easy way for people to quickly setup and download the images from their Game Boy. 100% game compatibility has been reached by reverse-engineering [Real Packet Capture Examples](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture).
 
+This emulator have been tested with Game Boy DMG (the brick), Game Boy Pocket, Game Boy Color, Game boy Advance and the GB Boy Colour. All work.
+
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
 **Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
@@ -31,9 +33,9 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 - Connect your board and choose the board type (Tools->Board) and the serial port (Tools->Port);
 - Flash the project to you board (Sketch->Upload);
 - The Serial monitor will open, set the baudrate to 115200. You should see a welcome message, your board is ready !
-- The Arduino IDE does not allow to directly copy-paste the emulator output, you have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to get data under text form;
-- Your text file can be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), and a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
-- You can also directly read and convert the serial data from [Android](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino and do not require using PuTTY.
+- The Arduino IDE does not allow to directly copy-paste the emulator output, you have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to get printer data under text form with PuTTy;
+- Your PuTTy log file can then be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), or a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
+- You can also directly read and convert the serial data from [Android](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino serial port and do not require using PuTTY or the Arduino IDE after the initial installation.
 
 ## Building the Arduino Gameboy Printer Emulator from scratch
 
@@ -61,7 +63,7 @@ Gameboy Original/Color Link Cable Pinout
 |  D2         | Pin 5 : Serial Clock (Interrupt) |
 |  GND        | Pin 6 : GND (Attach to GND Pin)  |
 
-Beware: Third generation link cables (purple ones or AGB-005) have a different pinout from GB/GBC cables, avoid using them. 
+Beware: Third generation link cables (purple ones or AGB-005) have a different pinout from pure GB/GBC cables, avoid using them. 
 
 ## Building the Arduino Gameboy Printer Emulator with a dedicated PCB
 
