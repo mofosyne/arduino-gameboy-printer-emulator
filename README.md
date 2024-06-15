@@ -1,10 +1,21 @@
 # Arduino Gameboy Printer Emulator (V3)
-
 ![CI](https://github.com/mofosyne/arduino-gameboy-printer-emulator/workflows/CI/badge.svg?branch=master)
+
+This project is a Game Boy Printer emulator for Arduino boards compatible and tested with the [110 games using the Game Boy Printer](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU). Goal is to provide an easy way for people to quickly setup and download the images from their Game Boy. 100% game compatibility has been reached by reverse-engineering [Real Packet Capture Examples](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture).
+
+This emulator have been tested with Game Boy DMG (the brick), Game Boy Pocket, Game Boy Color, Game boy Advance (regular and SP) and the Kong Feng GB Boy Colour. All work.
+
+Despite using Arduino as main target, the emulator code is also compatible with ESP8266, ESP32 and Raspberry Pi Pico derived boards with very minor adjustments (considering that the relevant library, [**ESP8266 Arduino**](https://github.com/esp8266/Arduino), [**ESP32 by Espressif System**](https://github.com/espressif/arduino-esp32) or the [**Arduino-Pico**](https://github.com/earlephilhower/arduino-pico) is installed on Arduino IDE). No support is provided for these boards, try them by yourself.
 
 * Main project website located at [https://mofosyne.github.io/arduino-gameboy-printer-emulator/](https://mofosyne.github.io/arduino-gameboy-printer-emulator/)
 
-* [Games Supported List (Google Spreadsheet)](https://docs.google.com/spreadsheets/d/1RQeTHemyEQnWHbKEhUy16cPxR6vA3YfeBbyx2tIXWaU)
+**Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
+
+![](./sample_image/gameboy_printer_emulator.png)
+
+## Official Releases
+
+Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases) / [Release Notes Located Here](./RELEASE_NOTES.md)
 
 --------------------------------------------------------------------------------
 
@@ -13,6 +24,65 @@
 Got telegram instant messaging and have some questions or need any advice, or just want to share? Invite link below:
 
 **[https://t.me/gameboycamera](https://t.me/gameboycamera)**
+
+--------------------------------------------------------------------------------
+
+## Quick installation/user guide for beginners
+
+- Install the [Arduino IDE](https://www.arduino.cc/en/software);
+- Download the whole project from Github (Code->Download ZIP) and unzip it on some local folder of your own;
+- Open /GameBoyPrinterEmulator/GameBoyPrinterEmulator.ino with the Arduino IDE;
+- Connect your board and choose the board type (Tools->Board) and the serial port (Tools->Port);
+- Flash the project to you board (Sketch->Upload);
+- The Serial monitor will open, set the baudrate to 115200. You should see a welcome message, your board is ready !
+- The Arduino IDE (from version 2) does not allow to easily copy-paste the serial output anymore, you have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to get printer data under text form with PuTTy (as log file). If you're on Linux, you can also directly feed a log file with the serial output (to adapt):
+```console
+#!/bin/bash
+#'Ctrl+a', then 'k' to kill the screen
+#'screen -r' to reopen the monitor if window was closed
+screen -L -Logfile "arduino_$(date +'%Y%m%d-%H%M%S').log" /dev/ttyUSB0 115200
+```
+- Your log file can then be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), or a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
+- You can also directly read and convert the serial data from an [Android app](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino serial port and do not require using PuTTY or the Arduino IDE after the initial installation.
+- If you're using the Android app or this [GNU Octave code](https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface), you can also plug a Game Boy Printer to the emulator instead of a Game Boy (reboot the Arduino with printer connected and ON so that the Arduino recognizes it) and it will act as an I/O interface between the Android (or the PC) and the printer to print images !
+
+## Building the Arduino Gameboy Printer Emulator from scratch
+
+Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below. Do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online.
+
+Else if you have a 3D printer, you can use a [Game Boy DMG-01 Link Port plug for dupont jumper wire](https://www.thingiverse.com/thing:4685189) by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition.
+
+Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project on his Arduino Nano plus Gameboy Color and helpfully submitted a handy picture of how to wire this project up. You can find his tutorial in [here](https://westm.co.uk/arduino-game-boy-printer-emulator/)
+
+![](GBP_Emu_Micro_pinout_West_McGowan.webp.png)
+
+```
+Gameboy Original/Color Link Cable Pinout
+ ___________
+|  6  4  2  |
+ \_5__3__1_/   (view at cable)
+```
+
+| Arduino Pin | Gameboy Link Pin                 |
+|-------------|----------------------------------|
+|  unused     | Pin 1 : 5.0V                     |
+|  D4         | Pin 2 : Serial OUTPUT (SOUT)     |
+|  D3         | Pin 3 : Serial INPUT  (SIN)      |
+|  unused     | Pin 4 : Serial Data              |
+|  D2         | Pin 5 : Serial Clock (Interrupt) |
+|  GND        | Pin 6 : GND (Attach to GND Pin)  |
+
+Two important things to note: 
+- **SIN and SOUT are crossed within the cable, so trust your multimeter and try inversing them (physically or in software by switching D3/D4) if the device does not work at first try.** Wire color is not a relevant indicator.
+- Third generation link cables (purple ones or AGB-005) have a completely different pinout from pure GB/GBC cables, avoid using them as retrieving which pin is which is a mess. Or do this at your own risk.
+
+## Building the Arduino Gameboy Printer Emulator with a dedicated PCB
+
+You have some very basic skill in soldering and want a clean finish ? You can order [dedicated PCBs](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) compatible with the Arduino Nano/Uno and equipped with a GBC socket, so no need to cut cables anymore.
+
+![](/sample_image/Nano_shield.jpg)
+
+The whole project shipped to your door must cost about 10€ if you order components and PCB from China (shipping included).
 
 --------------------------------------------------------------------------------
 
@@ -30,83 +100,7 @@ There is more examples located in our **[showcase page](./showcase/showcase.md)*
 
 --------------------------------------------------------------------------------
 
-## What is a Gameboy Camera?
-
-[The Game Boy Camera (GBC), released as Pocket Camera[a] in Japan, is a Nintendo accessory for the handheld Game Boy game console](https://en.wikipedia.org/wiki/Game_Boy_Camera)
-
-[Game Boy Camera commercial, 1998](https://twitter.com/historyinmemes/status/1569165178704633856)
-
-## About this project
-
-Code to emulate a gameboy printer via the gameboy link cable and an arduino module.
-
-![](./sample_image/gameboy_printer_emulator.png)
-
-* [Blog Post](http://briankhuu.com/projects/gameboy_camera_arduino/gameboy_camera_arduino.html)
-
-Goal is to provide an easy way for people to quickly setup and download the images from their gameboy to their computer before the battery of these gameboy cameras dies of old age.
-
-I hope there will be a project to collate these gameboy images somewhere.
-
-## Official Releases
-
-Downloads: [Version Release Downloads at GitHub](https://github.com/mofosyne/arduino-gameboy-printer-emulator/releases)
-
-[Release Notes Located Here](./RELEASE_NOTES.md)
-
---------------------------------------------------------------------------------
-
-## Quick Start
-
-### Construct the Arduino Gameboy Printer Emulator
-
-Use an arduino Nano/Uno and wire the gameboy link cable according to the pinout shown below.
-
-* [Pinout Reference](https://web.archive.org/web/20230220025605/https://www.hardwarebook.info/Game_Boy_Link)
-
-Pure GBA cables (purple ones) have a different pinout from GB/GBC, avoid using them. In general, do not destroy old genuine gameboy link cables for this purpose, there is plenty new cables you can purchase online. Do note that you cannot trust the color code of these cables, you must always check the wire against the plug pins. Especially considering the RX/TX pair of the pins may be flipped. 
-
-Else if you have a 3D printer, you can use (Game Boy DMG-01 Link Port plug for dupont jumper wire by Marko Štamcar from Slovenian Computer Museum, created as part of a retro tech exhibition)[https://www.thingiverse.com/thing:4685189]
-
-### Pinout Diagram
-
-Thanks to West McGowan (twitter: @imwestm) who was able to replicate this project on his Arduino Nano plus Gameboy Color and helpfully submitted a handy picture of how to wire this project up. You can find his tutorial in [here](https://westm.co.uk/arduino-game-boy-printer-emulator/)
-
-![](GBP_Emu_Micro_pinout_West_McGowan.webp.png)
-
-### General Pinout
-
-```
-Gameboy Original/Color Link Cable Pinout
- ___________
-|  6  4  2  |
- \_5__3__1_/   (at cable)
-```
-
-| Arduino Pin | Gameboy Link Pin                 |
-|-------------|----------------------------------|
-|  unused     | Pin 1 : 5.0V                     |
-|  D4         | Pin 2 : Serial OUTPUT            |
-|  D3         | Pin 3 : Serial INPUT             |
-|  unused     | Pin 4 : Serial Data              |
-|  D2         | Pin 5 : Serial Clock (Interrupt) |
-|  GND        | Pin 6 : GND (Attach to GND Pin)  |
-
-### Dedicated PCB
-
-As crossing Serial OUTPUT and Serial INPUT is the main cause of issues with the project, [dedicated PCBs were made](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) to fit with the Arduino Nano and Uno, using a GBA/GBC socket. This also allows not cutting a cable. The Uno version comes with pins dedicated for an SD shield that you can just left empty for this project.
-
-![](/sample_image/Nano_shield.jpg)
-
-### Programming the emulator
-
-* Arduino Project File: `./GameBoyPrinterEmulator/gpb_emulator.ino`
-* Baud 115200 baud
-
-Next download `./GameBoyPrinterEmulator/gpb_emulator.ino` to your arduino nano.
-After that, open the serial console and set the baud rate to 115200 baud.
-
-#### Alternative option of uploading precompiled arduino nano image via WebUSB
+### Alternative option of uploading precompiled arduino nano image via WebUSB
 
 If your browser supports webusb, you have the option of uploading directly to the arduino nano the firmware using WebUSB (e.g. via google chrome)
 
@@ -115,22 +109,6 @@ If your browser supports webusb, you have the option of uploading directly to th
 Afterwards, you can check if it's working via the webusb serial console below as well
 
 * [Arduino Nano WebSerial Serial Console](./webbasedtools/webserialConsole.html)
-
-
-### Download the image (Javascript)
-
-The Arduino IDE 2.XX does not allow to batch copy/paste the serial output anymore. You have to follow [this guide](https://datalab.medium.com/arduino-ide-serial-data-export-by-putty-6a77631a23ea) to configure PuTTy or another serial datalogger. Once connected to your Arduino serial with PuTTY, print from your gameboy, then close the serial monitor and copy/paste data from the log file to the raw packet javascript decoder in `./GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html`. Press click to render button.
-
-One you done that, your image will show up below. You can then right click on the image to save it to your computer. Or you can click upload to imgur to upload it to the web in public, so you can share it. (Feel free to share with me at mofosyne@gmail.com).
-
-A copy of the raw decoder is accessible here as well:
-* [V3 Raw JS Decoder: Click Here To Open Javascript Gameboy Printer Emulator Web Decoder](https://mofosyne.github.io/arduino-gameboy-printer-emulator/GameBoyPrinterDecoderJS/gameboy_printer_js_raw_decoder.html)
-
-Need example raw packet captures to test out the raw js decoder without the gameboy printer emulator hardware? You can check a few out in the [Real Packet Capture Example](https://github.com/mofosyne/GameboyPrinterSniffer/tree/master/RealCapture) folder of the gameboy printer sniffer project.
-
-You are all done!
-
-**Note: V3 now uses raw packet decoder, rather than the original tile decoder. This allows us to better support gameboy printers enabled games using compression.**
 
 ### Download via Game Boy Printer Web (External Project)
 
@@ -302,7 +280,7 @@ For adding color palette dropdown https://github.com/mofosyne/arduino-gameboy-pr
 
 * @imwestm : West McGowan for submitting a handy picture of how to wire this project up as well as feedback to improve the instructions in this readme.
 
-* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games. Also contributed a matlab/octave decoder implementation.
+* Raphaël BOICHOT : For assistance with capturing gameboy communications and timing for support with gameboy printer fast mode and compression. Assisting in the support of more games. Also contributed a [matlab/octave decoder implementation](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation).
 
 * @crizzlycruz (@23kpixels) : For adding support to js decoder for zero margin multi prints
 
