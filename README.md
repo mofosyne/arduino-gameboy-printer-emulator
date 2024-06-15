@@ -42,7 +42,7 @@ Got telegram instant messaging and have some questions or need any advice, or ju
 #'screen -r' to reopen the monitor if window was closed
 screen -L -Logfile "arduino_$(date +'%Y%m%d-%H%M%S').log" /dev/ttyUSB0 115200
 ```
-- Your log file can then be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), or a [web application](https://herrzatacke.github.io/gb-printer-web/#/);
+- Your log file can then be converted with [Python](/GameboyPrinterDecoderPython), [Javascript](/GameBoyPrinterDecoderJS), [C++](/GameBoyPrinterDecoderC), or a the [web application](https://herrzatacke.github.io/gb-printer-web/#/);
 - You can directly read and convert the serial data from an [Android app](https://github.com/Mraulio/GBCamera-Android-Manager) and [GNU Octave/Matlab](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation). These codes directly handle the Arduino serial port and do not require using PuTTY or the Arduino IDE after the initial installation.
 - You can also directly use the [web application](https://herrzatacke.github.io/gb-printer-web/#/) under Chrome (Settings->Enable WebUSB, then go to the WebUSB Serial devices->Open Web Serial devices) and just print ! 
 - If you're using the Android app or this [GNU Octave code](https://github.com/Raphael-Boichot/PC-to-Game-Boy-Printer-interface), you can also plug a Game Boy Printer to the emulator instead of a Game Boy (reboot the Arduino with printer connected and ON so that the Arduino recognizes it) and it will act as an I/O interface between the Android (or the PC) and the printer to print images !
