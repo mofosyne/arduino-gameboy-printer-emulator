@@ -31,16 +31,26 @@ Got questions, need advice, or just want to share? Join the Telegram group:
 
 ### Step 1 — Flash the firmware
 
+Choose either 1.A or 1.B below
+
+#### Step 1.A — Automatic Web Flasher
+
+If you got an Arduino Nano and if your browser supports WebUSB, you can flash the firmware directly without the Arduino IDE:
+
+1. Open [Arduino Nano WebSerial Firmware Flasher](./webbasedtools/arduino_nano/index.html) in a WebSerial compatible browser such as Chrome or Chromium.
+2. Connect your Arduino Nano then press either "Flash Newer Arduino Nano (Test Blink Firmware)" or "Flash Older Arduino Nano (Test Blink Firmware)" depending on your arduino Nano's bootloader type.
+3. Check that the Arduino Nano's led is blinking. This indicates that the microcontroller is working.
+4. Connect your Arduino Nano then press either "Flash Newer Arduino Nano (GameBoy Printer Emulator)" or "Flash Older Arduino Nano (GameBoy Printer Emulator)"
+5. Open the [Web Serial Monitor](./webbasedtools/webserialConsole.html) (or any Serial Monitor) and set the baud rate to **115200** — you should see a welcome message confirming the board is ready
+
+#### Step 1.B — Manually Compile and flash the firmware
+
 1. Install the [Arduino IDE](https://www.arduino.cc/en/software)
 2. Download this project from GitHub (Code → Download ZIP) and unzip it to a local folder
 3. Open `GameBoyPrinterEmulator/GameBoyPrinterEmulator.ino` in the Arduino IDE
 4. Connect your Arduino, then select the correct board (Tools → Board) and port (Tools → Port)
 5. Upload the sketch (Sketch → Upload)
-6. Open the Serial Monitor and set the baud rate to **115200** — you should see a welcome message confirming the board is ready
-
-Alternatively, if your browser supports WebUSB, you can flash the firmware directly without the Arduino IDE:
-
-* [Arduino Nano WebSerial Firmware Flasher](./webbasedtools/arduino_nano/index.html)
+5. Open the [Web Serial Monitor](./webbasedtools/webserialConsole.html) (or any Serial Monitor) and set the baud rate to **115200** — you should see a welcome message confirming the board is ready
 
 ### Step 2 — Wire your Game Boy and print
 
