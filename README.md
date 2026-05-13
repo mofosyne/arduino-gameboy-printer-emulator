@@ -90,7 +90,7 @@ Gameboy Original/Color Link Cable Pinout
 
 For a cleaner build, [dedicated PCBs](https://github.com/Raphael-Boichot/Collection-of-PCB-for-Game-Boy-Printer-Emulators) are available that include a GBC socket and fit an Arduino Nano or Uno — no soldering to cables required. Complete builds ordered from China typically cost around €10.
 
-![](/sample_image/Nano_shield.jpg)
+![](./sample_image/Nano_shield.jpg)
 
 Once wired, print from any compatible game. The Arduino will receive the data and output it over serial.
 
@@ -125,9 +125,9 @@ The saved log file can be pasted into GBP Downloader's manual input field or dec
 | [**GBP Downloader**](https://hexlions.github.io/GBP-Downloader/gbp_downloader.html)                 | Fast and lightweight: connect, print, export PNG or ZIP — works offline                                                                                                                                                                                                             |
 | [**GBCamera Android Manager**](https://github.com/Mraulio/GBCamera-Android-Manager)                 | Field use with an Android phone over USB serial. If you boot the Arduino with a real Game Boy Printer connected and switched on, it will boot in **printer mode** — allowing the app to output images directly to the physical printer. The LED on pin 13 flashes to indicate ready |
 | [**GNU Octave / MATLAB decoder**](https://github.com/Raphael-Boichot/GameboyPrinterPaperSimulation) | Scripted or batch processing workflows                                                                                                                                                                                                                                              |
-| [**Python decoder**](/GameboyPrinterDecoderPython)                                                  | Command-line / scripting                                                                                                                                                                                                                                                            |
-| [**JavaScript decoder**](/GameBoyPrinterDecoderJS)                                                  | Browser-based, works offline                                                                                                                                                                                                                                                        |
-| [**C decoder**](/GameBoyPrinterDecoderC)                                                            | Compiled command-line tool                                                                                                                                                                                                                                                          |
+| [**Python decoder**](./GameboyPrinterDecoderPython)                                                  | Command-line / scripting                                                                                                                                                                                                                                                            |
+| [**JavaScript decoder**](./GameBoyPrinterDecoderJS)                                                  | Browser-based, works offline                                                                                                                                                                                                                                                        |
+| [**C decoder**](./GameBoyPrinterDecoderC)                                                            | Compiled command-line tool                                                                                                                                                                                                                                                          |
 
 **Game Boy Printer Web** and **GBP Downloader** both support direct Web Serial connections (Chrome, Edge, or Opera on desktop) — you can print and watch images appear live without saving a log file at all.
 
